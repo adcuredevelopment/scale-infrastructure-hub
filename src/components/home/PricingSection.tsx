@@ -107,16 +107,29 @@ export const PricingSection = () => {
                   ))}
                 </ul>
 
-                <Link to="/contact">
-                  <Button
-                    className={`w-full hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
-                      plan.popular ? "glow-primary-sm" : ""
-                    }`}
-                    variant={plan.popular ? "default" : "outline"}
-                  >
-                    Get Started
-                  </Button>
-                </Link>
+                {plan.checkoutUrl ? (
+                  <a href={plan.checkoutUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
+                    <Button
+                      className={`w-full hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
+                        plan.popular ? "glow-primary-sm" : ""
+                      }`}
+                      variant={plan.popular ? "default" : "outline"}
+                    >
+                      Get Started
+                    </Button>
+                  </a>
+                ) : (
+                  <Link to="/contact">
+                    <Button
+                      className={`w-full hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
+                        plan.popular ? "glow-primary-sm" : ""
+                      }`}
+                      variant={plan.popular ? "default" : "outline"}
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
+                )}
               </div>
             </ScrollReveal>
           ))}
