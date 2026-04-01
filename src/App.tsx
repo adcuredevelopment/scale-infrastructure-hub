@@ -8,6 +8,7 @@ import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Refund from "./pages/Refund";
+import SubscriptionPolicy from "./pages/SubscriptionPolicy";
 import FacebookAccounts from "./pages/FacebookAccounts";
 import BusinessManagers from "./pages/BusinessManagers";
 import FacebookPages from "./pages/FacebookPages";
