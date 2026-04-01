@@ -159,10 +159,10 @@ export const HowItWorksSection = () => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={active}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 15, x: direction * 20 }}
+                animate={{ opacity: 1, y: 0, x: 0 }}
+                exit={{ opacity: 0, y: -10, x: direction * -20 }}
+                transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1], delay: 0.05 }}
                 className="pt-6"
               >
                 <h3 className="font-display font-bold text-2xl mb-2">{steps[active].title}</h3>
