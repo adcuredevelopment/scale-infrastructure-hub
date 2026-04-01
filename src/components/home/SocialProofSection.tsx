@@ -1,6 +1,6 @@
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { Star } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const testimonials = [
   {
@@ -71,29 +71,55 @@ const testimonials = [
   },
 ];
 
-export const SocialProofSection = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const visibleCount = 3;
-  const totalSlides = testimonials.length;
+const TestimonialCard = ({ t }: { t: typeof testimonials[0] }) => (
+  <div className="glass rounded-xl p-8 hover-lift flex flex-col min-w-[340px] w-[340px] shrink-0">
+    <div className="flex gap-1 mb-4">
+      {[...Array(t.stars)].map((_, j) => (
+        <Star key={j} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+      ))}
+    </div>
+    <p className="text-sm text-foreground/80 leading-relaxed mb-6 flex-1">"{t.text}"</p>
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="font-display font-semibold text-sm">{t.author}</div>
+        <div className="text-xs text-muted-foreground">Verified on Trustpilot</div>
+      </div>
+      <div className="text-xs text-muted-foreground">{t.date}</div>
+    </div>
+  </div>
+);
 
-  const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % totalSlides);
-  }, [totalSlides]);
+export const SocialProofSection = () => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(nextSlide, 4000);
-    return () => clearInterval(interval);
-  }, [nextSlide]);
+    const el = scrollRef.current;
+    if (!el) return;
 
-  // Get visible testimonials with wrapping
-  const getVisibleTestimonials = () => {
-    const items = [];
-    for (let i = 0; i < visibleCount; i++) {
-      const idx = (currentIndex + i) % totalSlides;
-      items.push({ ...testimonials[idx], idx });
-    }
-    return items;
-  };
+    let animationId: number;
+    let scrollPos = 0;
+    const speed = 0.5; // pixels per frame
+
+    const step = () => {
+      if (!isPaused) {
+        scrollPos += speed;
+        // Reset when we've scrolled through one full set
+        const halfWidth = el.scrollWidth / 2;
+        if (scrollPos >= halfWidth) {
+          scrollPos = 0;
+        }
+        el.scrollLeft = scrollPos;
+      }
+      animationId = requestAnimationFrame(step);
+    };
+
+    animationId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationId);
+  }, [isPaused]);
+
+  // Duplicate testimonials for seamless loop
+  const doubled = [...testimonials, ...testimonials];
 
   return (
     <section className="section-padding">
@@ -117,45 +143,19 @@ export const SocialProofSection = () => {
             </div>
           </div>
         </ScrollReveal>
+      </div>
 
-        <div className="relative overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {getVisibleTestimonials().map((t) => (
-              <div
-                key={`${t.idx}-${currentIndex}`}
-                className="glass rounded-xl p-8 hover-lift h-full flex flex-col animate-fade-in"
-              >
-                <div className="flex gap-1 mb-4">
-                  {[...Array(t.stars)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-sm text-foreground/80 leading-relaxed mb-6 flex-1">"{t.text}"</p>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-display font-semibold text-sm">{t.author}</div>
-                    <div className="text-xs text-muted-foreground">Verified on Trustpilot</div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">{t.date}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Progress dots */}
-          <div className="flex items-center justify-center gap-1.5 mt-8">
-            {testimonials.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                  i === currentIndex
-                    ? "bg-primary w-4"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                }`}
-              />
-            ))}
-          </div>
+      <div
+        ref={scrollRef}
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        className="overflow-hidden"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        <div className="flex gap-6 px-4 w-max">
+          {doubled.map((t, i) => (
+            <TestimonialCard key={i} t={t} />
+          ))}
         </div>
       </div>
     </section>
