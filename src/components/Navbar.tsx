@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import adcureAgencyLogo from "@/assets/adcure-agency-logo-white.png";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import adcureAgencyLogo from "@/assets/adcure-agency-logo-white.png";
 
 const navLinks = [
   { label: "Home", path: "/#hero" },
@@ -16,6 +16,7 @@ export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -26,6 +27,21 @@ export const Navbar = () => {
   useEffect(() => {
     setMobileOpen(false);
   }, [location]);
+
+  const handleNavClick = (e: React.MouseEvent, path: string) => {
+    if (path.startsWith("/#")) {
+      e.preventDefault();
+      const id = path.slice(2);
+      if (location.pathname === "/") {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        navigate("/");
+        setTimeout(() => {
+          document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      }
+    }
+  };
 
   return (
     <motion.header
@@ -48,8 +64,9 @@ export const Navbar = () => {
             <Link
               key={link.path}
               to={link.path}
+              onClick={(e) => handleNavClick(e, link.path)}
               className={`text-sm font-medium transition-colors duration-300 hover:text-primary ${
-                location.pathname === link.path
+                location.pathname === link.path || (link.path === "/#hero" && location.pathname === "/")
                   ? "text-primary"
                   : "text-muted-foreground"
               }`}
@@ -88,6 +105,7 @@ export const Navbar = () => {
                 <Link
                   key={link.path}
                   to={link.path}
+                  onClick={(e) => handleNavClick(e, link.path)}
                   className={`text-sm font-medium py-2 transition-colors ${
                     location.pathname === link.path
                       ? "text-primary"

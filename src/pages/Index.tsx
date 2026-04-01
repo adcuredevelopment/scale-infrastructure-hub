@@ -14,12 +14,12 @@ const Index = () => {
     <div className="noise-overlay">
       <Navbar />
       <main>
-        <HeroSection />
+        <div id="hero"><HeroSection /></div>
         <ProblemSection />
         <SolutionSection />
-        <ServicesSection />
+        <div id="services"><ServicesSection /></div>
         <SocialProofSection />
-        <PricingSection />
+        <div id="pricing"><PricingSection /></div>
         <WhyAdcureSection />
         <FinalCTASection />
       </main>
