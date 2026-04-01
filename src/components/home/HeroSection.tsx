@@ -44,12 +44,13 @@ export const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/5 blur-[100px] gpu-blur animate-glow-pulse" />
         <div className="absolute top-1/3 right-0 w-[400px] h-[400px] rounded-full bg-blue-500/3 blur-[80px] gpu-blur" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        {/* Soft bottom fade instead of hard line */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       {/* Grid pattern — crisp 1px lines */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)]"
         style={{
           backgroundImage: `linear-gradient(hsl(220 16% 16% / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(220 16% 16% / 0.3) 1px, transparent 1px)`,
           backgroundSize: '64px 64px',
