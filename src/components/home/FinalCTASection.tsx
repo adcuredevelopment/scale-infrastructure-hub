@@ -19,7 +19,7 @@ export const FinalCTASection = () => {
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
               Join 500+ advertisers who trust Adcure for stable, high-performance ad infrastructure.
             </p>
-            <Link to="/contact">
+            <a href="#pricing" onClick={(e) => { e.preventDefault(); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }}>
               <Button
                 size="lg"
                 className="glow-primary text-base px-10 py-6 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 group"
@@ -27,7 +27,7 @@ export const FinalCTASection = () => {
                 Get Started Now
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-            </Link>
+            </a>
           </div>
         </ScrollReveal>
       </div>
