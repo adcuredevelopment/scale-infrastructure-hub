@@ -8,9 +8,10 @@ interface Guarantee {
 
 interface ShopGuaranteesProps {
   guarantees: Guarantee[];
+  columns?: 2 | 3;
 }
 
-export const ShopGuarantees = ({ guarantees }: ShopGuaranteesProps) => {
+export const ShopGuarantees = ({ guarantees, columns = 3 }: ShopGuaranteesProps) => {
   return (
     <section className="section-padding">
       <div className="container mx-auto px-4 md:px-8 max-w-4xl">
@@ -26,7 +27,7 @@ export const ShopGuarantees = ({ guarantees }: ShopGuaranteesProps) => {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${columns === 2 ? "md:grid-cols-2" : "md:grid-cols-3"} gap-4`}>
           {guarantees.map((g, i) => (
             <ScrollReveal key={i} delay={i * 0.1}>
               <div className="glass rounded-xl p-6 h-full">

@@ -159,7 +159,7 @@ const FacebookStructures = () => {
           </div>
         </section>
 
-        <ShopGuarantees guarantees={guarantees} />
+        <ShopGuarantees guarantees={guarantees} columns={2} />
         <ShopFAQ />
       </main>
       <Footer />
