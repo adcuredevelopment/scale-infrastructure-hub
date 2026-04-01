@@ -88,7 +88,7 @@ export const Navbar = () => {
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
+          {navLinksBefore.map((link) => (
             <Link
               key={link.path}
               to={link.path}
