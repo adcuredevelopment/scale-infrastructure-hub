@@ -76,7 +76,7 @@ export const DashboardMockup = () => {
                   JD
                 </div>
                 <div>
-                  <div className="text-[9px] font-semibold text-foreground">Joey Dekker</div>
+                  <div className="text-[9px] font-semibold text-foreground">Simon</div>
                   <div className="text-[8px] text-muted-foreground">Enterprise</div>
                 </div>
               </div>
