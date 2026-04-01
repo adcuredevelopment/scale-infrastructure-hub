@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -65,6 +65,22 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Better focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: hsl(213 94% 52% / 0.25);
+    color: hsl(210 20% 92%);
+  }
 }
 
 @layer utilities {
@@ -72,8 +88,13 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-400;
   }
 
+  .text-gradient-warm {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-400 to-cyan-400;
+  }
+
   .glow-primary {
-    box-shadow: 0 0 30px -5px hsl(213 94% 52% / 0.3);
+    box-shadow: 0 0 30px -5px hsl(213 94% 52% / 0.3),
+                0 0 60px -15px hsl(213 94% 52% / 0.15);
   }
 
   .glow-primary-sm {
@@ -88,8 +109,16 @@
     @apply bg-card/30 backdrop-blur-md border border-border/30;
   }
 
+  .glass-strong {
+    @apply bg-card/80 backdrop-blur-2xl border border-border/60;
+  }
+
   .section-padding {
     @apply py-24 md:py-32 px-4 md:px-8;
+  }
+
+  .section-padding-sm {
+    @apply py-16 md:py-24 px-4 md:px-8;
   }
 
   .noise-overlay {
@@ -116,6 +145,48 @@
 
   .hover-lift:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px -12px hsl(213 94% 52% / 0.15);
+    box-shadow: 0 12px 40px -12px hsl(213 94% 52% / 0.15),
+                0 4px 12px -4px hsl(0 0% 0% / 0.3);
+  }
+
+  /* Animated gradient border */
+  .border-gradient {
+    position: relative;
+    background-clip: padding-box;
+  }
+
+  .border-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(213 94% 52% / 0.3), transparent 50%, hsl(213 94% 52% / 0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Subtle shimmer for premium feel */
+  .shimmer {
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      hsl(213 94% 52% / 0.05) 37%,
+      transparent 63%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Smooth divider line */
+  .section-divider {
+    @apply w-full h-px bg-gradient-to-r from-transparent via-border/60 to-transparent;
   }
 }
