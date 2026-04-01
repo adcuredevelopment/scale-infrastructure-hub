@@ -81,7 +81,7 @@ export const HowItWorksSection = () => {
               return (
                 <button
                   key={step.number}
-                  onClick={() => setActive(i)}
+                  onClick={() => goTo(i)}
                   className={`relative text-left rounded-xl px-5 py-5 transition-all duration-300 border ${
                     isActive
                       ? "border-primary/40 bg-primary/5"
