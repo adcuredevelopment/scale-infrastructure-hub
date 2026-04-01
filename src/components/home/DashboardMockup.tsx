@@ -9,10 +9,10 @@ const kpiData = [
 ];
 
 const tableRows = [
-  { name: "Brand Awareness", balance: "€4,200", status: "Active" },
-  { name: "Retargeting Q1", balance: "€3,840", status: "Active" },
-  { name: "Lead Gen EU", balance: "€2,100", status: "Active" },
-  { name: "Test Campaign", balance: "€2,700", status: "Inactive" },
+  { name: "Ad Account 1", balance: "€4,200", status: "Active" },
+  { name: "Ad Account 2", balance: "€3,840", status: "Active" },
+  { name: "Ad Account 3", balance: "€2,100", status: "Active" },
+  { name: "Ad Account 4", balance: "€2,700", status: "Inactive" },
 ];
 
 const activityItems = [
