@@ -8,6 +8,10 @@ import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Refund from "./pages/Refund";
+import FacebookAccounts from "./pages/FacebookAccounts";
+import BusinessManagers from "./pages/BusinessManagers";
+import FacebookPages from "./pages/FacebookPages";
+import FacebookStructures from "./pages/FacebookStructures";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +28,10 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />
+          <Route path="/facebook-accounts" element={<FacebookAccounts />} />
+          <Route path="/business-managers" element={<BusinessManagers />} />
+          <Route path="/facebook-pages" element={<FacebookPages />} />
+          <Route path="/facebook-structures" element={<FacebookStructures />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
