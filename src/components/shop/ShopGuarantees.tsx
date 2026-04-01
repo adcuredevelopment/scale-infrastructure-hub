@@ -11,7 +11,7 @@ interface ShopGuaranteesProps {
   columns?: 2 | 3;
 }
 
-export const ShopGuarantees = ({ guarantees }: ShopGuaranteesProps) => {
+export const ShopGuarantees = ({ guarantees, columns = 3 }: ShopGuaranteesProps) => {
   return (
     <section className="section-padding">
       <div className="container mx-auto px-4 md:px-8 max-w-4xl">
