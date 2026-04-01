@@ -1,6 +1,6 @@
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { CreditCard, UserCheck, Rocket, ArrowLeft, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const steps = [
@@ -29,9 +29,36 @@ const steps = [
 
 export const HowItWorksSection = () => {
   const [active, setActive] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const prev = () => setActive((a) => Math.max(0, a - 1));
-  const next = () => setActive((a) => Math.min(steps.length - 1, a + 1));
+  const resetTimer = useCallback(() => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDirection(1);
+      setActive((a) => (a + 1) % steps.length);
+    }, 5000);
+  }, []);
+
+  useEffect(() => {
+    resetTimer();
+    return () => clearTimeout(timerRef.current);
+  }, [active, resetTimer]);
+
+  const goTo = (i: number) => {
+    setDirection(i > active ? 1 : -1);
+    setActive(i);
+  };
+
+  const prev = () => {
+    setDirection(-1);
+    setActive((a) => Math.max(0, a - 1));
+  };
+
+  const next = () => {
+    setDirection(1);
+    setActive((a) => Math.min(steps.length - 1, a + 1));
+  };
 
   return (
     <section className="section-padding">
