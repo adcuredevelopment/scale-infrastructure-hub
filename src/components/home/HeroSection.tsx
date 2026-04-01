@@ -1,8 +1,40 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { DashboardMockup } from "./DashboardMockup";
+import { useEffect, useRef, useState } from "react";
+
+const AnimatedCounter = ({ target, suffix = "" }: { target: string; suffix?: string }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const hasAnimated = useRef(false);
+  const numericTarget = parseInt(target.replace(/[^0-9]/g, ""));
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const duration = 1500;
+          const start = performance.now();
+          const animate = (now: number) => {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.floor(eased * numericTarget));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [numericTarget]);
+
+  return <div ref={ref}>{count}{suffix}</div>;
+};
 
 export const HeroSection = () => {
   return (
@@ -11,6 +43,7 @@ export const HeroSection = () => {
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px] animate-glow-pulse" />
+        <div className="absolute top-1/3 right-0 w-[400px] h-[400px] rounded-full bg-blue-500/3 blur-[100px]" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       </div>
 
@@ -67,27 +100,27 @@ export const HeroSection = () => {
             </a>
           </motion.div>
 
-          {/* Stats */}
+          {/* Stats with animated counters */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.9 }}
             className="grid grid-cols-3 gap-8 max-w-lg mx-auto mt-16 pt-8 border-t border-border/30"
           >
-            {[
-              { value: "500+", label: "Active Clients" },
-              { value: "4.4★", label: "Trustpilot" },
-              { value: "24/7", label: "Support" },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-2xl md:text-3xl font-display font-bold text-foreground">
-                  {stat.value}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {stat.label}
-                </div>
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-display font-bold text-foreground">
+                <AnimatedCounter target="500" suffix="+" />
               </div>
-            ))}
+              <div className="text-xs text-muted-foreground mt-1">Active Clients</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-display font-bold text-foreground">4.4★</div>
+              <div className="text-xs text-muted-foreground mt-1">Trustpilot</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-display font-bold text-foreground">24/7</div>
+              <div className="text-xs text-muted-foreground mt-1">Support</div>
+            </div>
           </motion.div>
         </div>
 

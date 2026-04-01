@@ -3,9 +3,9 @@ import { Footer } from "@/components/Footer";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { ShopFAQ } from "@/components/shop/ShopFAQ";
 import { ShopGuarantees } from "@/components/shop/ShopGuarantees";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { ArrowRight, Shield, Clock, CheckCircle2, Users } from "lucide-react";
+import { ShopHero } from "@/components/shop/ShopHero";
+import { ShopProductGrid } from "@/components/shop/ShopProductGrid";
+import { Shield, Clock, CheckCircle2, Users } from "lucide-react";
 
 const products = [
   {
@@ -27,6 +27,7 @@ const products = [
     name: "Facebook US 3Line 2x Reinstated Account",
     description: "Double-reinstated US profile with 3-line verification and maximum ad durability.",
     price: "€60",
+    popular: true,
   },
 ];
 
@@ -49,69 +50,19 @@ const FacebookAccounts = () => {
     <div className="noise-overlay">
       <Navbar />
       <main>
-        <section className="relative pt-32 md:pt-40 pb-20 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
-          <div className="container mx-auto px-4 md:px-8 relative z-10">
-            <ScrollReveal>
-              <div className="max-w-3xl mx-auto text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-6">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-glow-pulse" />
-                  <span className="text-xs font-medium text-primary">Premium Accounts</span>
-                </div>
-                <h1 className="text-4xl md:text-6xl font-display font-bold tracking-tight mb-6">
-                  Facebook <span className="text-gradient">Accounts</span>
-                </h1>
-                <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-                  Aged, verified and stable profiles ready for ad scalability. Get access to premium accounts that won't get banned.
-                </p>
-                <Link to="/contact">
-                  <Button size="lg" className="glow-primary text-base px-8 py-6 group">
-                    Get Started <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              </div>
-            </ScrollReveal>
+        <ShopHero
+          badge="Premium Accounts"
+          title="Facebook"
+          titleGradient="Accounts"
+          description="Aged, verified and stable profiles ready for ad scalability. Get access to premium accounts that won't get banned."
+          stats={stats}
+        />
 
-            <ScrollReveal delay={0.2}>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mt-16">
-                {stats.map((stat) => (
-                  <div key={stat.label} className="glass rounded-xl p-4 text-center">
-                    <stat.icon className="w-5 h-5 text-primary mx-auto mb-2" />
-                    <div className="text-xl font-display font-bold text-foreground">{stat.value}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        <section className="section-padding bg-card/30">
-          <div className="container mx-auto px-4 md:px-8">
-            <ScrollReveal>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12">
-                Choose Your <span className="text-gradient">Account</span>
-              </h2>
-            </ScrollReveal>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {products.map((product, i) => (
-                <ScrollReveal key={product.name} delay={i * 0.1}>
-                  <div className="glass rounded-xl p-6 hover-lift h-full flex flex-col">
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-display font-semibold text-base text-foreground pr-4">{product.name}</h3>
-                      <span className="text-2xl font-display font-bold text-primary shrink-0">{product.price}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">{product.description}</p>
-                    <Link to="/contact">
-                      <Button className="w-full" variant="outline">Order Now</Button>
-                    </Link>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          </div>
-        </section>
+        <ShopProductGrid
+          title="Choose Your"
+          titleGradient="Account"
+          products={products}
+        />
 
         <section className="section-padding">
           <div className="container mx-auto px-4 md:px-8 max-w-3xl">
@@ -120,7 +71,7 @@ const FacebookAccounts = () => {
               <p className="text-muted-foreground leading-relaxed mb-6">
                 Our Facebook Accounts are carefully aged and verified profiles designed for advertisers who need reliable, stable accounts for scaling their campaigns.
               </p>
-              <div className="glass rounded-xl p-6 mb-6">
+              <div className="rounded-xl p-6 mb-6 bg-card/40 border border-border/30">
                 <h3 className="font-display font-semibold mb-4 text-foreground">Each account comes with:</h3>
                 <ul className="space-y-3">
                   {[

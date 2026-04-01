@@ -24,6 +24,7 @@ const shopLinks = [
 
 export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [mobileShopOpen, setMobileShopOpen] = useState(false);
@@ -32,7 +33,11 @@ export const Navbar = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 20);
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(totalHeight > 0 ? (window.scrollY / totalHeight) * 100 : 0);
+    };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -266,6 +271,15 @@ export const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Scroll progress bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-transparent">
+        <motion.div
+          className="h-full bg-gradient-to-r from-primary to-blue-400"
+          style={{ width: `${scrollProgress}%` }}
+          transition={{ duration: 0.05 }}
+        />
+      </div>
     </motion.header>
   );
 };

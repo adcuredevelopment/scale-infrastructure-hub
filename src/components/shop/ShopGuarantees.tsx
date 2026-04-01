@@ -30,9 +30,11 @@ export const ShopGuarantees = ({ guarantees, columns = 3 }: ShopGuaranteesProps)
         <div className={`grid grid-cols-1 ${columns === 2 ? "md:grid-cols-2" : "md:grid-cols-3"} gap-4`}>
           {guarantees.map((g, i) => (
             <ScrollReveal key={i} delay={i * 0.1}>
-              <div className="glass rounded-xl p-6 h-full">
+              <div className="group rounded-xl p-6 h-full bg-card/40 border border-border/30 hover:border-primary/15 transition-all duration-500">
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors duration-300">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  </div>
                   <div>
                     <h3 className="font-display font-semibold text-foreground mb-1.5">{g.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">{g.description}</p>
@@ -44,7 +46,7 @@ export const ShopGuarantees = ({ guarantees, columns = 3 }: ShopGuaranteesProps)
         </div>
 
         <ScrollReveal delay={0.3}>
-          <div className="mt-8 text-center glass rounded-xl p-6 border border-primary/20">
+          <div className="mt-8 text-center rounded-xl p-6 border border-primary/20 bg-primary/5">
             <h3 className="font-display font-semibold text-foreground mb-2">Money-Back Guarantee</h3>
             <p className="text-sm text-muted-foreground">
               If Adcure doesn't live up to these expectations, just email us and we'll give you a full refund.
