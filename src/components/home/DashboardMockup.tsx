@@ -51,7 +51,7 @@ export const DashboardMockup = () => {
             {/* Logo */}
             <div className="flex items-center gap-2.5 mb-4 px-1">
               <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-                <Triangle className="w-3.5 h-3.5 text-primary fill-primary" />
+                <img src={adcureLogo} alt="Adcure" className="w-4 h-4 object-contain" />
               </div>
               <span className="text-[12px] font-bold text-foreground">Adcure</span>
             </div>
