@@ -10,7 +10,7 @@ const plans = [
     price: "€79",
     period: "/mo",
     topUp: "5% Top-Up Fee",
-    popular: false,
+    checkoutUrl: "https://checkout.revolut.com/subscription/0d6b1ba4-3865-4820-a4ae-44a1ae5c0bdb",
     features: [
       "24/7 Top-Up Service",
       "Mon–Sun Support (08:00-22:00)",
@@ -107,16 +107,29 @@ export const PricingSection = () => {
                   ))}
                 </ul>
 
-                <Link to="/contact">
-                  <Button
-                    className={`w-full hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
-                      plan.popular ? "glow-primary-sm" : ""
-                    }`}
-                    variant={plan.popular ? "default" : "outline"}
-                  >
-                    Get Started
-                  </Button>
-                </Link>
+                {plan.checkoutUrl ? (
+                  <a href={plan.checkoutUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
+                    <Button
+                      className={`w-full hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
+                        plan.popular ? "glow-primary-sm" : ""
+                      }`}
+                      variant={plan.popular ? "default" : "outline"}
+                    >
+                      Get Started
+                    </Button>
+                  </a>
+                ) : (
+                  <Link to="/contact">
+                    <Button
+                      className={`w-full hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
+                        plan.popular ? "glow-primary-sm" : ""
+                      }`}
+                      variant={plan.popular ? "default" : "outline"}
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
+                )}
               </div>
             </ScrollReveal>
           ))}
