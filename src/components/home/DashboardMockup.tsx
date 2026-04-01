@@ -46,40 +46,58 @@ export const DashboardMockup = () => {
         {/* App layout */}
         <div className="flex bg-[hsl(220_20%_5%)]">
           {/* Sidebar */}
-          <div className="w-44 min-h-[340px] border-r border-border/30 bg-[hsl(220_22%_6%)] p-3 hidden md:flex flex-col">
+          <div className="w-48 min-h-[340px] border-r border-border/30 bg-[hsl(220_22%_6%)] p-3 hidden md:flex flex-col">
             {/* Logo */}
-            <div className="flex items-center gap-2 mb-4 px-1">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center">
-                <LayoutDashboard className="w-3 h-3 text-white" />
+            <div className="flex items-center gap-2.5 mb-4 px-1">
+              <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                <Triangle className="w-3.5 h-3.5 text-primary fill-primary" />
               </div>
-              <span className="text-[11px] font-bold text-foreground">Adcure Portal</span>
+              <span className="text-[12px] font-bold text-foreground">Adcure</span>
             </div>
 
-            {/* Nav items */}
-            {["Dashboard", "Ad Accounts", "Wallet", "Invoices", "Support", "Settings"].map((item, i) => (
-              <div
-                key={item}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium mb-0.5 ${
-                  i === 0
-                    ? "bg-primary/15 text-primary"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <div className={`w-1 h-1 rounded-full ${i === 0 ? "bg-primary" : "bg-muted-foreground/30"}`} />
-                {item}
-              </div>
-            ))}
+            {/* Search */}
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[hsl(220_18%_10%)] border border-border/20 mb-4">
+              <Search className="w-3 h-3 text-muted-foreground" />
+              <span className="text-[9px] text-muted-foreground">Search...</span>
+            </div>
 
-            <div className="mt-auto pt-3 border-t border-border/20">
-              <div className="flex items-center gap-2 px-1">
-                <div className="w-5 h-5 rounded-md bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-[8px] font-bold text-white">
-                  S
-                </div>
-                <div>
-                  <div className="text-[9px] font-semibold text-foreground">Simon</div>
-                  <div className="text-[8px] text-muted-foreground">Enterprise</div>
-                </div>
+            {/* Overview */}
+            <div className="text-[8px] font-semibold text-primary uppercase tracking-widest px-2 mb-1.5">Overview</div>
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium mb-0.5 bg-primary/10 text-primary">
+              <LayoutDashboard className="w-3 h-3" />
+              Dashboard
+            </div>
+
+            {/* Advertising */}
+            <div className="text-[8px] font-semibold text-primary uppercase tracking-widest px-2 mt-3 mb-1.5">Advertising</div>
+            <div className="flex items-center justify-between px-2 py-1.5 rounded-md text-[10px] font-medium mb-0.5 text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Monitor className="w-3 h-3" />
+                Ad Accounts
               </div>
+              <span className="text-[7px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-bold">3</span>
+            </div>
+
+            {/* Finance */}
+            <div className="text-[8px] font-semibold text-primary uppercase tracking-widest px-2 mt-3 mb-1.5">Finance</div>
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium mb-0.5 text-muted-foreground">
+              <Wallet className="w-3 h-3" />
+              Wallet
+            </div>
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium mb-0.5 text-muted-foreground">
+              <FileText className="w-3 h-3" />
+              Invoices
+            </div>
+
+            {/* Help */}
+            <div className="text-[8px] font-semibold text-primary uppercase tracking-widest px-2 mt-3 mb-1.5">Help</div>
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium mb-0.5 text-muted-foreground">
+              <HelpCircle className="w-3 h-3" />
+              Support
+            </div>
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium mb-0.5 text-muted-foreground">
+              <Settings className="w-3 h-3" />
+              Settings
             </div>
           </div>
 
