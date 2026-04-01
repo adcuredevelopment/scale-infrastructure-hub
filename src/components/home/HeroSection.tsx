@@ -56,7 +56,7 @@ export const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.7 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link to="/contact">
+            <a href="#pricing" onClick={(e) => { e.preventDefault(); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }}>
               <Button
                 size="lg"
                 className="glow-primary text-base px-8 py-6 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 group"
@@ -64,16 +64,7 @@ export const HeroSection = () => {
                 Get Started
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-            </Link>
-            <Link to="/pricing">
-              <Button
-                variant="outline"
-                size="lg"
-                className="text-base px-8 py-6 border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
-              >
-                View Pricing
-              </Button>
-            </Link>
+            </a>
           </motion.div>
 
           {/* Stats */}
