@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import adcureAgencyLogo from "@/assets/adcure-agency-logo.png";
 
 const footerLinks = {
   Product: [
