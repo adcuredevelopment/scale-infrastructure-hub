@@ -194,7 +194,7 @@ export const Navbar = () => {
             className="md:hidden glass border-t border-border/30"
           >
             <div className="container mx-auto px-4 py-6 flex flex-col gap-4">
-              {navLinks.map((link) => (
+              {navLinksBefore.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
