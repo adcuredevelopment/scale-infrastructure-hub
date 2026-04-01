@@ -1,25 +1,100 @@
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { Star } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
 
 const testimonials = [
   {
-    text: "Adcure delivered our new ad accounts within hours. No limits, no spending caps — finally scaling without random shutdowns.",
-    author: "Lucas V.",
-    role: "Verified Client",
+    text: "Truly recommended! Quick response, friendly, helpful and everything is arranged in no time. If you don't want to sit still for days with your ads, this is genuinely the right choice.",
+    author: "Anonymous",
+    date: "Feb 2026",
+    stars: 5,
   },
   {
-    text: "Every time an account gets unstable, they replace it instantly. Genuinely the best service for advertisers right now.",
-    author: "Matteo Rossi",
-    role: "Verified Client",
+    text: "Been working with Adcure Agency for two months now. Service & speed is top! Definitely recommended. Available 24/7 and always focused on fast solutions. Great company.",
+    author: "Anonymous",
+    date: "Nov 2025",
+    stars: 5,
   },
   {
-    text: "We switched 100% of our Meta spend to Adcure accounts. CPM dropped by 22% in the first week and stability is insane.",
-    author: "Jana Müller",
-    role: "Verified Client",
+    text: "This company is truly amazing. The knowledge and expertise I searched for for years, I found here within two months. A whole new world has opened up for me in terms of entrepreneurship.",
+    author: "Anonymous",
+    date: "Sep 2025",
+    stars: 5,
+  },
+  {
+    text: "Everything always runs smoothly. If something does go wrong, they pick it up immediately and resolve the issue properly. Very satisfied and would definitely recommend this agency.",
+    author: "Anonymous",
+    date: "Jul 2025",
+    stars: 5,
+  },
+  {
+    text: "More than satisfied! Great people who definitely deserve more recognition!",
+    author: "Anonymous",
+    date: "Jul 2025",
+    stars: 5,
+  },
+  {
+    text: "Had an issue with my ad account, quick action was taken and we checked via a Zoom call what went wrong. The problem has been solved ever since! 👍",
+    author: "Anonymous",
+    date: "May 2025",
+    stars: 5,
+  },
+  {
+    text: "Great service, I've always been able to keep running. Even small issues were resolved quickly. Super!",
+    author: "Anonymous",
+    date: "May 2025",
+    stars: 5,
+  },
+  {
+    text: "I can wholeheartedly recommend Adcure Agency! The team radiates professionalism and expertise. They don't just think along, but come up with creative and effective solutions that truly make a difference.",
+    author: "Anonymous",
+    date: "Mar 2025",
+    stars: 5,
+  },
+  {
+    text: "Super agency. Everything is well organized.",
+    author: "Anonymous",
+    date: "Jan 2025",
+    stars: 5,
+  },
+  {
+    text: "They work neatly and accurately, they stick to their rules and you don't have to wait months for them to respond like other agencies.",
+    author: "Anonymous",
+    date: "Jan 2025",
+    stars: 5,
+  },
+  {
+    text: "Top service! Great collaboration with the help that's needed 👌🏼",
+    author: "Anonymous",
+    date: "Dec 2024",
+    stars: 5,
   },
 ];
 
 export const SocialProofSection = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const visibleCount = 3;
+  const totalSlides = testimonials.length;
+
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % totalSlides);
+  }, [totalSlides]);
+
+  useEffect(() => {
+    const interval = setInterval(nextSlide, 4000);
+    return () => clearInterval(interval);
+  }, [nextSlide]);
+
+  // Get visible testimonials with wrapping
+  const getVisibleTestimonials = () => {
+    const items = [];
+    for (let i = 0; i < visibleCount; i++) {
+      const idx = (currentIndex + i) % totalSlides;
+      items.push({ ...testimonials[idx], idx });
+    }
+    return items;
+  };
+
   return (
     <section className="section-padding">
       <div className="container mx-auto">
@@ -38,27 +113,49 @@ export const SocialProofSection = () => {
               ))}
               <span className="ml-2 text-sm font-medium text-foreground">4.4</span>
               <span className="text-sm text-muted-foreground ml-1">on Trustpilot</span>
+              <span className="text-xs text-muted-foreground ml-1">• 13 reviews</span>
             </div>
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((t, i) => (
-            <ScrollReveal key={t.author} delay={i * 0.1}>
-              <div className="glass rounded-xl p-8 hover-lift h-full flex flex-col">
+        <div className="relative overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {getVisibleTestimonials().map((t) => (
+              <div
+                key={`${t.idx}-${currentIndex}`}
+                className="glass rounded-xl p-8 hover-lift h-full flex flex-col animate-fade-in"
+              >
                 <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, j) => (
+                  {[...Array(t.stars)].map((_, j) => (
                     <Star key={j} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                   ))}
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed mb-6 flex-1">"{t.text}"</p>
-                <div>
-                  <div className="font-display font-semibold text-sm">{t.author}</div>
-                  <div className="text-xs text-muted-foreground">{t.role}</div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-display font-semibold text-sm">{t.author}</div>
+                    <div className="text-xs text-muted-foreground">Verified on Trustpilot</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{t.date}</div>
                 </div>
               </div>
-            </ScrollReveal>
-          ))}
+            ))}
+          </div>
+
+          {/* Progress dots */}
+          <div className="flex items-center justify-center gap-1.5 mt-8">
+            {testimonials.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentIndex(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  i === currentIndex
+                    ? "bg-primary w-4"
+                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
