@@ -115,7 +115,7 @@ export const HowItWorksSection = () => {
                 className="relative rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent aspect-[4/3] flex items-center justify-center overflow-hidden"
               >
                 {/* Large background number */}
-                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[160px] md:text-[200px] font-display font-bold text-primary/10 leading-none select-none">
+                <span className="absolute right-5 top-4 text-sm font-mono font-bold text-primary/40 select-none">
                   {steps[active].number}
                 </span>
                 {/* Center icon */}
