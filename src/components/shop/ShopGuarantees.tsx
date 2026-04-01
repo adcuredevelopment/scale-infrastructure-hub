@@ -8,6 +8,7 @@ interface Guarantee {
 
 interface ShopGuaranteesProps {
   guarantees: Guarantee[];
+  columns?: 2 | 3;
 }
 
 export const ShopGuarantees = ({ guarantees }: ShopGuaranteesProps) => {
