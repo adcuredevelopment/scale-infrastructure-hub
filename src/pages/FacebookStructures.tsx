@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { ShopFAQ } from "@/components/shop/ShopFAQ";
+import { ShopGuarantees } from "@/components/shop/ShopGuarantees";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Shield, Clock, CheckCircle2, Users, Package } from "lucide-react";
@@ -26,6 +28,13 @@ const stats = [
   { icon: Clock, label: "Delivery", value: "24 Hours" },
   { icon: Users, label: "Trusted By", value: "1,500+" },
   { icon: Shield, label: "Guarantee", value: "7 Days" },
+];
+
+const guarantees = [
+  { title: "Structure Setup Guarantee", description: "Every Facebook Structure setup is delivered fully optimized and ready for scaling on day one." },
+  { title: "Replacement Guarantee", description: "If your Structure experiences technical issues caused by our setup within 7 days, we'll repair or replace it free of charge." },
+  { title: "Compliance Guarantee", description: "All Structures are built following Meta's latest best practices to minimize restrictions and maximize stability." },
+  { title: "Performance Tracking Guarantee", description: "Your Structure is delivered with clean data paths and tracking logic verified for accuracy at the time of delivery." },
 ];
 
 const FacebookStructures = () => {
@@ -149,6 +158,9 @@ const FacebookStructures = () => {
             </ScrollReveal>
           </div>
         </section>
+
+        <ShopGuarantees guarantees={guarantees} />
+        <ShopFAQ />
       </main>
       <Footer />
     </div>

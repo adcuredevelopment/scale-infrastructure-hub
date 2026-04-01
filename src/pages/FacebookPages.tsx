@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { ShopFAQ } from "@/components/shop/ShopFAQ";
+import { ShopGuarantees } from "@/components/shop/ShopGuarantees";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Shield, Clock, CheckCircle2, Users } from "lucide-react";
@@ -34,6 +36,11 @@ const stats = [
   { icon: Clock, label: "Delivery", value: "1 Hour" },
   { icon: Users, label: "Trusted By", value: "3,200+" },
   { icon: Shield, label: "Guarantee", value: "24 Hour" },
+];
+
+const guarantees = [
+  { title: "Access Guarantee", description: "If Page access details are invalid at delivery, we'll provide a replacement within 24 hours." },
+  { title: "Condition Guarantee", description: "Each Page is delivered in good condition and fully functional at the time of purchase." },
 ];
 
 const FacebookPages = () => {
@@ -141,6 +148,9 @@ const FacebookPages = () => {
             </ScrollReveal>
           </div>
         </section>
+
+        <ShopGuarantees guarantees={guarantees} />
+        <ShopFAQ />
       </main>
       <Footer />
     </div>
