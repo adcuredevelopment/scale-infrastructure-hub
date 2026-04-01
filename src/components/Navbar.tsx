@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import adcureIcon from "@/assets/adcure-icon-white.png";
 
-const navLinks = [
+const navLinksBefore = [
   { label: "Home", path: "/#hero" },
   { label: "Services", path: "/#services" },
   { label: "Pricing", path: "/#pricing" },
+];
+
+const navLinksAfter = [
   { label: "Contact", path: "/contact" },
 ];
 
@@ -85,7 +88,7 @@ export const Navbar = () => {
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
+          {navLinksBefore.map((link) => (
             <Link
               key={link.path}
               to={link.path}
@@ -149,6 +152,21 @@ export const Navbar = () => {
               )}
             </AnimatePresence>
           </div>
+
+          {navLinksAfter.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              onClick={(e) => handleNavClick(e, link.path)}
+              className={`text-sm font-medium transition-colors duration-300 hover:text-primary ${
+                location.pathname === link.path
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
@@ -176,7 +194,7 @@ export const Navbar = () => {
             className="md:hidden glass border-t border-border/30"
           >
             <div className="container mx-auto px-4 py-6 flex flex-col gap-4">
-              {navLinks.map((link) => (
+              {navLinksBefore.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
@@ -225,6 +243,21 @@ export const Navbar = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {navLinksAfter.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={(e) => handleNavClick(e, link.path)}
+                  className={`text-sm font-medium py-2 transition-colors ${
+                    location.pathname === link.path
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
 
               <Link to="/contact">
                 <Button className="w-full mt-2">Get Started</Button>
