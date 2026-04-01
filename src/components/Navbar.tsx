@@ -13,10 +13,10 @@ const navLinks = [
 ];
 
 const shopLinks = [
-  { label: "Facebook Accounts", path: "/facebook-accounts" },
-  { label: "Business Managers", path: "/business-managers" },
-  { label: "Facebook Pages", path: "/facebook-pages" },
-  { label: "Facebook Structures", path: "/facebook-structures" },
+  { label: "Facebook Accounts", path: "/facebook-accounts", icon: Users, description: "Aged, verified and stable profiles ready for ad scalability." },
+  { label: "Business Managers", path: "/business-managers", icon: Building2, description: "Verified BMs with correct permissions and billing." },
+  { label: "Facebook Pages", path: "/facebook-pages", icon: FileText, description: "Niche-aligned pages to boost credibility and ad delivery." },
+  { label: "Facebook Structures", path: "/facebook-structures", icon: Layers, description: "Complete ad account structures optimized for long-term scaling." },
 ];
 
 export const Navbar = () => {
