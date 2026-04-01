@@ -244,6 +244,21 @@ export const Navbar = () => {
                 )}
               </AnimatePresence>
 
+              {navLinksAfter.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={(e) => handleNavClick(e, link.path)}
+                  className={`text-sm font-medium py-2 transition-colors ${
+                    location.pathname === link.path
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
               <Link to="/contact">
                 <Button className="w-full mt-2">Get Started</Button>
               </Link>
