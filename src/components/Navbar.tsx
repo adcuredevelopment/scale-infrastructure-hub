@@ -259,9 +259,9 @@ export const Navbar = () => {
                 </Link>
               ))}
 
-              <Link to="/contact">
+              <a href="/#pricing" onClick={(e) => { e.preventDefault(); setMobileOpen(false); if (window.location.pathname === '/') { document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); } else { window.location.href = '/#pricing'; } }}>
                 <Button className="w-full mt-2">Get Started</Button>
-              </Link>
+              </a>
             </div>
           </motion.div>
         )}
