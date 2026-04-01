@@ -3,8 +3,8 @@ import adcureAgencyLogo from "@/assets/adcure-agency-logo-white.png";
 
 const footerLinks = {
   Product: [
-    { label: "Services", path: "/services" },
-    { label: "Pricing", path: "/pricing" },
+    { label: "Services", path: "/#services" },
+    { label: "Pricing", path: "/#pricing" },
     { label: "Contact", path: "/contact" },
   ],
   Legal: [
