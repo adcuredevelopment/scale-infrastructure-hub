@@ -24,20 +24,21 @@ const activityItems = [
 export const DashboardMockup = () => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 60, scale: 0.95 }}
+      initial={{ opacity: 0, y: 60, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 1, delay: 1.1, ease: [0.16, 1, 0.3, 1] }}
       className="relative mx-auto mt-16 max-w-5xl"
+      style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}
     >
-      {/* Glow behind dashboard */}
-      <div className="absolute -inset-8 bg-primary/8 blur-[80px] rounded-3xl" />
+      {/* Glow behind dashboard — GPU composited */}
+      <div className="absolute -inset-8 bg-primary/8 blur-[60px] rounded-3xl gpu-blur" />
 
       {/* Browser chrome */}
-      <div className="relative rounded-xl overflow-hidden border border-border/60 shadow-2xl shadow-primary/10">
+      <div className="relative rounded-xl overflow-hidden border border-border/60 shadow-2xl shadow-primary/10" style={{ transform: 'translateZ(0)' }}>
         {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-[hsl(220_20%_7%)] border-b border-border/40">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-secondary border-b border-border/40">
           <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+            <div className="w-2.5 h-2.5 rounded-full bg-destructive/70" />
             <div className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
           </div>
@@ -45,19 +46,19 @@ export const DashboardMockup = () => {
         </div>
 
         {/* App layout */}
-        <div className="flex bg-[hsl(220_20%_5%)]">
+        <div className="flex bg-background">
           {/* Sidebar */}
-          <div className="w-48 min-h-[340px] border-r border-border/30 bg-[hsl(220_22%_6%)] p-3 hidden md:flex flex-col">
+          <div className="w-48 min-h-[340px] border-r border-border/30 bg-secondary/50 p-3 hidden md:flex flex-col">
             {/* Logo */}
             <div className="flex items-center gap-2.5 mb-4 px-1">
               <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-                <img src={adcureLogo} alt="Adcure" className="w-5 h-5 object-contain" />
+                <img src={adcureLogo} alt="Adcure" className="w-5 h-5 object-contain" style={{ imageRendering: 'auto' }} />
               </div>
               <span className="text-[12px] font-bold text-foreground">Adcure</span>
             </div>
 
             {/* Search */}
-            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[hsl(220_18%_10%)] border border-border/20 mb-4">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-muted/50 border border-border/20 mb-4">
               <Search className="w-3 h-3 text-muted-foreground" />
               <span className="text-[9px] text-muted-foreground">Search...</span>
             </div>
@@ -110,7 +111,7 @@ export const DashboardMockup = () => {
                 <h3 className="text-xs md:text-sm font-bold text-foreground">Good morning, Simon 👋</h3>
                 <p className="text-[9px] md:text-[10px] text-muted-foreground">Here's what's happening with your campaigns today.</p>
               </div>
-              <div className="px-2.5 py-1 rounded-md bg-gradient-to-r from-primary to-blue-400 text-[9px] font-semibold text-white">
+              <div className="px-2.5 py-1 rounded-md bg-gradient-to-r from-primary to-blue-400 text-[9px] font-semibold text-primary-foreground">
                 New Request
               </div>
             </div>
@@ -123,7 +124,7 @@ export const DashboardMockup = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 1.5 + i * 0.15 }}
-                  className="rounded-lg border border-border/30 bg-[hsl(220_18%_8%)] p-2.5 md:p-3"
+                  className="rounded-lg border border-border/30 bg-card/60 p-2.5 md:p-3"
                 >
                   <div className="flex items-start justify-between mb-1">
                     <span className="text-[8px] md:text-[9px] font-medium text-muted-foreground uppercase tracking-wider">{kpi.label}</span>
@@ -145,7 +146,7 @@ export const DashboardMockup = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 2 }}
-                className="rounded-lg border border-border/30 bg-[hsl(220_18%_8%)] overflow-hidden"
+                className="rounded-lg border border-border/30 bg-card/60 overflow-hidden"
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-border/20">
                   <span className="text-[10px] font-semibold text-foreground">Ad Accounts</span>
@@ -175,7 +176,7 @@ export const DashboardMockup = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 2.2 }}
-                className="rounded-lg border border-border/30 bg-[hsl(220_18%_8%)] overflow-hidden"
+                className="rounded-lg border border-border/30 bg-card/60 overflow-hidden"
               >
                 <div className="px-3 py-2 border-b border-border/20">
                   <span className="text-[10px] font-semibold text-foreground">Recent Activity</span>
@@ -197,8 +198,8 @@ export const DashboardMockup = () => {
         </div>
       </div>
 
-      {/* Reflection effect */}
-      <div className="absolute -bottom-8 left-4 right-4 h-16 bg-gradient-to-b from-primary/5 to-transparent blur-xl rounded-full" />
+      {/* Reflection effect — GPU composited */}
+      <div className="absolute -bottom-8 left-4 right-4 h-16 bg-gradient-to-b from-primary/5 to-transparent blur-xl rounded-full gpu-blur" />
     </motion.div>
   );
 };

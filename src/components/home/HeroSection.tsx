@@ -39,16 +39,23 @@ const AnimatedCounter = ({ target, suffix = "" }: { target: string; suffix?: str
 export const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-start overflow-hidden pt-28 md:pt-32 pb-20">
-      {/* Animated gradient background */}
+      {/* Animated gradient background — GPU composited for crisp rendering */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px] animate-glow-pulse" />
-        <div className="absolute top-1/3 right-0 w-[400px] h-[400px] rounded-full bg-blue-500/3 blur-[100px]" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/5 blur-[100px] gpu-blur animate-glow-pulse" />
+        <div className="absolute top-1/3 right-0 w-[400px] h-[400px] rounded-full bg-blue-500/3 blur-[80px] gpu-blur" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       </div>
 
-      {/* Grid pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(hsl(220_16%_16%_/_0.3)_1px,transparent_1px),linear-gradient(90deg,hsl(220_16%_16%_/_0.3)_1px,transparent_1px)] bg-[size:64px_64px]" />
+      {/* Grid pattern — crisp 1px lines */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `linear-gradient(hsl(220 16% 16% / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(220 16% 16% / 0.3) 1px, transparent 1px)`,
+          backgroundSize: '64px 64px',
+          transform: 'translateZ(0)',
+        }}
+      />
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
