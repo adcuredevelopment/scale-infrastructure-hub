@@ -15,7 +15,6 @@ const plans = [
     features: [
       "24/7 Top-Up Service",
       "Mon–Sun Support (08:00-22:00)",
-      "One-time Strategy Call",
       "Unlimited Ad Account Requests",
       "Supplier Access",
       "FB Structure (€149)",
@@ -32,7 +31,6 @@ const plans = [
     features: [
       "24/7 Top-Up Service",
       "Mon–Sun Support (08:00-22:00)",
-      "Monthly Strategic Meeting",
       "Unlimited Ad Accounts On Demand",
       "Supplier Access",
       "FB Structure (€124)",
@@ -50,7 +48,6 @@ const plans = [
       "0% Fee available on request",
       "24/7 Top-Up Service",
       "Mon–Sun Support (08:00-22:00)",
-      "Monthly Strategic Meeting",
       "Unlimited Ad Accounts On Demand",
       "Supplier Access",
       "FB Structure (€99)",
