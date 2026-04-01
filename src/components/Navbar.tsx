@@ -152,6 +152,21 @@ export const Navbar = () => {
               )}
             </AnimatePresence>
           </div>
+
+          {navLinksAfter.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              onClick={(e) => handleNavClick(e, link.path)}
+              className={`text-sm font-medium transition-colors duration-300 hover:text-primary ${
+                location.pathname === link.path
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
