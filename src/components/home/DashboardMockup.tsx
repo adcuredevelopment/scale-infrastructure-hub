@@ -76,7 +76,7 @@ export const DashboardMockup = () => {
                   JD
                 </div>
                 <div>
-                  <div className="text-[9px] font-semibold text-foreground">Joey Dekker</div>
+                  <div className="text-[9px] font-semibold text-foreground">Simon</div>
                   <div className="text-[8px] text-muted-foreground">Enterprise</div>
                 </div>
               </div>
@@ -88,7 +88,7 @@ export const DashboardMockup = () => {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-xs md:text-sm font-bold text-foreground">Good morning, Joey 👋</h3>
+                <h3 className="text-xs md:text-sm font-bold text-foreground">Good morning, Simon 👋</h3>
                 <p className="text-[9px] md:text-[10px] text-muted-foreground">Here's what's happening with your campaigns today.</p>
               </div>
               <div className="px-2.5 py-1 rounded-md bg-gradient-to-r from-primary to-blue-400 text-[9px] font-semibold text-white">
