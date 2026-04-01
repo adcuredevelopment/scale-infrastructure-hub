@@ -50,7 +50,7 @@ export const HeroSection = () => {
 
       {/* Grid pattern — crisp 1px lines */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)]"
         style={{
           backgroundImage: `linear-gradient(hsl(220 16% 16% / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(220 16% 16% / 0.3) 1px, transparent 1px)`,
           backgroundSize: '64px 64px',
