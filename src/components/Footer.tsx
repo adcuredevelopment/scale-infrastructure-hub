@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import adcureIcon from "@/assets/adcure-icon-white.png";
+import { ArrowRight } from "lucide-react";
 
 const footerLinks = {
   Product: [
@@ -22,23 +23,54 @@ const footerLinks = {
 };
 
 export const Footer = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleNavClick = (e: React.MouseEvent, path: string) => {
+    if (path.startsWith("/#")) {
+      e.preventDefault();
+      const id = path.slice(2);
+      if (location.pathname === "/") {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        navigate("/");
+        setTimeout(() => {
+          document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      }
+    }
+  };
+
   return (
-    <footer className="border-t border-border/50 bg-card/30">
-      <div className="container mx-auto px-4 md:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-2.5 mb-4">
+    <footer className="relative border-t border-border/30">
+      {/* Subtle top gradient */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+
+      <div className="container mx-auto px-4 md:px-8 py-16 md:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
+          {/* Brand column */}
+          <div className="md:col-span-4">
+            <div className="flex items-center gap-2.5 mb-5">
               <img src={adcureIcon} alt="Adcure Agency" className="h-9" />
               <span className="font-display font-bold text-lg text-foreground">Adcure</span>
             </div>
-            <p className="text-muted-foreground text-sm max-w-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm max-w-sm leading-relaxed mb-6">
               The scaling infrastructure behind high-performing e-commerce brands. Reliable ad accounts, stable systems, unlimited growth.
             </p>
+            <a
+              href="/#pricing"
+              onClick={(e) => handleNavClick(e, "/#pricing")}
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors group"
+            >
+              Get Started
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </a>
           </div>
 
+          {/* Link columns */}
           {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category}>
-              <h4 className="font-display font-semibold text-sm mb-4 text-foreground">
+            <div key={category} className="md:col-span-2 md:col-start-auto">
+              <h4 className="font-display font-semibold text-xs uppercase tracking-widest text-muted-foreground mb-5">
                 {category}
               </h4>
               <ul className="space-y-3">
@@ -46,7 +78,8 @@ export const Footer = () => {
                   <li key={link.path}>
                     <Link
                       to={link.path}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300"
+                      onClick={(e) => handleNavClick(e, link.path)}
+                      className="text-sm text-muted-foreground/80 hover:text-foreground transition-colors duration-300"
                     >
                       {link.label}
                     </Link>
@@ -57,11 +90,13 @@ export const Footer = () => {
           ))}
         </div>
 
-        <div className="border-t border-border/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">
+        <div className="section-divider mt-12 mb-8" />
+
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-xs text-muted-foreground/60">
             © {new Date().getFullYear()} Adcure Agency. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground/40">
             Built for scale. Designed for performance.
           </p>
         </div>
