@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { TrendingUp, Wallet, CreditCard, LayoutDashboard } from "lucide-react";
+import { TrendingUp, Wallet, CreditCard, LayoutDashboard, Monitor, FileText, HelpCircle, Settings, Search, Triangle } from "lucide-react";
 
 const kpiData = [
   { label: "Ad Accounts", value: "4", trend: "+1 this month", icon: CreditCard },
