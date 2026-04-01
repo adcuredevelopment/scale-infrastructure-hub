@@ -14,9 +14,10 @@ const footerLinks = {
     { label: "Facebook Structures", path: "/facebook-structures" },
   ],
   Legal: [
-    { label: "Terms & Conditions", path: "/terms" },
+    { label: "Terms of Service", path: "/terms" },
     { label: "Privacy Policy", path: "/privacy" },
     { label: "Refund Policy", path: "/refund" },
+    { label: "Subscription Policy", path: "/subscription-policy" },
   ],
 };
 

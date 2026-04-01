@@ -29,6 +29,7 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />
+          <Route path="/subscription-policy" element={<SubscriptionPolicy />} />
           <Route path="/facebook-accounts" element={<FacebookAccounts />} />
           <Route path="/business-managers" element={<BusinessManagers />} />
           <Route path="/facebook-pages" element={<FacebookPages />} />
