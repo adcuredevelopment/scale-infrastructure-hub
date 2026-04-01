@@ -73,7 +73,7 @@ export const DashboardMockup = () => {
             <div className="mt-auto pt-3 border-t border-border/20">
               <div className="flex items-center gap-2 px-1">
                 <div className="w-5 h-5 rounded-md bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-[8px] font-bold text-white">
-                  JD
+                  S
                 </div>
                 <div>
                   <div className="text-[9px] font-semibold text-foreground">Simon</div>
