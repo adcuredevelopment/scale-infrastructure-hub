@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Users, Building2, FileText, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import adcureIcon from "@/assets/adcure-icon-white.png";
@@ -13,10 +13,10 @@ const navLinks = [
 ];
 
 const shopLinks = [
-  { label: "Facebook Accounts", path: "/facebook-accounts" },
-  { label: "Business Managers", path: "/business-managers" },
-  { label: "Facebook Pages", path: "/facebook-pages" },
-  { label: "Facebook Structures", path: "/facebook-structures" },
+  { label: "Facebook Accounts", path: "/facebook-accounts", icon: Users, description: "Aged, verified and stable profiles ready for ad scalability." },
+  { label: "Business Managers", path: "/business-managers", icon: Building2, description: "Verified BMs with correct permissions and billing." },
+  { label: "Facebook Pages", path: "/facebook-pages", icon: FileText, description: "Niche-aligned pages to boost credibility and ad delivery." },
+  { label: "Facebook Structures", path: "/facebook-structures", icon: Layers, description: "Complete ad account structures optimized for long-term scaling." },
 ];
 
 export const Navbar = () => {
@@ -119,22 +119,31 @@ export const Navbar = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full right-0 mt-3 w-56 rounded-xl border border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl shadow-background/80 overflow-hidden"
+                  className="absolute top-full right-0 mt-3 w-[520px] rounded-xl border border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl shadow-background/80 overflow-hidden"
                 >
-                  <div className="p-2">
-                    {shopLinks.map((link) => (
-                      <Link
-                        key={link.path}
-                        to={link.path}
-                        className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                          location.pathname === link.path
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
+                  <div className="p-3">
+                    <div className="text-[10px] font-semibold text-primary uppercase tracking-widest px-3 pt-1 pb-3">Assets</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {shopLinks.map((link) => (
+                        <Link
+                          key={link.path}
+                          to={link.path}
+                          className={`flex items-start gap-3 px-3 py-3 rounded-lg transition-colors duration-200 ${
+                            location.pathname === link.path
+                              ? "bg-primary/10"
+                              : "hover:bg-muted/50"
+                          }`}
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <link.icon className="w-4.5 h-4.5 text-primary" />
+                          </div>
+                          <div>
+                            <div className={`text-sm font-semibold ${location.pathname === link.path ? "text-primary" : "text-foreground"}`}>{link.label}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{link.description}</div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               )}

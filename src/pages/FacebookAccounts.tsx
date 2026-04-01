@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { ShopFAQ } from "@/components/shop/ShopFAQ";
+import { ShopGuarantees } from "@/components/shop/ShopGuarantees";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Shield, Clock, CheckCircle2, Users } from "lucide-react";
@@ -35,12 +37,18 @@ const stats = [
   { icon: Shield, label: "Guarantee", value: "24 Hour" },
 ];
 
+const guarantees = [
+  { title: "Access Guarantee", description: "If the login credentials to the Facebook Account are invalid at delivery, we'll provide a replacement within 24 hours." },
+  { title: "Security Guarantee", description: "Every Facebook Account is delivered secure, verified, and free of unauthorized activity at the time of purchase." },
+  { title: "Replacement Guarantee", description: "If the Facebook Account becomes disabled within 48 hours of delivery—before any policy violations—we will replace it free of charge." },
+  { title: "Working Condition Guarantee", description: "All Facebook Accounts are tested and confirmed operational at the time of delivery." },
+];
+
 const FacebookAccounts = () => {
   return (
     <div className="noise-overlay">
       <Navbar />
       <main>
-        {/* Hero */}
         <section className="relative pt-32 md:pt-40 pb-20 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
@@ -65,7 +73,6 @@ const FacebookAccounts = () => {
               </div>
             </ScrollReveal>
 
-            {/* Stats */}
             <ScrollReveal delay={0.2}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mt-16">
                 {stats.map((stat) => (
@@ -80,7 +87,6 @@ const FacebookAccounts = () => {
           </div>
         </section>
 
-        {/* Products */}
         <section className="section-padding bg-card/30">
           <div className="container mx-auto px-4 md:px-8">
             <ScrollReveal>
@@ -107,7 +113,6 @@ const FacebookAccounts = () => {
           </div>
         </section>
 
-        {/* About */}
         <section className="section-padding">
           <div className="container mx-auto px-4 md:px-8 max-w-3xl">
             <ScrollReveal>
@@ -137,6 +142,9 @@ const FacebookAccounts = () => {
             </ScrollReveal>
           </div>
         </section>
+
+        <ShopGuarantees guarantees={guarantees} />
+        <ShopFAQ />
       </main>
       <Footer />
     </div>

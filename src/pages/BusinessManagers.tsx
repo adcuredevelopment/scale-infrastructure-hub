@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { ShopFAQ } from "@/components/shop/ShopFAQ";
+import { ShopGuarantees } from "@/components/shop/ShopGuarantees";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Shield, Clock, CheckCircle2, Users } from "lucide-react";
@@ -28,6 +30,12 @@ const stats = [
   { icon: Clock, label: "Delivery", value: "1 Hour" },
   { icon: Users, label: "Trusted By", value: "1,800+" },
   { icon: Shield, label: "Guarantee", value: "24 Hour" },
+];
+
+const guarantees = [
+  { title: "24-Hour Replacement Guarantee", description: "If your Business Manager is restricted, disabled, or its limits are reduced within 24 hours before you take any action, we'll replace it immediately." },
+  { title: "Account Replacement Guarantee", description: "If the verification status of your Business Manager (verified with original documents) is revoked within 14 days, a replacement will be issued." },
+  { title: "Ad Spend Guarantee", description: "Every Business Manager is delivered in perfect condition at the time of purchase." },
 ];
 
 const BusinessManagers = () => {
@@ -126,6 +134,9 @@ const BusinessManagers = () => {
             </ScrollReveal>
           </div>
         </section>
+
+        <ShopGuarantees guarantees={guarantees} />
+        <ShopFAQ />
       </main>
       <Footer />
     </div>
