@@ -79,52 +79,48 @@ const platforms = [
 
 export const ServicesSection = () => {
   return (
-    <section className="section-padding bg-card/30">
+    <section className="py-16 md:py-32 px-5 md:px-8 bg-card/30">
       <div className="container mx-auto">
         <ScrollReveal>
-          <div className="text-center mb-16">
-            <span className="text-xs font-medium text-primary uppercase tracking-widest">Infrastructure Built For Scale</span>
-            <h2 className="text-3xl md:text-5xl font-display font-bold mt-4 mb-4">
+          <div className="text-center mb-10 md:mb-16">
+            <span className="text-[11px] sm:text-xs font-medium text-primary uppercase tracking-widest">Infrastructure Built For Scale</span>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold mt-3 md:mt-4 mb-3 md:mb-4">
               Premium Whitelisted <span className="text-gradient">Ad Accounts</span>
             </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
               Platinum tier agency accounts across all major platforms. Enterprise grade stability, zero restrictions, instant deployment.
             </p>
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           {platforms.map((platform, i) => (
-            <ScrollReveal key={platform.name} delay={i * 0.08}>
-              <div className="glass rounded-xl p-7 hover-lift h-full flex flex-col relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-all duration-500" />
+            <ScrollReveal key={platform.name} delay={i * 0.06}>
+              <div className="glass rounded-xl p-5 sm:p-6 md:p-7 hover-lift h-full flex flex-col relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-all duration-500" />
 
                 <div className="relative flex-1 flex flex-col">
-                  {/* Icon + Name */}
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="w-11 h-11 rounded-xl bg-muted/80 flex items-center justify-center">
+                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-muted/80 flex items-center justify-center shrink-0">
                       {platform.icon}
                     </div>
-                    <div>
-                      <h3 className="font-display font-bold text-lg">{platform.name}</h3>
-                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{platform.tier}</span>
+                    <div className="min-w-0">
+                      <h3 className="font-display font-bold text-base md:text-lg">{platform.name}</h3>
+                      <span className="text-[9px] md:text-[10px] font-bold text-primary uppercase tracking-widest">{platform.tier}</span>
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-sm text-muted-foreground leading-relaxed mt-4 mb-6">{platform.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mt-3 md:mt-4 mb-4 md:mb-6">{platform.description}</p>
 
-                  {/* Features */}
-                  <ul className="space-y-3 mb-7 flex-1">
+                  <ul className="space-y-2.5 md:space-y-3 mb-5 md:mb-7 flex-1">
                     {platform.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                      <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
                         <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                         {f}
                       </li>
                     ))}
                   </ul>
 
-                  {/* CTA */}
                   <a
                     href={platform.ctaLink || "/#pricing"}
                     onClick={!platform.ctaLink ? (e: React.MouseEvent) => {
@@ -134,7 +130,7 @@ export const ServicesSection = () => {
                   >
                     <Button
                       variant="outline"
-                      className="w-full border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 group/btn"
+                      className="w-full border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 group/btn min-h-[44px]"
                     >
                       {platform.cta}
                       <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
