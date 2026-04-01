@@ -194,7 +194,7 @@ export const HowItWorksSection = () => {
                     className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                       i === active ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"
                     }`}
-                    onClick={() => setActive(i)}
+                    onClick={() => goTo(i)}
                   />
                 ))}
               </div>
