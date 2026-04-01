@@ -135,10 +135,10 @@ export const HowItWorksSection = () => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={active}
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.97 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0, scale: 0.95, x: direction * 30 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.95, x: direction * -30 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="relative rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent aspect-[4/3] flex items-center justify-center overflow-hidden"
               >
                 {/* Large background number */}
