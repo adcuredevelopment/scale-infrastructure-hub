@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { TrendingUp, Wallet, CreditCard, LayoutDashboard, Monitor, FileText, HelpCircle, Settings, Search, Triangle } from "lucide-react";
+import { TrendingUp, Wallet, CreditCard, LayoutDashboard, Monitor, FileText, HelpCircle, Settings, Search } from "lucide-react";
+import adcureLogo from "@/assets/adcure-logo.png";
 
 const kpiData = [
   { label: "Ad Accounts", value: "4", trend: "+1 this month", icon: CreditCard },
@@ -50,7 +51,7 @@ export const DashboardMockup = () => {
             {/* Logo */}
             <div className="flex items-center gap-2.5 mb-4 px-1">
               <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-                <Triangle className="w-3.5 h-3.5 text-primary fill-primary" />
+                <img src={adcureLogo} alt="Adcure" className="w-4 h-4 object-contain" />
               </div>
               <span className="text-[12px] font-bold text-foreground">Adcure</span>
             </div>
