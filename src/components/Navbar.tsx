@@ -170,11 +170,11 @@ export const Navbar = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/contact">
+          <a href="/#pricing" onClick={(e) => { e.preventDefault(); if (window.location.pathname === '/') { document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); } else { window.location.href = '/#pricing'; } }}>
             <Button className="glow-primary-sm hover:scale-[1.03] active:scale-[0.97] transition-all duration-200">
               Get Started
             </Button>
-          </Link>
+          </a>
         </div>
 
         <button
