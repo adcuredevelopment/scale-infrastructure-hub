@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import adcureAgencyLogo from "@/assets/adcure-agency-logo-white.png";
+import adcureIcon from "@/assets/adcure-icon-white.png";
 
 const navLinks = [
   { label: "Home", path: "/#hero" },
