@@ -60,6 +60,9 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -80,6 +83,17 @@
   ::selection {
     background: hsl(213 94% 52% / 0.25);
     color: hsl(210 20% 92%);
+  }
+
+  /* Crisp image rendering globally */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+
+  /* Ensure SVGs render crisply */
+  svg {
+    shape-rendering: geometricPrecision;
   }
 }
 
@@ -103,14 +117,20 @@
 
   .glass {
     @apply bg-card/60 backdrop-blur-xl border border-border/50;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 
   .glass-subtle {
     @apply bg-card/30 backdrop-blur-md border border-border/30;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 
   .glass-strong {
     @apply bg-card/80 backdrop-blur-2xl border border-border/60;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 
   .section-padding {
@@ -121,6 +141,7 @@
     @apply py-16 md:py-24 px-4 md:px-8;
   }
 
+  /* Noise overlay — high-res SVG for crisp 4K rendering */
   .noise-overlay {
     position: relative;
   }
@@ -134,17 +155,22 @@
     height: 100%;
     pointer-events: none;
     z-index: 9999;
-    opacity: 0.015;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    background-size: 512px 512px;
+    opacity: 0.012;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+    transform: translateZ(0);
+    will-change: transform;
   }
 
   .hover-lift {
     @apply transition-all duration-300 ease-out;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
   .hover-lift:hover {
-    transform: translateY(-4px);
+    transform: translateY(-4px) translateZ(0);
     box-shadow: 0 12px 40px -12px hsl(213 94% 52% / 0.15),
                 0 4px 12px -4px hsl(0 0% 0% / 0.3);
   }
@@ -188,5 +214,13 @@
   /* Smooth divider line */
   .section-divider {
     @apply w-full h-px bg-gradient-to-r from-transparent via-border/60 to-transparent;
+  }
+
+  /* GPU-accelerated blur backgrounds — prevents fuzzy rendering */
+  .gpu-blur {
+    transform: translateZ(0);
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 }
