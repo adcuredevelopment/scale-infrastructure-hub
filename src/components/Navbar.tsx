@@ -81,7 +81,7 @@ export const Navbar = () => {
       <div className="container mx-auto flex items-center justify-between h-16 md:h-20 px-4 md:px-8">
         <Link to="/" className="flex items-center gap-2">
           <img src={adcureIcon} alt="Adcure Agency" className="h-9 md:h-10" />
-          <span className="font-display font-bold text-lg text-foreground">Adcure</span>
+          
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
