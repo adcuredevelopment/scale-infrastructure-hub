@@ -26,7 +26,7 @@ export const ShopGuarantees = ({ guarantees }: ShopGuaranteesProps) => {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {guarantees.map((g, i) => (
             <ScrollReveal key={i} delay={i * 0.1}>
               <div className="glass rounded-xl p-6 h-full">
