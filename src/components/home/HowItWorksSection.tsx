@@ -1,6 +1,6 @@
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { CreditCard, UserCheck, Rocket, ArrowLeft, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const steps = [
@@ -29,9 +29,36 @@ const steps = [
 
 export const HowItWorksSection = () => {
   const [active, setActive] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const prev = () => setActive((a) => Math.max(0, a - 1));
-  const next = () => setActive((a) => Math.min(steps.length - 1, a + 1));
+  const resetTimer = useCallback(() => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDirection(1);
+      setActive((a) => (a + 1) % steps.length);
+    }, 5000);
+  }, []);
+
+  useEffect(() => {
+    resetTimer();
+    return () => clearTimeout(timerRef.current);
+  }, [active, resetTimer]);
+
+  const goTo = (i: number) => {
+    setDirection(i > active ? 1 : -1);
+    setActive(i);
+  };
+
+  const prev = () => {
+    setDirection(-1);
+    setActive((a) => Math.max(0, a - 1));
+  };
+
+  const next = () => {
+    setDirection(1);
+    setActive((a) => Math.min(steps.length - 1, a + 1));
+  };
 
   return (
     <section className="section-padding">
@@ -54,7 +81,7 @@ export const HowItWorksSection = () => {
               return (
                 <button
                   key={step.number}
-                  onClick={() => setActive(i)}
+                  onClick={() => goTo(i)}
                   className={`relative text-left rounded-xl px-5 py-5 transition-all duration-300 border ${
                     isActive
                       ? "border-primary/40 bg-primary/5"
@@ -108,10 +135,10 @@ export const HowItWorksSection = () => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={active}
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.97 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0, scale: 0.95, x: direction * 30 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.95, x: direction * -30 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="relative rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent aspect-[4/3] flex items-center justify-center overflow-hidden"
               >
                 {/* Large background number */}
@@ -132,10 +159,10 @@ export const HowItWorksSection = () => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={active}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 15, x: direction * 20 }}
+                animate={{ opacity: 1, y: 0, x: 0 }}
+                exit={{ opacity: 0, y: -10, x: direction * -20 }}
+                transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1], delay: 0.05 }}
                 className="pt-6"
               >
                 <h3 className="font-display font-bold text-2xl mb-2">{steps[active].title}</h3>
@@ -167,7 +194,7 @@ export const HowItWorksSection = () => {
                     className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                       i === active ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"
                     }`}
-                    onClick={() => setActive(i)}
+                    onClick={() => goTo(i)}
                   />
                 ))}
               </div>
