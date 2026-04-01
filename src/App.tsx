@@ -8,6 +8,7 @@ import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Refund from "./pages/Refund";
+import SubscriptionPolicy from "./pages/SubscriptionPolicy";
 import FacebookAccounts from "./pages/FacebookAccounts";
 import BusinessManagers from "./pages/BusinessManagers";
 import FacebookPages from "./pages/FacebookPages";
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />
+          <Route path="/subscription-policy" element={<SubscriptionPolicy />} />
           <Route path="/facebook-accounts" element={<FacebookAccounts />} />
           <Route path="/business-managers" element={<BusinessManagers />} />
           <Route path="/facebook-pages" element={<FacebookPages />} />

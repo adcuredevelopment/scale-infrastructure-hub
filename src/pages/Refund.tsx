@@ -8,17 +8,40 @@ const Refund = () => (
     <main className="pt-32 section-padding">
       <div className="container mx-auto max-w-3xl">
         <ScrollReveal>
-          <h1 className="text-4xl md:text-5xl font-display font-bold mb-8">Refund Policy</h1>
+          <h1 className="text-4xl md:text-5xl font-display font-bold mb-8">Refund & Warranty Policy</h1>
           <div className="prose prose-invert prose-sm max-w-none space-y-6 text-muted-foreground">
-            <p>Last updated: {new Date().toLocaleDateString()}</p>
-            <h2 className="text-foreground font-display text-xl font-semibold">7-Day Money-Back Guarantee</h2>
-            <p>All plans include a 7-day money-back guarantee. If you're not satisfied within 7 days of your purchase, contact us for a full refund of your subscription fee.</p>
-            <h2 className="text-foreground font-display text-xl font-semibold">Top-Up Fees</h2>
-            <p>Top-up fees and wallet balances are non-refundable once processed. Unused wallet balances may be refunded on a case-by-case basis.</p>
-            <h2 className="text-foreground font-display text-xl font-semibold">How to Request a Refund</h2>
-            <p>Email support@adcure.agency with your account details and reason for the refund request. We process refunds within 5-7 business days.</p>
-            <h2 className="text-foreground font-display text-xl font-semibold">Cancellation</h2>
-            <p>You can cancel your subscription at any time. Your access continues until the end of the current billing period. No partial refunds for unused days.</p>
+            <p>Last updated: December 2024</p>
+
+            <h2 className="text-foreground font-display text-xl font-semibold">1. General Principle</h2>
+            <p>Refunds are only granted at Adcure's discretion unless legal obligation applies.</p>
+            <p>Policy is B2B-oriented; consumer law only applies when legally defined as consumer.</p>
+
+            <h2 className="text-foreground font-display text-xl font-semibold">2. Subscription Payments</h2>
+            <p>Processed subscription fees remain payable and are not returned based on usage or late cancellation.</p>
+
+            <h2 className="text-foreground font-display text-xl font-semibold">3. 24h Warranty on Structures</h2>
+            <p>Within first 24h after delivery, Client may request replacement if Structure is unusable.</p>
+            <p>Replacement is free only if:</p>
+            <ul>
+              <li>Issue reported within 24h</li>
+              <li>Client followed recommended safe usage procedures</li>
+              <li>No risky/ad policy breaking activity took place</li>
+            </ul>
+
+            <h2 className="text-foreground font-display text-xl font-semibold">4. Post-Warranty Replacement</h2>
+            <p>After 24h, responsibility lies with Client. Replacement may be purchased.</p>
+
+            <h2 className="text-foreground font-display text-xl font-semibold">5. Evidence Requirement</h2>
+            <p>For free replacement post-period, Client must provide clear evidence of platform/system fault.</p>
+            <p>Decision based on technical assessment by Adcure Agency.</p>
+
+            <h2 className="text-foreground font-display text-xl font-semibold">6. Chargebacks & Disputes</h2>
+            <p>Unjustified disputes allow legal recovery including admin, legal and banking costs.</p>
+
+            <h2 className="text-foreground font-display text-xl font-semibold">7. Contact Us</h2>
+            <p>For refund requests or questions about this policy, please contact us at:</p>
+            <p>Email: service@adcure.agency</p>
+            <p>Phone: +31 97010209535</p>
           </div>
         </ScrollReveal>
       </div>
