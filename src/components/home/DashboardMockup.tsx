@@ -40,11 +40,7 @@ export const DashboardMockup = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
           </div>
-          <div className="flex-1 flex justify-center">
-            <div className="px-4 py-1 rounded-md bg-[hsl(220_18%_10%)] border border-border/30 text-[10px] text-muted-foreground font-mono">
-              portal.adcure.agency
-            </div>
-          </div>
+          <div className="flex-1" />
         </div>
 
         {/* App layout */}
