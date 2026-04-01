@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import adcureIcon from "@/assets/adcure-icon-white.png";
 
-const navLinks = [
+const navLinksBefore = [
   { label: "Home", path: "/#hero" },
   { label: "Services", path: "/#services" },
   { label: "Pricing", path: "/#pricing" },
+];
+
+const navLinksAfter = [
   { label: "Contact", path: "/contact" },
 ];
 
