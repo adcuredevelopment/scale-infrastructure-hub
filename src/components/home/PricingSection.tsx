@@ -45,6 +45,7 @@ const plans = [
     period: "/mo",
     topUp: "2% Top-Up Fee",
     popular: false,
+    checkoutUrl: "https://checkout.revolut.com/subscription/d905f7d4-fa9f-450d-b9e8-b2b397fc36a7",
     features: [
       "0% Fee available on request",
       "24/7 Top-Up Service",
