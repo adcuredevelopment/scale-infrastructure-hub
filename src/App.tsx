@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
@@ -16,6 +17,16 @@ import FacebookPages from "./pages/FacebookPages";
 import FacebookStructures from "./pages/FacebookStructures";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import AdminLogin from "./pages/AdminLogin";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminGamification from "./pages/admin/AdminGamification";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -25,21 +36,34 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/refund" element={<Refund />} />
-          <Route path="/subscription-policy" element={<SubscriptionPolicy />} />
-          <Route path="/facebook-accounts" element={<FacebookAccounts />} />
-          <Route path="/business-managers" element={<BusinessManagers />} />
-          <Route path="/facebook-pages" element={<FacebookPages />} />
-          <Route path="/facebook-structures" element={<FacebookStructures />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund" element={<Refund />} />
+            <Route path="/subscription-policy" element={<SubscriptionPolicy />} />
+            <Route path="/facebook-accounts" element={<FacebookAccounts />} />
+            <Route path="/business-managers" element={<BusinessManagers />} />
+            <Route path="/facebook-pages" element={<FacebookPages />} />
+            <Route path="/facebook-structures" element={<FacebookStructures />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverview />} />
+              <Route path="subscriptions" element={<AdminSubscriptions />} />
+              <Route path="payments" element={<AdminPayments />} />
+              <Route path="customers" element={<AdminCustomers />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="gamification" element={<AdminGamification />} />
+              <Route path="notifications" element={<AdminNotifications />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
