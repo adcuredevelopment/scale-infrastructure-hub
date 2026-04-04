@@ -26,8 +26,8 @@ Deno.serve(async (req) => {
       // against the raw request body using the webhookSecret
     }
 
-    const payload = await req.json()
-    console.log('Revolut webhook received:', JSON.stringify(payload))
+    const rawPayload = await req.json()
+    console.log('Revolut webhook received, event:', rawPayload.event, 'order:', rawPayload.order_id)
 
     // --- Validate payload structure ---
     const { event, order_id, merchant_order_ext_ref } = payload
