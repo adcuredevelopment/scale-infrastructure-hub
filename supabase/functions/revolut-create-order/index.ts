@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   try {
     // --- Validate input ---
     const body = await req.json()
-    const { planName, email } = body
+    const { planName, email, affiliateCode } = body
 
     if (!planName || typeof planName !== 'string') {
       return new Response(
