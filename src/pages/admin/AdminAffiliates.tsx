@@ -247,9 +247,10 @@ export default function AdminAffiliates() {
                 <TableRow className="border-border/20">
                   <TableHead className="text-xs">Affiliate</TableHead>
                   <TableHead className="text-xs">Customer</TableHead>
-                  <TableHead className="text-xs">Plan</TableHead>
-                  <TableHead className="text-xs">Amount</TableHead>
-                  <TableHead className="text-xs">Commission</TableHead>
+                   <TableHead className="text-xs">Plan</TableHead>
+                   <TableHead className="text-xs">Type</TableHead>
+                   <TableHead className="text-xs">Amount</TableHead>
+                   <TableHead className="text-xs">Commission</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs">Date</TableHead>
                   <TableHead className="text-xs">Actions</TableHead>
