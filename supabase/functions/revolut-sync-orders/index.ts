@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
         const { data: existingCustomer } = await supabaseAdmin
           .from('customers')
           .select('id, total_spent, subscription_count')
-          .eq('email', email)
+          .eq('email', finalEmail)
           .maybeSingle()
 
         if (existingCustomer) {
