@@ -14,14 +14,14 @@ export default function AdminCustomers() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
-      setCustomers(data || []);
-      setLoading(false);
-    };
-    fetch();
+  const fetchCustomers = useCallback(async () => {
+    const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
+    setCustomers(data || []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+  useAutoRefresh(fetchCustomers);
 
   const filtered = customers.filter((c) =>
     c.email?.toLowerCase().includes(search.toLowerCase()) ||

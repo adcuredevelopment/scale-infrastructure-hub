@@ -14,17 +14,17 @@ export default function AdminPayments() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPayments = async () => {
-      const { data } = await supabase
-        .from("payments")
-        .select("*")
-        .order("created_at", { ascending: false });
-      setPayments(data || []);
-      setLoading(false);
-    };
-    fetchPayments();
+  const fetchPayments = useCallback(async () => {
+    const { data } = await supabase
+      .from("payments")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setPayments(data || []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { fetchPayments(); }, [fetchPayments]);
+  useAutoRefresh(fetchPayments);
 
   const filtered = payments.filter((p) => {
     const payload = p.payload as any;

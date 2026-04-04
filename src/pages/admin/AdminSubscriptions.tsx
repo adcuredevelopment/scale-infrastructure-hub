@@ -19,14 +19,17 @@ export default function AdminSubscriptions() {
     fetchSubscriptions();
   }, []);
 
-  const fetchSubscriptions = async () => {
+  const fetchSubscriptions = useCallback(async () => {
     const { data } = await supabase
       .from("subscriptions")
       .select("*")
       .order("created_at", { ascending: false });
     setSubscriptions(data || []);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => { fetchSubscriptions(); }, [fetchSubscriptions]);
+  useAutoRefresh(fetchSubscriptions);
 
   const filtered = subscriptions.filter((s) => {
     const matchesSearch =

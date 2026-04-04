@@ -75,8 +75,7 @@ export default function AdminAffiliates() {
   const [payoutNotes, setPayoutNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchAll = async () => {
-    setLoading(true);
+  const fetchAll = useCallback(async () => {
     const [affRes, refRes, payRes] = await Promise.all([
       supabase.from("affiliates").select("*").order("created_at", { ascending: false }),
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
@@ -86,9 +85,10 @@ export default function AdminAffiliates() {
     setReferrals((refRes.data as Referral[]) || []);
     setPayouts((payRes.data as Payout[]) || []);
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useAutoRefresh(fetchAll);
 
   const filtered = affiliates.filter((a) =>
     a.email?.toLowerCase().includes(search.toLowerCase()) ||
