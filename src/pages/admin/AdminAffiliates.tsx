@@ -37,6 +37,7 @@ interface Referral {
   commission_rate: number;
   commission_amount: number;
   status: string;
+  referral_type: string;
   created_at: string;
 }
 
@@ -246,9 +247,10 @@ export default function AdminAffiliates() {
                 <TableRow className="border-border/20">
                   <TableHead className="text-xs">Affiliate</TableHead>
                   <TableHead className="text-xs">Customer</TableHead>
-                  <TableHead className="text-xs">Plan</TableHead>
-                  <TableHead className="text-xs">Amount</TableHead>
-                  <TableHead className="text-xs">Commission</TableHead>
+                   <TableHead className="text-xs">Plan</TableHead>
+                   <TableHead className="text-xs">Type</TableHead>
+                   <TableHead className="text-xs">Amount</TableHead>
+                   <TableHead className="text-xs">Commission</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs">Date</TableHead>
                   <TableHead className="text-xs">Actions</TableHead>
@@ -257,15 +259,20 @@ export default function AdminAffiliates() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
-                ) : referrals.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No referrals yet</TableCell></TableRow>
+                 ) : referrals.length === 0 ? (
+                   <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No referrals yet</TableCell></TableRow>
                 ) : (
                   referrals.map((r) => (
                     <TableRow key={r.id} className="border-border/10">
                       <TableCell className="text-sm">{getAffiliateEmail(r.affiliate_id)}</TableCell>
                       <TableCell className="text-sm">{r.customer_email || "—"}</TableCell>
                       <TableCell className="text-sm">{r.plan_name || "—"}</TableCell>
-                      <TableCell className="text-sm">€{Number(r.payment_amount).toFixed(2)}</TableCell>
+                       <TableCell>
+                         <Badge variant="outline" className={r.referral_type === "signup_bonus" ? "bg-purple-500/15 text-purple-400 border-purple-500/20" : "bg-blue-500/15 text-blue-400 border-blue-500/20"}>
+                           {r.referral_type === "signup_bonus" ? "Bonus" : "Recurring"}
+                         </Badge>
+                       </TableCell>
+                       <TableCell className="text-sm">€{Number(r.payment_amount).toFixed(2)}</TableCell>
                       <TableCell className="text-sm font-medium">€{Number(r.commission_amount).toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>

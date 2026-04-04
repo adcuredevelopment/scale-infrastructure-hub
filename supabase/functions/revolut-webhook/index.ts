@@ -5,13 +5,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Signup bonus amounts by plan price
+const SIGNUP_BONUSES: Record<number, number> = {
+  79: 20,
+  119: 30,
+  149: 50,
+}
+
+function getSignupBonus(amount: number): number {
+  return SIGNUP_BONUSES[amount] || 0
+}
+
 async function verifyRevolutSignature(
   payload: string,
   signatureHeader: string,
   secret: string
 ): Promise<boolean> {
   try {
-    // Revolut sends: v1=<hex-hmac-sha256>
     const parts = signatureHeader.split(',')
     const v1Sig = parts.find((p) => p.trim().startsWith('v1='))
     if (!v1Sig) return false
@@ -31,7 +41,6 @@ async function verifyRevolutSignature(
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('')
 
-    // Constant-time comparison
     if (receivedHex.length !== expectedHex.length) return false
     let mismatch = 0
     for (let i = 0; i < receivedHex.length; i++) {
@@ -40,6 +49,106 @@ async function verifyRevolutSignature(
     return mismatch === 0
   } catch {
     return false
+  }
+}
+
+async function handleAffiliateCommission(
+  supabase: any,
+  paymentId: string,
+  email: string,
+  planName: string,
+  amount: number,
+  affiliateCode: string | null
+) {
+  // Case 1: First-time referral via affiliate link
+  if (affiliateCode && typeof affiliateCode === 'string') {
+    const { data: aff } = await supabase
+      .from('affiliates')
+      .select('id')
+      .eq('affiliate_code', affiliateCode)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (aff) {
+      const commissionRate = 0.20
+      const commissionAmount = amount * commissionRate
+      const bonusAmount = getSignupBonus(amount)
+
+      // Create recurring commission (auto-approved)
+      await supabase.from('affiliate_referrals').insert({
+        affiliate_id: aff.id,
+        payment_id: paymentId,
+        customer_email: email,
+        plan_name: planName,
+        payment_amount: amount,
+        commission_rate: commissionRate,
+        commission_amount: commissionAmount,
+        status: 'approved',
+        referral_type: 'recurring',
+      })
+
+      // Create signup bonus if applicable (auto-approved)
+      if (bonusAmount > 0) {
+        await supabase.from('affiliate_referrals').insert({
+          affiliate_id: aff.id,
+          payment_id: paymentId,
+          customer_email: email,
+          plan_name: planName,
+          payment_amount: amount,
+          commission_rate: 0,
+          commission_amount: bonusAmount,
+          status: 'approved',
+          referral_type: 'signup_bonus',
+        })
+        console.log(`Signup bonus €${bonusAmount} created for affiliate ${affiliateCode}`)
+      }
+
+      // Store affiliate_code on the subscription for future recurring attribution
+      await supabase
+        .from('subscriptions')
+        .update({ affiliate_code: affiliateCode })
+        .eq('customer_email', email)
+        .eq('status', 'active')
+
+      console.log(`Affiliate referral (first) created for code ${affiliateCode}, commission €${commissionAmount}`)
+    }
+    return
+  }
+
+  // Case 2: Recurring payment — check if customer has an active subscription with an affiliate_code
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('affiliate_code')
+    .eq('customer_email', email)
+    .eq('status', 'active')
+    .not('affiliate_code', 'is', null)
+    .maybeSingle()
+
+  if (sub?.affiliate_code) {
+    const { data: aff } = await supabase
+      .from('affiliates')
+      .select('id')
+      .eq('affiliate_code', sub.affiliate_code)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (aff) {
+      const commissionRate = 0.20
+      const commissionAmount = amount * commissionRate
+
+      await supabase.from('affiliate_referrals').insert({
+        affiliate_id: aff.id,
+        payment_id: paymentId,
+        customer_email: email,
+        plan_name: planName,
+        payment_amount: amount,
+        commission_rate: commissionRate,
+        commission_amount: commissionAmount,
+        status: 'approved',
+        referral_type: 'recurring',
+      })
+      console.log(`Recurring commission €${commissionAmount} for affiliate ${sub.affiliate_code}`)
+    }
   }
 }
 
@@ -187,33 +296,9 @@ Deno.serve(async (req) => {
 
           console.log(`Synced customer & subscription for ${email}`)
 
-          // Affiliate referral tracking
+          // Affiliate commission handling (auto-approved)
           const affiliateCode = prevPayload?.affiliateCode
-          if (affiliateCode && typeof affiliateCode === 'string') {
-            const { data: aff } = await supabase
-              .from('affiliates')
-              .select('id')
-              .eq('affiliate_code', affiliateCode)
-              .eq('status', 'active')
-              .maybeSingle()
-
-            if (aff) {
-              const commissionRate = 0.20
-              const commissionAmount = amount * commissionRate
-
-              await supabase.from('affiliate_referrals').insert({
-                affiliate_id: aff.id,
-                payment_id: existing.id,
-                customer_email: email,
-                plan_name: planName,
-                payment_amount: amount,
-                commission_rate: commissionRate,
-                commission_amount: commissionAmount,
-                status: 'pending',
-              })
-              console.log(`Affiliate referral created for code ${affiliateCode}, commission €${commissionAmount}`)
-            }
-          }
+          await handleAffiliateCommission(supabase, existing.id, email, planName, amount, affiliateCode || null)
         }
       }
 

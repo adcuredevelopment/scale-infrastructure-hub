@@ -66,6 +66,7 @@ export type Database = {
           payment_amount: number
           payment_id: string | null
           plan_name: string | null
+          referral_type: string
           status: string
         }
         Insert: {
@@ -78,6 +79,7 @@ export type Database = {
           payment_amount?: number
           payment_id?: string | null
           plan_name?: string | null
+          referral_type?: string
           status?: string
         }
         Update: {
@@ -90,6 +92,7 @@ export type Database = {
           payment_amount?: number
           payment_id?: string | null
           plan_name?: string | null
+          referral_type?: string
           status?: string
         }
         Relationships: [
@@ -312,6 +315,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          affiliate_code: string | null
           amount: number
           cancelled_at: string | null
           created_at: string
@@ -327,6 +331,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          affiliate_code?: string | null
           amount?: number
           cancelled_at?: string | null
           created_at?: string
@@ -342,6 +347,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          affiliate_code?: string | null
           amount?: number
           cancelled_at?: string | null
           created_at?: string

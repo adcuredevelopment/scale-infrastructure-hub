@@ -5,7 +5,7 @@ import { ReferralsTable } from "@/components/affiliate/ReferralsTable";
 import { PayoutsTable } from "@/components/affiliate/PayoutsTable";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { DollarSign, Clock, Users, CreditCard, LogOut, Loader2 } from "lucide-react";
+import { DollarSign, Clock, Users, CreditCard, LogOut, Loader2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +25,7 @@ function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: st
 }
 
 export default function AffiliateDashboard() {
-  const { affiliate, referrals, payouts, loading, totalEarnings, pendingEarnings, totalPaidOut, totalReferrals } = useAffiliate();
+  const { affiliate, referrals, payouts, loading, totalEarnings, pendingEarnings, totalPaidOut, totalReferrals, bonusEarnings } = useAffiliate();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -75,8 +75,9 @@ export default function AffiliateDashboard() {
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6">
             <KPI icon={DollarSign} label="Total Earnings" value={`€${totalEarnings.toFixed(2)}`} />
+            <KPI icon={Gift} label="Signup Bonuses" value={`€${bonusEarnings.toFixed(2)}`} />
             <KPI icon={Clock} label="Pending" value={`€${pendingEarnings.toFixed(2)}`} />
             <KPI icon={Users} label="Total Referrals" value={String(totalReferrals)} />
             <KPI icon={CreditCard} label="Paid Out" value={`€${totalPaidOut.toFixed(2)}`} />

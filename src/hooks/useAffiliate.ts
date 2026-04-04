@@ -18,6 +18,7 @@ export interface AffiliateReferral {
   commission_rate: number;
   commission_amount: number;
   status: string;
+  referral_type: string;
   created_at: string;
 }
 
@@ -103,6 +104,10 @@ export function useAffiliate() {
     .filter((p) => p.status === "paid")
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
+  const bonusEarnings = referrals
+    .filter((r) => r.referral_type === "signup_bonus" && (r.status === "approved" || r.status === "paid"))
+    .reduce((sum, r) => sum + Number(r.commission_amount), 0);
+
   return {
     user,
     affiliate,
@@ -113,6 +118,7 @@ export function useAffiliate() {
     pendingEarnings,
     totalPaidOut,
     totalReferrals: referrals.length,
+    bonusEarnings,
     refetch: fetchAffiliateData,
   };
 }
