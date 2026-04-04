@@ -64,6 +64,10 @@ export const PricingSection = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const handleGetStarted = async (plan: typeof plans[0]) => {
+    if (plan.checkoutUrl) {
+      window.location.href = plan.checkoutUrl;
+      return;
+    }
     setLoadingPlan(plan.name);
     try {
       const { data, error } = await supabase.functions.invoke('revolut-create-order', {
