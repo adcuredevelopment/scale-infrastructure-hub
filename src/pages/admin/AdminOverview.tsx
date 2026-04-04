@@ -51,6 +51,8 @@ export default function AdminOverview() {
     const subs = subsRes.data || [];
     const custs = custRes.data || [];
     const payments = paymentsRes.data || [];
+    const allPayments = allPaymentsRes.data || [];
+    const notifs = notifsRes.data || [];
     const notifs = notifsRes.data || [];
 
     const activeSubs = subs.filter((s) => s.status === "active").length;
