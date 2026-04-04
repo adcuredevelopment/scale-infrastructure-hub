@@ -372,7 +372,7 @@ Deno.serve(async (req) => {
           expiresAt.setMonth(expiresAt.getMonth() + 1)
 
           await supabaseAdmin.from('subscriptions').insert({
-            customer_email: email,
+            customer_email: finalEmail,
             customer_name: order.customer?.full_name || order.customer?.name || null,
             plan_name: planName,
             status: 'active',
