@@ -256,8 +256,6 @@ Deno.serve(async (req) => {
     for (const order of orders) {
       const orderId = order.id
       const email = order.email || order.customer?.email || null
-      const existingEmailFromPayload = (existingPayment?.payload as any)?.email || null
-      const finalEmail = email || existingEmailFromPayload
       const amount = order.order_amount?.value
         ? (order.order_amount.value / 100)
         : (order.amount ? order.amount / 100 : 0)
@@ -265,8 +263,6 @@ Deno.serve(async (req) => {
       const state = (order.state || 'unknown').toUpperCase()
       const createdAt = order.created_at || new Date().toISOString()
       const description = order.description || ''
-
-      console.log(`Order ${orderId}: state=${state}, amount=${amount}, email=${finalEmail}, desc=${description}`)
 
       let planName = 'Unknown'
       const descLower = description.toLowerCase()
@@ -280,12 +276,15 @@ Deno.serve(async (req) => {
       else if (state === 'FAILED' || state === 'CANCELLED') dbStatus = 'failed'
       else if (state === 'AUTHORISED') dbStatus = 'authorised'
 
-      // Read existing payment to preserve affiliateCode
+      // Read existing payment FIRST to preserve email and affiliateCode
       const { data: existingPayment } = await supabaseAdmin
         .from('payments')
         .select('id, payload')
         .eq('revolut_order_id', orderId)
         .maybeSingle()
+
+      const existingEmailFromPayload = (existingPayment?.payload as any)?.email || null
+      const finalEmail = email || existingEmailFromPayload
 
       // Preserve affiliateCode from existing payload
       const existingAffiliateCode = (existingPayment?.payload as any)?.affiliateCode || null
