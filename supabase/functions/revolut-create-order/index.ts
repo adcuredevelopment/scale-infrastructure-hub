@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       amount: amount * 100, // Revolut expects minor units (cents)
       currency: currency.toUpperCase(),
       description: `Adcure ${planName} Subscription`,
-      capture_mode: 'AUTOMATIC',
+      capture_mode: 'automatic',
       merchant_order_ext_ref: `adcure_${planName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
       email: email || undefined,
       redirect_url: `${origin}/payment-success?plan=${encodeURIComponent(planName)}`,
