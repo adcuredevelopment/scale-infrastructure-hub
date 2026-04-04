@@ -40,7 +40,7 @@ export default function AdminOverview() {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     const [subsRes, custRes, paymentsRes, notifsRes, allPaymentsRes] = await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("customers").select("*"),
