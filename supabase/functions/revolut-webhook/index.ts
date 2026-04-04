@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
               console.log(`Affiliate referral created for code ${affiliateCode}, commission €${commissionAmount}`)
             }
           }
-      }
+        }
 
       if (event === 'ORDER_PAYMENT_FAILED' || event === 'ORDER_PAYMENT_DECLINED') {
         const prevPayload = existing.payload as any

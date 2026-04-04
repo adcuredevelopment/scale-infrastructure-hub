@@ -74,7 +74,6 @@ const App = () => (
             <Route path="/affiliate/dashboard" element={<AffiliateLayout />}>
               <Route index element={<AffiliateDashboard />} />
             </Route>
-            </Route>
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />
