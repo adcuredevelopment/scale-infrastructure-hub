@@ -46,7 +46,6 @@ const plans = [
     checkoutUrl: "https://checkout.revolut.com/subscription/d905f7d4-fa9f-450d-b9e8-b2b397fc36a7",
     features: [
       "24/7 Top-Up Service",
-      "24/7 Top-Up Service",
       "Mon–Sun Support (08:00-22:00)",
       "Unlimited Ad Accounts On Demand",
       "Supplier Access",
