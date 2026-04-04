@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from "react";
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -17,98 +17,104 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(false);
 
-  const checkAdmin = useCallback(async (nextUser: User | null) => {
-    if (!nextUser) {
-      setIsAdmin(false);
-      return false;
-    }
+  const loading = useMemo(() => !authReady || (!!user && roleLoading), [authReady, roleLoading, user]);
+
+  const checkAdmin = useCallback(async (userId: string) => {
+    setRoleLoading(true);
 
     try {
-      const roleQuery = supabase
+      const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", nextUser.id)
+        .eq("user_id", userId)
         .eq("role", "admin")
         .maybeSingle();
 
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Admin role check timed out")), 4000);
-      });
-
-      const { data, error } = await Promise.race([roleQuery, timeoutPromise]);
       if (error) throw error;
-
-      const admin = Boolean(data);
-      setIsAdmin(admin);
-      return admin;
+      setIsAdmin(Boolean(data));
     } catch (error) {
       console.error("Failed to check admin role:", error);
       setIsAdmin(false);
-      return false;
+    } finally {
+      setRoleLoading(false);
     }
   }, []);
-
-  const applySession = useCallback(async (nextSession: Session | null) => {
-    setSession(nextSession);
-    const nextUser = nextSession?.user ?? null;
-    setUser(nextUser);
-    await checkAdmin(nextUser);
-  }, [checkAdmin]);
 
   useEffect(() => {
     let mounted = true;
 
-    const syncAuthState = async (nextSession: Session | null) => {
+    const applyAuthState = (nextSession: Session | null) => {
       if (!mounted) return;
-      setLoading(true);
-      await applySession(nextSession);
-      if (mounted) {
-        setLoading(false);
-      }
+
+      const nextUser = nextSession?.user ?? null;
+      setSession(nextSession);
+      setUser(nextUser);
+      setIsAdmin(false);
+      setRoleLoading(Boolean(nextUser));
+      setAuthReady(true);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void syncAuthState(nextSession);
+      applyAuthState(nextSession);
     });
 
-    void supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      void syncAuthState(initialSession);
-    });
+    void supabase.auth.getSession()
+      .then(({ data: { session: initialSession } }) => {
+        applyAuthState(initialSession);
+      })
+      .catch((error) => {
+        console.error("Failed to restore session:", error);
+        if (mounted) {
+          setAuthReady(true);
+          setRoleLoading(false);
+        }
+      });
 
-    const safetyTimeout = setTimeout(() => {
+    const fallbackTimeout = setTimeout(() => {
       if (mounted) {
-        setLoading(false);
+        setAuthReady(true);
       }
     }, 5000);
 
     return () => {
       mounted = false;
-      clearTimeout(safetyTimeout);
+      clearTimeout(fallbackTimeout);
       subscription.unsubscribe();
     };
-  }, [applySession]);
+  }, []);
 
-  const signIn = async (email: string, password: string) => {
-    setLoading(true);
+  useEffect(() => {
+    if (!authReady) return;
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setLoading(false);
-      return { error: error.message };
+    if (!user) {
+      setIsAdmin(false);
+      setRoleLoading(false);
+      return;
     }
 
-    await applySession(data.session ?? null);
-    setLoading(false);
+    void checkAdmin(user.id);
+  }, [authReady, user?.id, session?.access_token, checkAdmin]);
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+
+    if (error) return { error: error.message };
     return { error: null };
   };
 
   const signOut = async () => {
-    setLoading(true);
     await supabase.auth.signOut();
-    await applySession(null);
-    setLoading(false);
+    setUser(null);
+    setSession(null);
+    setIsAdmin(false);
+    setRoleLoading(false);
+    setAuthReady(true);
   };
 
   return (
