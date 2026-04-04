@@ -88,7 +88,7 @@ export default function AdminAffiliates() {
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
-  useAutoRefresh(fetchAll);
+  const { lastRefreshed } = useAutoRefresh(fetchAll);
 
   const filtered = affiliates.filter((a) =>
     a.email?.toLowerCase().includes(search.toLowerCase()) ||
