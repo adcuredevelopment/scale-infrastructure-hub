@@ -29,8 +29,23 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
+import AffiliateLogin from "./pages/affiliate/AffiliateLogin";
+import AffiliateRegister from "./pages/affiliate/AffiliateRegister";
+import { AffiliateLayout } from "@/components/affiliate/AffiliateLayout";
 
 const queryClient = new QueryClient();
+
+function RefCapture() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      localStorage.setItem("adcure_ref", JSON.stringify({ code: ref, ts: Date.now() }));
+    }
+  }, []);
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
