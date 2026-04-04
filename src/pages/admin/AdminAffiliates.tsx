@@ -259,8 +259,8 @@ export default function AdminAffiliates() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
-                ) : referrals.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No referrals yet</TableCell></TableRow>
+                 ) : referrals.length === 0 ? (
+                   <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No referrals yet</TableCell></TableRow>
                 ) : (
                   referrals.map((r) => (
                     <TableRow key={r.id} className="border-border/10">
