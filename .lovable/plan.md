@@ -1,34 +1,54 @@
 
-## Revolut Merchant API Integration Plan
 
-### What we need to set up:
+## Problem Analysis
 
-**1. Enable Lovable Cloud (Backend)**
-- Required for edge functions to securely handle Revolut API calls and webhooks
+The payment workflow fails because:
 
-**2. Revolut API Keys**
-- You'll need your **Revolut Merchant API secret key** from [Revolut Business → Developer → API Keys](https://business.revolut.com/settings/api)
-- We'll store it securely as a secret
+1. **Starter plan** uses a direct Revolut checkout link that bypasses the edge function entirely — no DB record, no webhook, no redirect to `/payment-success`
+2. **All plans** need to use the Merchant API, but `revolut-create-order` requires JWT authentication — new paying users aren't logged in (this site has no auth)
+3. **Webhook** endpoint exists but Revolut may not be configured to call it
 
-**3. Edge Functions (Backend Code)**
-- **`revolut-create-order`** — Creates a Revolut order via the Merchant API when a user clicks "Get Started". This replaces the current direct checkout links with API-created orders that include a `redirect_url` back to your site
-- **`revolut-webhook`** — Receives Revolut webhook notifications when payment is completed, so you can track successful payments
+## Plan
 
-**4. Post-Payment Flow**
-- User clicks "Get Started" → Edge function creates a Revolut order → User is redirected to Revolut checkout
-- After successful payment → Revolut redirects to a "success" page on your site
-- Success page redirects user to `portal.adcure.agency` sign-up with their email pre-filled (if available)
+### 1. Make `revolut-create-order` work without authentication
 
-**5. Frontend Changes**
-- Replace static checkout URLs with dynamic order creation
-- Create a `/payment-success` page that handles the redirect to portal
-- Update pricing buttons to call the edge function
+Since paying users are anonymous visitors (not logged into your site), the edge function must accept unauthenticated requests. We'll:
+- Remove the JWT/auth requirement from the edge function
+- Add rate-limiting protection via input validation (email required, amount must match known plans)
+- Add a server-side allowlist of valid plan configurations so callers can't create arbitrary orders
+- Store payments with `user_id = null` (already nullable)
 
-### What you'll need to provide:
-- Revolut Merchant API secret key (sandbox for testing, production for live)
-- Confirm the 3 subscription product/plan IDs from your Revolut Business dashboard
+### 2. Update all 3 plans to use the Merchant API
 
-### Important notes:
-- The current pre-built checkout links (`checkout.revolut.com/subscription/...`) will be replaced with API-created orders
-- Revolut's Merchant API uses order creation → payment widget/redirect → capture flow
-- We'll use `automatic` capture mode so payments process immediately
+- Remove the `checkoutUrl` from Starter Advertiser
+- Add `amount: 79` to Starter plan config
+- All plans will call the edge function, which creates a Revolut order and returns a checkout URL
+
+### 3. Add email collection before checkout
+
+Since we need the user's email for the Revolut order and for post-payment portal signup:
+- Add a simple email input dialog/modal that appears when clicking "Get Started"
+- Email is passed to the edge function and included in the Revolut order
+- Email is also passed as a query param to the success page for display
+
+### 4. Verify webhook configuration
+
+- Confirm the webhook edge function is deployed
+- Provide the webhook URL you need to register in Revolut Business dashboard:
+  `https://uwncaohygevjvtgkazvv.supabase.co/functions/v1/revolut-webhook`
+
+### Technical details
+
+**Edge function changes (`revolut-create-order`):**
+- Remove `getClaims()` auth check
+- Add server-side plan validation (only allow known plan/amount/currency combos)
+- Require email field
+- Keep service-role insert for DB tracking
+
+**Frontend changes (`PricingSection.tsx`):**
+- Remove `checkoutUrl` from Starter plan, add `amount: 79`
+- Add email collection dialog before calling the edge function
+- Pass email to success page via query param
+
+**No database changes needed** — `user_id` is already nullable.
+
