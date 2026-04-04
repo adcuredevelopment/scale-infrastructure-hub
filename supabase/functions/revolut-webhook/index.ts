@@ -5,39 +5,90 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+async function verifyRevolutSignature(
+  payload: string,
+  signatureHeader: string,
+  secret: string
+): Promise<boolean> {
+  try {
+    // Revolut sends: v1=<hex-hmac-sha256>
+    const parts = signatureHeader.split(',')
+    const v1Sig = parts.find((p) => p.trim().startsWith('v1='))
+    if (!v1Sig) return false
+
+    const receivedHex = v1Sig.trim().substring(3)
+
+    const encoder = new TextEncoder()
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+    const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload))
+    const expectedHex = Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+
+    // Constant-time comparison
+    if (receivedHex.length !== expectedHex.length) return false
+    let mismatch = 0
+    for (let i = 0; i < receivedHex.length; i++) {
+      mismatch |= receivedHex.charCodeAt(i) ^ expectedHex.charCodeAt(i)
+    }
+    return mismatch === 0
+  } catch {
+    return false
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    const rawBody = await req.text()
     const webhookSecret = Deno.env.get('REVOLUT_WEBHOOK_SECRET')
+
     if (webhookSecret) {
       const signature = req.headers.get('Revolut-Signature')
       if (!signature) {
         console.error('Missing Revolut-Signature header')
         return new Response(
-          JSON.stringify({ error: 'Missing signature' }),
+          JSON.stringify({ error: 'Unauthorized' }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+
+      const valid = await verifyRevolutSignature(rawBody, signature, webhookSecret)
+      if (!valid) {
+        console.error('Invalid webhook signature')
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } else {
+      console.warn('REVOLUT_WEBHOOK_SECRET not set — skipping signature verification')
     }
 
-    const rawPayload = await req.json()
+    const rawPayload = JSON.parse(rawBody)
     console.log('Revolut webhook received, event:', rawPayload.event, 'order:', rawPayload.order_id)
 
     const { event, order_id, merchant_order_ext_ref } = rawPayload
 
     if (!event || typeof event !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Invalid payload: missing event' }),
+        JSON.stringify({ error: 'Invalid payload' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (!order_id || typeof order_id !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Invalid payload: missing order_id' }),
+        JSON.stringify({ error: 'Invalid payload' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -68,7 +119,6 @@ Deno.serve(async (req) => {
     else if (event === 'ORDER_AUTHORISED') status = 'authorised'
     else if (event === 'ORDER_PAYMENT_FAILED' || event === 'ORDER_PAYMENT_DECLINED') status = 'failed'
 
-    // Update payment record
     const { data: existing } = await supabase
       .from('payments')
       .select('id, payload')
@@ -82,7 +132,6 @@ Deno.serve(async (req) => {
         .eq('revolut_order_id', order_id)
       console.log(`Payment ${order_id} updated to ${status}`)
 
-      // On completed: sync to subscriptions & customers
       if (event === 'ORDER_COMPLETED') {
         const prevPayload = existing.payload as any
         const email = prevPayload?.email
@@ -90,7 +139,6 @@ Deno.serve(async (req) => {
         const amount = Number(prevPayload?.amount || 0)
 
         if (email && planName) {
-          // Upsert customer
           const { data: existingCustomer } = await supabase
             .from('customers')
             .select('id, total_spent, subscription_count')
@@ -117,7 +165,6 @@ Deno.serve(async (req) => {
             })
           }
 
-          // Create subscription record
           const expiresAt = new Date()
           expiresAt.setMonth(expiresAt.getMonth() + 1)
 
@@ -131,7 +178,6 @@ Deno.serve(async (req) => {
             expires_at: expiresAt.toISOString(),
           })
 
-          // Create notification
           await supabase.from('notifications').insert({
             type: 'payment',
             title: `New payment: ${planName}`,
@@ -143,7 +189,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // On failed: create alert notification
       if (event === 'ORDER_PAYMENT_FAILED' || event === 'ORDER_PAYMENT_DECLINED') {
         const prevPayload = existing.payload as any
         await supabase.from('notifications').insert({
@@ -170,7 +215,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Webhook error:', error)
     return new Response(
-      JSON.stringify({ error: 'Webhook processing failed' }),
+      JSON.stringify({ error: 'Processing failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
