@@ -51,6 +51,7 @@ const App = () => (
             <Route path="/facebook-pages" element={<FacebookPages />} />
             <Route path="/facebook-structures" element={<FacebookStructures />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/affiliate" element={<Affiliate />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />
