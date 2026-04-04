@@ -1,65 +1,38 @@
 
 
-## Automatic Affiliate Commission & Bonus System
+## Fix: Affiliate Dashboard Not Updating
 
-### What changes
+### Root Cause Analysis
 
-Currently, affiliate referrals are created as "pending" and require manual admin approval. The user wants:
-1. **One-time signup bonus** automatically created when a referred customer's first payment completes
-2. **20% recurring commission** automatically created on every subsequent payment from a referred customer
-3. **Automatic stop** when the customer's subscription is cancelled/expires
+Two issues are preventing the affiliate dashboard from showing commission data:
 
-### Database changes
+**Issue 1: Payment still pending**
+The payment `69d1872a` for `dobzakelijk@gmail.com` with affiliate code `50C8FA41` has status `pending`. The Revolut webhook has never been called for this order (no webhook logs exist at all). This means either:
+- The customer hasn't completed payment yet on Revolut's side
+- The Revolut webhook URL is not configured correctly in the Revolut merchant dashboard
 
-**Add columns to `affiliate_referrals`:**
-- `referral_type` (text, default `'recurring'`) — values: `'signup_bonus'` or `'recurring'`
+**Issue 2: `revolut-sync-orders` drops affiliate data**
+When the sync function processes completed orders, it **overwrites the payment payload** — losing the `affiliateCode` that was stored by `revolut-create-order`. It also never calls the affiliate commission logic (`handleAffiliateCommission`). So even if the order completes and gets synced, no referral record is created.
 
-**Add column to `subscriptions`:**
-- `affiliate_code` (text, nullable) — tracks which affiliate referred this subscription, so recurring payments can be attributed
+### Fix Plan
 
-### Bonus amounts (server-side constant)
-```
-Starter Advertiser (€79)  → €20 bonus
-Growth Advertiser (€119)  → €30 bonus  
-Advanced Advertiser (€149) → €50 bonus
-```
+**1. Update `revolut-sync-orders` to preserve `affiliateCode` and attribute commissions**
 
-### Webhook logic changes (`revolut-webhook/index.ts`)
+When syncing an order that transitions to `completed`:
+- Read the existing payment record's `affiliateCode` from the stored payload before overwriting
+- After syncing customers/subscriptions, call the same affiliate commission logic used in `revolut-webhook`
+- Store the `affiliate_code` on the subscription record
 
-On `ORDER_COMPLETED`:
-1. Check if payment has `affiliateCode` in payload (first purchase via ref link)
-2. **Also** check if customer email has an active subscription with an `affiliate_code` stored (recurring purchase)
-3. For first-time referral:
-   - Create signup bonus referral (`referral_type: 'signup_bonus'`, status `'approved'`)
-   - Create recurring commission referral (`referral_type: 'recurring'`, status `'approved'`)
-   - Store `affiliate_code` on the subscription record
-4. For recurring payment (customer already has subscription with `affiliate_code`):
-   - Look up the affiliate by code
-   - Check subscription is still `active`
-   - Auto-create approved commission referral
-5. Set referral status to `'approved'` automatically (no manual approval needed)
+**2. Extract shared affiliate commission logic**
 
-On subscription cancellation (when customer cancels or payment fails repeatedly):
-- The subscription status becomes `cancelled`/`failed`
-- Future payments won't trigger new referrals because the subscription check fails
+The `handleAffiliateCommission` function and `SIGNUP_BONUSES` constants from `revolut-webhook` need to be replicated in `revolut-sync-orders` (edge functions can't share code easily, so we duplicate the logic).
 
-### Frontend changes
+### Files to Modify
 
-**`useAffiliate.ts`**: Update `totalEarnings` to include `approved` status (already does).
+- `supabase/functions/revolut-sync-orders/index.ts` — add affiliate commission handling when syncing completed orders, preserve `affiliateCode` in payload merging
 
-**`EarningsChart.tsx`**: No changes needed.
+### What This Does NOT Fix
 
-**`ReferralsTable.tsx`**: Show `referral_type` column (bonus vs recurring).
-
-**`AffiliateDashboard.tsx`**: Add a "Signup Bonuses" KPI card.
-
-**`AdminAffiliates.tsx`**: Show referral type in the referrals tab.
-
-### Files to modify
-- `supabase/migrations/` — new migration for `referral_type` column and `affiliate_code` on subscriptions
-- `supabase/functions/revolut-webhook/index.ts` — auto-approve logic, bonus creation, recurring attribution
-- `src/components/affiliate/ReferralsTable.tsx` — show referral type
-- `src/pages/affiliate/AffiliateDashboard.tsx` — bonus KPI
-- `src/pages/admin/AdminAffiliates.tsx` — show referral type
-- `src/hooks/useAffiliate.ts` — minor: add bonus earnings calc
+The webhook itself not firing is a Revolut configuration issue. You need to verify in Revolut's merchant dashboard that the webhook URL points to:
+`https://uwncaohygevjvtgkazvv.supabase.co/functions/v1/revolut-webhook`
 
