@@ -215,6 +215,7 @@ Deno.serve(async (req) => {
             }
           }
         }
+      }
 
       if (event === 'ORDER_PAYMENT_FAILED' || event === 'ORDER_PAYMENT_DECLINED') {
         const prevPayload = existing.payload as any
