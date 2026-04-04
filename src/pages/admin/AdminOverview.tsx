@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { LastRefreshed } from "@/components/admin/LastRefreshed";
 
 export default function AdminOverview() {
   const [stats, setStats] = useState({
