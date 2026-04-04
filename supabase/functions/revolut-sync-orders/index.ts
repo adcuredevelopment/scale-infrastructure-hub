@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -6,18 +7,145 @@ const corsHeaders = {
 
 const REVOLUT_API_URL = 'https://merchant.revolut.com/api/orders'
 
+// Signup bonus amounts by plan price (duplicated from revolut-webhook)
+const SIGNUP_BONUSES: Record<number, number> = {
+  79: 20,
+  119: 30,
+  149: 50,
+}
+
+function getSignupBonus(amount: number): number {
+  return SIGNUP_BONUSES[amount] || 0
+}
+
+async function handleAffiliateCommission(
+  supabase: any,
+  paymentId: string,
+  email: string,
+  planName: string,
+  amount: number,
+  affiliateCode: string | null
+) {
+  // Case 1: First-time referral via affiliate link
+  if (affiliateCode && typeof affiliateCode === 'string') {
+    const { data: aff } = await supabase
+      .from('affiliates')
+      .select('id')
+      .eq('affiliate_code', affiliateCode)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (aff) {
+      // Check if commission already exists for this payment
+      const { data: existingRef } = await supabase
+        .from('affiliate_referrals')
+        .select('id')
+        .eq('payment_id', paymentId)
+        .maybeSingle()
+
+      if (existingRef) {
+        console.log(`Commission already exists for payment ${paymentId}, skipping`)
+        return
+      }
+
+      const commissionRate = 0.20
+      const commissionAmount = amount * commissionRate
+      const bonusAmount = getSignupBonus(amount)
+
+      await supabase.from('affiliate_referrals').insert({
+        affiliate_id: aff.id,
+        payment_id: paymentId,
+        customer_email: email,
+        plan_name: planName,
+        payment_amount: amount,
+        commission_rate: commissionRate,
+        commission_amount: commissionAmount,
+        status: 'approved',
+        referral_type: 'recurring',
+      })
+
+      if (bonusAmount > 0) {
+        await supabase.from('affiliate_referrals').insert({
+          affiliate_id: aff.id,
+          payment_id: paymentId,
+          customer_email: email,
+          plan_name: planName,
+          payment_amount: amount,
+          commission_rate: 0,
+          commission_amount: bonusAmount,
+          status: 'approved',
+          referral_type: 'signup_bonus',
+        })
+        console.log(`Signup bonus €${bonusAmount} created for affiliate ${affiliateCode}`)
+      }
+
+      await supabase
+        .from('subscriptions')
+        .update({ affiliate_code: affiliateCode })
+        .eq('customer_email', email)
+        .eq('status', 'active')
+
+      console.log(`Affiliate referral created for code ${affiliateCode}, commission €${commissionAmount}`)
+    }
+    return
+  }
+
+  // Case 2: Recurring payment — check if customer has active subscription with affiliate_code
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('affiliate_code')
+    .eq('customer_email', email)
+    .eq('status', 'active')
+    .not('affiliate_code', 'is', null)
+    .maybeSingle()
+
+  if (sub?.affiliate_code) {
+    const { data: aff } = await supabase
+      .from('affiliates')
+      .select('id')
+      .eq('affiliate_code', sub.affiliate_code)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (aff) {
+      // Check if commission already exists for this payment
+      const { data: existingRef } = await supabase
+        .from('affiliate_referrals')
+        .select('id')
+        .eq('payment_id', paymentId)
+        .maybeSingle()
+
+      if (!existingRef) {
+        const commissionRate = 0.20
+        const commissionAmount = amount * commissionRate
+
+        await supabase.from('affiliate_referrals').insert({
+          affiliate_id: aff.id,
+          payment_id: paymentId,
+          customer_email: email,
+          plan_name: planName,
+          payment_amount: amount,
+          commission_rate: commissionRate,
+          commission_amount: commissionAmount,
+          status: 'approved',
+          referral_type: 'recurring',
+        })
+        console.log(`Recurring commission €${commissionAmount} for affiliate ${sub.affiliate_code}`)
+      }
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Allow cron calls (anon key only, no user) OR admin users
     const authHeader = req.headers.get('Authorization')
     const isCronCall = req.headers.get('x-cron') === 'true' || !authHeader?.includes('.')
-    
+
     if (!isCronCall) {
-      // Verify admin auth for manual calls
       if (!authHeader) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
@@ -58,7 +186,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch orders from Revolut
     const REVOLUT_API_KEY = Deno.env.get('REVOLUT_API_SECRET_KEY')
     if (!REVOLUT_API_KEY) {
       return new Response(JSON.stringify({ error: 'Revolut API not configured' }), {
@@ -67,7 +194,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Fetch recent orders (last 90 days)
     const fromDate = new Date()
     fromDate.setDate(fromDate.getDate() - 90)
 
@@ -93,11 +219,9 @@ Deno.serve(async (req) => {
 
     const rawData = await revolutRes.json()
     console.log('Revolut response type:', typeof rawData, 'isArray:', Array.isArray(rawData), 'keys:', rawData ? Object.keys(rawData) : 'null')
-    
-    // Revolut may return array directly or wrapped in an object
+
     const orders = Array.isArray(rawData) ? rawData : (rawData?.orders || rawData?.items || [rawData]).filter(Boolean)
 
-    // Use service role for DB writes
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -109,9 +233,8 @@ Deno.serve(async (req) => {
     for (const order of orders) {
       const orderId = order.id
       const email = order.email || order.customer?.email || null
-      // Revolut uses order_amount.value in minor units, OR amount in major units
-      const amount = order.order_amount?.value 
-        ? (order.order_amount.value / 100) 
+      const amount = order.order_amount?.value
+        ? (order.order_amount.value / 100)
         : (order.amount ? order.amount / 100 : 0)
       const currency = order.order_amount?.currency || order.currency || 'EUR'
       const state = (order.state || 'unknown').toUpperCase()
@@ -120,7 +243,6 @@ Deno.serve(async (req) => {
 
       console.log(`Order ${orderId}: state=${state}, amount=${amount}, email=${email}, desc=${description}`)
 
-      // Determine plan from description or merchant ref
       let planName = 'Unknown'
       const descLower = description.toLowerCase()
       const refLower = (order.merchant_order_ext_ref || '').toLowerCase()
@@ -133,12 +255,15 @@ Deno.serve(async (req) => {
       else if (state === 'FAILED' || state === 'CANCELLED') dbStatus = 'failed'
       else if (state === 'AUTHORISED') dbStatus = 'authorised'
 
-      // Upsert payment
+      // Read existing payment to preserve affiliateCode
       const { data: existingPayment } = await supabaseAdmin
         .from('payments')
-        .select('id')
+        .select('id, payload')
         .eq('revolut_order_id', orderId)
         .maybeSingle()
+
+      // Preserve affiliateCode from existing payload
+      const existingAffiliateCode = (existingPayment?.payload as any)?.affiliateCode || null
 
       if (existingPayment) {
         await supabaseAdmin.from('payments').update({
@@ -150,6 +275,8 @@ Deno.serve(async (req) => {
             email,
             revolut_state: state,
             synced_at: new Date().toISOString(),
+            // Preserve affiliateCode
+            ...(existingAffiliateCode ? { affiliateCode: existingAffiliateCode } : {}),
           },
         }).eq('revolut_order_id', orderId)
         updated++
@@ -171,9 +298,8 @@ Deno.serve(async (req) => {
         synced++
       }
 
-      // Sync completed orders to customers & subscriptions
+      // Sync completed orders to customers & subscriptions + affiliate commissions
       if (dbStatus === 'completed' && email) {
-        // Upsert customer
         const { data: existingCustomer } = await supabaseAdmin
           .from('customers')
           .select('id, total_spent, subscription_count')
@@ -181,7 +307,6 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         if (existingCustomer) {
-          // Check if this order already counted
           const { data: existingSub } = await supabaseAdmin
             .from('subscriptions')
             .select('id')
@@ -231,7 +356,21 @@ Deno.serve(async (req) => {
             revolut_subscription_id: orderId,
             started_at: createdAt,
             expires_at: expiresAt.toISOString(),
+            ...(existingAffiliateCode ? { affiliate_code: existingAffiliateCode } : {}),
           })
+        }
+
+        // Handle affiliate commissions
+        const paymentId = existingPayment?.id || null
+        if (paymentId) {
+          await handleAffiliateCommission(
+            supabaseAdmin,
+            paymentId,
+            email,
+            planName,
+            amount,
+            existingAffiliateCode
+          )
         }
       }
     }
@@ -253,7 +392,6 @@ Deno.serve(async (req) => {
       }).eq('id', m.id)
     }
 
-    // Also update achieved milestones current_amount
     await supabaseAdmin.from('revenue_milestones').update({
       current_amount: totalRevenue,
     }).eq('achieved', true)
