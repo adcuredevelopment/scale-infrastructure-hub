@@ -26,11 +26,11 @@ Deno.serve(async (req) => {
       // against the raw request body using the webhookSecret
     }
 
-    const payload = await req.json()
-    console.log('Revolut webhook received:', JSON.stringify(payload))
+    const rawPayload = await req.json()
+    console.log('Revolut webhook received, event:', rawPayload.event, 'order:', rawPayload.order_id)
 
     // --- Validate payload structure ---
-    const { event, order_id, merchant_order_ext_ref } = payload
+    const { event, order_id, merchant_order_ext_ref } = rawPayload
 
     if (!event || typeof event !== 'string') {
       return new Response(
@@ -48,14 +48,21 @@ Deno.serve(async (req) => {
 
     const validEvents = ['ORDER_COMPLETED', 'ORDER_AUTHORISED', 'ORDER_PAYMENT_FAILED', 'ORDER_PAYMENT_DECLINED']
     if (!validEvents.includes(event)) {
-      // Acknowledge unknown events without processing
       return new Response(
         JSON.stringify({ received: true }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Use service role for DB writes (webhook has no user context)
+    // Strip sensitive data — only store safe reconciliation fields
+    const sanitizedPayload = {
+      event,
+      order_id,
+      merchant_order_ext_ref: merchant_order_ext_ref || null,
+      state: rawPayload.state || null,
+      completed_at: rawPayload.completed_at || null,
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -66,7 +73,6 @@ Deno.serve(async (req) => {
     else if (event === 'ORDER_AUTHORISED') status = 'authorised'
     else if (event === 'ORDER_PAYMENT_FAILED' || event === 'ORDER_PAYMENT_DECLINED') status = 'failed'
 
-    // Try to update existing payment record first
     const { data: existing } = await supabase
       .from('payments')
       .select('id')
@@ -76,7 +82,7 @@ Deno.serve(async (req) => {
     if (existing) {
       const { error } = await supabase
         .from('payments')
-        .update({ status, payload })
+        .update({ status, payload: sanitizedPayload })
         .eq('revolut_order_id', order_id)
       if (error) console.error('Error updating payment:', error)
       else console.log(`Payment ${order_id} updated to ${status}`)
@@ -85,7 +91,7 @@ Deno.serve(async (req) => {
         revolut_order_id: order_id,
         merchant_ref: merchant_order_ext_ref || null,
         status,
-        payload,
+        payload: sanitizedPayload,
       })
       if (error) console.error('Error storing payment:', error)
       else console.log(`Payment ${order_id} stored with status ${status}`)

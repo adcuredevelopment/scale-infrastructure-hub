@@ -117,7 +117,12 @@ Deno.serve(async (req) => {
       merchant_ref: orderPayload.merchant_order_ext_ref,
       status: 'pending',
       user_id: userId,
-      payload: { plan: planName, amount, currency },
+      payload: {
+        plan: planName,
+        amount,
+        currency,
+        revolut_state: data.state,
+      },
     })
 
     return new Response(
