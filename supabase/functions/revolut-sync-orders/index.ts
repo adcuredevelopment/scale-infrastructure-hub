@@ -404,7 +404,8 @@ Deno.serve(async (req) => {
             finalEmail,
             planName,
             amount,
-            existingAffiliateCode
+            existingAffiliateCode,
+            createdAt
           )
         }
       }
