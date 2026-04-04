@@ -25,7 +25,7 @@ import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminGamification from "./pages/admin/AdminGamification";
+
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSettings from "./pages/admin/AdminSettings";
 
