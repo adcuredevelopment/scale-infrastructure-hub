@@ -71,8 +71,9 @@ const App = () => (
             <Route path="/affiliate" element={<Affiliate />} />
             <Route path="/affiliate/login" element={<AffiliateLogin />} />
             <Route path="/affiliate/register" element={<AffiliateRegister />} />
-            <Route path="/affiliate" element={<AffiliateLayout />}>
-              <Route path="dashboard" element={<AffiliateDashboard />} />
+            <Route path="/affiliate/dashboard" element={<AffiliateLayout />}>
+              <Route index element={<AffiliateDashboard />} />
+            </Route>
             </Route>
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
