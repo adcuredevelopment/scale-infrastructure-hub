@@ -180,6 +180,11 @@ export const Navbar = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <a href="https://portal.adcure.agency/" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="hover:scale-[1.03] active:scale-[0.97] transition-all duration-200">
+              Sign In
+            </Button>
+          </a>
           <a href="/#pricing" onClick={(e) => { e.preventDefault(); if (window.location.pathname === '/') { document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); } else { window.location.href = '/#pricing'; } }}>
             <Button className="glow-primary-sm hover:scale-[1.03] active:scale-[0.97] transition-all duration-200">
               Get Started
