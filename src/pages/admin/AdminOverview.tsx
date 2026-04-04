@@ -40,16 +40,18 @@ export default function AdminOverview() {
   };
 
   const fetchDashboardData = async () => {
-    const [subsRes, custRes, paymentsRes, notifsRes] = await Promise.all([
+    const [subsRes, custRes, paymentsRes, notifsRes, allPaymentsRes] = await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("customers").select("*"),
       supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(10),
       supabase.from("notifications").select("*").eq("read", false).order("created_at", { ascending: false }).limit(5),
+      supabase.from("payments").select("*").order("created_at", { ascending: false }),
     ]);
 
     const subs = subsRes.data || [];
     const custs = custRes.data || [];
     const payments = paymentsRes.data || [];
+    const allPayments = allPaymentsRes.data || [];
     const notifs = notifsRes.data || [];
 
     const activeSubs = subs.filter((s) => s.status === "active").length;
@@ -65,20 +67,22 @@ export default function AdminOverview() {
     setRecentPayments(payments);
     setNotifications(notifs);
 
-    // Build chart data from payments (last 7 days)
+    // Build chart data from ALL payments (last 7 days)
     const days: Record<string, number> = {};
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       days[format(d, "MMM dd")] = 0;
     }
-    payments.forEach((p) => {
-      const key = format(new Date(p.created_at), "MMM dd");
-      if (key in days) {
-        const payload = p.payload as any;
-        days[key] += Number(payload?.amount || 0);
-      }
-    });
+    allPayments
+      .filter((p) => p.status === "completed")
+      .forEach((p) => {
+        const key = format(new Date(p.created_at), "MMM dd");
+        if (key in days) {
+          const payload = p.payload as any;
+          days[key] += Number(payload?.amount || 0);
+        }
+      });
     setChartData(Object.entries(days).map(([date, amount]) => ({ date, amount })));
   };
 
