@@ -324,7 +324,7 @@ Deno.serve(async (req) => {
       }
 
       // Sync completed orders to customers & subscriptions + affiliate commissions
-      if (dbStatus === 'completed' && email) {
+      if (dbStatus === 'completed' && finalEmail) {
         const { data: existingCustomer } = await supabaseAdmin
           .from('customers')
           .select('id, total_spent, subscription_count')
