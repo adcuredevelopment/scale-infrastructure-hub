@@ -67,20 +67,22 @@ export default function AdminOverview() {
     setRecentPayments(payments);
     setNotifications(notifs);
 
-    // Build chart data from payments (last 7 days)
+    // Build chart data from ALL payments (last 7 days)
     const days: Record<string, number> = {};
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       days[format(d, "MMM dd")] = 0;
     }
-    payments.forEach((p) => {
-      const key = format(new Date(p.created_at), "MMM dd");
-      if (key in days) {
-        const payload = p.payload as any;
-        days[key] += Number(payload?.amount || 0);
-      }
-    });
+    allPayments
+      .filter((p) => p.status === "completed")
+      .forEach((p) => {
+        const key = format(new Date(p.created_at), "MMM dd");
+        if (key in days) {
+          const payload = p.payload as any;
+          days[key] += Number(payload?.amount || 0);
+        }
+      });
     setChartData(Object.entries(days).map(([date, amount]) => ({ date, amount })));
   };
 
