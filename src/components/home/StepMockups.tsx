@@ -108,10 +108,10 @@ export const LaunchMockup = () => (
         {["Meta Ad Account", "Google Ad Account", "TikTok Ad Account"].map((account, i) => (
           <div key={account} className="rounded-lg border border-border/50 bg-card/50 p-2.5 md:p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <div className="w-2 h-2 rounded-full bg-primary" />
               <span className="text-[9px] md:text-[10px] text-foreground">{account}</span>
             </div>
-            <span className="text-[7px] md:text-[8px] text-green-500 font-medium">Active</span>
+            <span className="text-[7px] md:text-[8px] text-primary font-medium">Active</span>
           </div>
         ))}
       </div>
