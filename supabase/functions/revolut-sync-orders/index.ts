@@ -256,6 +256,8 @@ Deno.serve(async (req) => {
     for (const order of orders) {
       const orderId = order.id
       const email = order.email || order.customer?.email || null
+      const existingEmailFromPayload = (existingPayment?.payload as any)?.email || null
+      const finalEmail = email || existingEmailFromPayload
       const amount = order.order_amount?.value
         ? (order.order_amount.value / 100)
         : (order.amount ? order.amount / 100 : 0)
