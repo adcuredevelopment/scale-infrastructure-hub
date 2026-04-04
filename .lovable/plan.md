@@ -1,87 +1,65 @@
 
 
-## Affiliate Dashboard — Plan
+## Automatic Affiliate Commission & Bonus System
 
-### Overview
-Build a full affiliate tracking system: affiliates register/login, get a unique referral link, and earn commissions on payments made through that link. They see earnings, graphs, and payout history on a dedicated dashboard.
+### What changes
 
-### Phase 1: Database Tables (Migration)
+Currently, affiliate referrals are created as "pending" and require manual admin approval. The user wants:
+1. **One-time signup bonus** automatically created when a referred customer's first payment completes
+2. **20% recurring commission** automatically created on every subsequent payment from a referred customer
+3. **Automatic stop** when the customer's subscription is cancelled/expires
 
-**New tables:**
+### Database changes
 
-1. **`affiliates`** — stores affiliate accounts
-   - `id` (uuid, PK), `user_id` (uuid, references auth.users), `affiliate_code` (text, unique — used in referral URLs), `display_name`, `email`, `payout_method` (text), `payout_details` (text), `status` (active/suspended), `created_at`, `updated_at`
+**Add columns to `affiliate_referrals`:**
+- `referral_type` (text, default `'recurring'`) — values: `'signup_bonus'` or `'recurring'`
 
-2. **`affiliate_referrals`** — tracks each referred payment
-   - `id` (uuid, PK), `affiliate_id` (uuid, FK → affiliates), `payment_id` (uuid, FK → payments), `customer_email`, `plan_name`, `payment_amount` (numeric), `commission_rate` (numeric, default 0.20), `commission_amount` (numeric), `status` (pending/approved/paid), `created_at`
+**Add column to `subscriptions`:**
+- `affiliate_code` (text, nullable) — tracks which affiliate referred this subscription, so recurring payments can be attributed
 
-3. **`affiliate_payouts`** — payout records
-   - `id` (uuid, PK), `affiliate_id` (uuid, FK → affiliates), `amount` (numeric), `currency` (text, default EUR), `status` (pending/processing/paid/failed), `payout_date`, `notes`, `created_at`
+### Bonus amounts (server-side constant)
+```
+Starter Advertiser (€79)  → €20 bonus
+Growth Advertiser (€119)  → €30 bonus  
+Advanced Advertiser (€149) → €50 bonus
+```
 
-**RLS policies:**
-- Affiliates can only read their own data (affiliate record, referrals, payouts) via `auth.uid() = user_id`
-- Admins get full access via `has_role()`
-- Service role gets full access for edge functions
+### Webhook logic changes (`revolut-webhook/index.ts`)
 
-### Phase 2: Referral Link Tracking
+On `ORDER_COMPLETED`:
+1. Check if payment has `affiliateCode` in payload (first purchase via ref link)
+2. **Also** check if customer email has an active subscription with an `affiliate_code` stored (recurring purchase)
+3. For first-time referral:
+   - Create signup bonus referral (`referral_type: 'signup_bonus'`, status `'approved'`)
+   - Create recurring commission referral (`referral_type: 'recurring'`, status `'approved'`)
+   - Store `affiliate_code` on the subscription record
+4. For recurring payment (customer already has subscription with `affiliate_code`):
+   - Look up the affiliate by code
+   - Check subscription is still `active`
+   - Auto-create approved commission referral
+5. Set referral status to `'approved'` automatically (no manual approval needed)
 
-**How it works:**
-- Each affiliate gets a unique code (e.g. `adcure.agency/?ref=ABC123`)
-- When a visitor lands with `?ref=`, the code is stored in `localStorage` (persists 30 days)
-- At checkout (PricingSection), the `ref` code is sent along with `planName` and `email` to `revolut-create-order`
+On subscription cancellation (when customer cancels or payment fails repeatedly):
+- The subscription status becomes `cancelled`/`failed`
+- Future payments won't trigger new referrals because the subscription check fails
 
-**Edge function changes:**
-- **`revolut-create-order`**: Accept optional `affiliateCode` param, store it in the payment `payload`
-- **`revolut-webhook`**: On `ORDER_COMPLETED`, check if payment has an `affiliateCode` in payload → look up affiliate → create `affiliate_referrals` record with calculated commission
+### Frontend changes
 
-### Phase 3: Affiliate Auth
+**`useAffiliate.ts`**: Update `totalEarnings` to include `approved` status (already does).
 
-- Affiliates register and login via standard email/password auth (same Supabase auth)
-- On signup, create an `affiliates` record with a generated unique code
-- Route: `/affiliate/dashboard` (protected, requires authenticated affiliate)
-- Route: `/affiliate/login` and `/affiliate/register`
+**`EarningsChart.tsx`**: No changes needed.
 
-### Phase 4: Affiliate Dashboard Page
+**`ReferralsTable.tsx`**: Show `referral_type` column (bonus vs recurring).
 
-Single page at `/affiliate/dashboard` containing:
+**`AffiliateDashboard.tsx`**: Add a "Signup Bonuses" KPI card.
 
-1. **KPI Cards** — Total earnings, pending payouts, total referrals, conversion rate
-2. **Earnings Chart** — Line graph (Recharts) showing commissions over time (monthly)
-3. **Referral Link** — Copyable affiliate link with share button
-4. **Recent Referrals Table** — Customer email (masked), plan, commission, status, date
-5. **Payouts Section** — Table of payouts with status badges (pending/processing/paid)
+**`AdminAffiliates.tsx`**: Show referral type in the referrals tab.
 
-### Phase 5: Admin Integration
-
-- Add affiliate management to the existing admin dashboard (view affiliates, approve payouts, see referral stats)
-- Admin can create payouts for affiliates and update payout status
-
-### Technical Details
-
-- Referral code capture: `useEffect` in App.tsx reads `?ref=` from URL and stores in localStorage with a 30-day expiry
-- Commission calculation: 20% recurring, done server-side in the webhook
-- The affiliate dashboard uses the same dark theme and design system as the admin dashboard
-- Charts use Recharts (already installed)
-- No new edge functions needed beyond modifying existing ones
-
-### Files to Create/Modify
-
-**New files:**
-- `src/pages/affiliate/AffiliateDashboard.tsx`
-- `src/pages/affiliate/AffiliateLogin.tsx`
-- `src/pages/affiliate/AffiliateRegister.tsx`
-- `src/components/affiliate/AffiliateLayout.tsx`
-- `src/components/affiliate/EarningsChart.tsx`
-- `src/components/affiliate/ReferralLink.tsx`
-- `src/components/affiliate/ReferralsTable.tsx`
-- `src/components/affiliate/PayoutsTable.tsx`
-- `src/hooks/useAffiliate.ts`
-
-**Modified files:**
-- `src/App.tsx` — add affiliate routes
-- `src/components/home/PricingSection.tsx` — pass affiliate code to checkout
-- `supabase/functions/revolut-create-order/index.ts` — accept & store affiliate code
-- `supabase/functions/revolut-webhook/index.ts` — create referral on completed payment
-- `src/pages/Affiliate.tsx` — update CTA buttons to link to register/login
-- Database migration for new tables + RLS
+### Files to modify
+- `supabase/migrations/` — new migration for `referral_type` column and `affiliate_code` on subscriptions
+- `supabase/functions/revolut-webhook/index.ts` — auto-approve logic, bonus creation, recurring attribution
+- `src/components/affiliate/ReferralsTable.tsx` — show referral type
+- `src/pages/affiliate/AffiliateDashboard.tsx` — bonus KPI
+- `src/pages/admin/AdminAffiliates.tsx` — show referral type
+- `src/hooks/useAffiliate.ts` — minor: add bonus earnings calc
 
