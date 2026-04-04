@@ -7,60 +7,41 @@ const corsHeaders = {
 
 const REVOLUT_API_URL = 'https://merchant.revolut.com/api/orders'
 
+// Server-side allowlist of valid plans — prevents arbitrary order creation
+const VALID_PLANS: Record<string, { amount: number; currency: string }> = {
+  'Starter Advertiser': { amount: 79, currency: 'EUR' },
+  'Growth Advertiser': { amount: 119, currency: 'EUR' },
+  'Advanced Advertiser': { amount: 149, currency: 'EUR' },
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // --- Authenticate the caller ---
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    )
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token)
-    if (claimsError || !claimsData?.claims) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const userId = claimsData.claims.sub
-
     // --- Validate input ---
     const body = await req.json()
-    const { planName, amount, currency, email } = body
+    const { planName, email } = body
 
-    if (!planName || typeof planName !== 'string' || planName.length > 100) {
+    if (!planName || typeof planName !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Invalid planName' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (!amount || typeof amount !== 'number' || amount <= 0 || amount > 10000) {
+    const plan = VALID_PLANS[planName]
+    if (!plan) {
       return new Response(
-        JSON.stringify({ error: 'Invalid amount' }),
+        JSON.stringify({ error: 'Unknown plan' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const validCurrencies = ['EUR', 'USD', 'GBP']
-    if (!currency || !validCurrencies.includes(currency.toUpperCase())) {
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid currency' }),
+        JSON.stringify({ error: 'Valid email is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -77,13 +58,13 @@ Deno.serve(async (req) => {
     const origin = req.headers.get('origin') || 'https://scale-infrastructure-hub.lovable.app'
 
     const orderPayload = {
-      amount: amount * 100,
-      currency: currency.toUpperCase(),
+      amount: plan.amount * 100,
+      currency: plan.currency,
       description: `Adcure ${planName} Subscription`,
       capture_mode: 'automatic',
       merchant_order_ext_ref: `adcure_${planName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
-      email: email || undefined,
-      redirect_url: `${origin}/payment-success?plan=${encodeURIComponent(planName)}`,
+      email,
+      redirect_url: `${origin}/payment-success?plan=${encodeURIComponent(planName)}&email=${encodeURIComponent(email)}`,
     }
 
     const response = await fetch(REVOLUT_API_URL, {
@@ -106,7 +87,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Store the order with user_id using service role
+    // Store the order using service role
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -116,11 +97,12 @@ Deno.serve(async (req) => {
       revolut_order_id: data.id,
       merchant_ref: orderPayload.merchant_order_ext_ref,
       status: 'pending',
-      user_id: userId,
+      user_id: null,
       payload: {
         plan: planName,
-        amount,
-        currency,
+        amount: plan.amount,
+        currency: plan.currency,
+        email,
         revolut_state: data.state,
       },
     })
