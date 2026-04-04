@@ -138,12 +138,10 @@ export const HowItWorksSection = () => {
                 <span className="absolute right-4 md:right-5 top-2 md:top-3 text-5xl md:text-6xl font-display font-bold text-primary/15 select-none leading-none">
                   {steps[active].number}
                 </span>
-                <div className="relative z-10 w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center">
-                  {(() => {
-                    const Icon = steps[active].icon;
-                    return <Icon className="w-7 h-7 md:w-8 md:h-8 text-primary" />;
-                  })()}
-                </div>
+                {(() => {
+                  const Mockup = stepMockups[active];
+                  return <Mockup />;
+                })()}
               </motion.div>
             </AnimatePresence>
 
