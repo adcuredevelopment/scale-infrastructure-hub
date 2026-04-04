@@ -16,10 +16,6 @@ export default function AdminSubscriptions() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSubscriptions();
-  }, []);
-
   const fetchSubscriptions = useCallback(async () => {
     const { data } = await supabase
       .from("subscriptions")
