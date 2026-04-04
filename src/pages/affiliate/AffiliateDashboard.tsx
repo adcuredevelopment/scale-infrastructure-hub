@@ -25,7 +25,7 @@ function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: st
 }
 
 export default function AffiliateDashboard() {
-  const { affiliate, referrals, payouts, loading, totalEarnings, pendingEarnings, totalPaidOut, totalReferrals } = useAffiliate();
+  const { affiliate, referrals, payouts, loading, totalEarnings, pendingEarnings, totalPaidOut, totalReferrals, bonusEarnings } = useAffiliate();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
