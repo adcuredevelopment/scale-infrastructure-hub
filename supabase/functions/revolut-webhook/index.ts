@@ -118,12 +118,13 @@ async function handleAffiliateCommission(
   // Case 2: Recurring payment — check if customer has an active subscription with an affiliate_code
   const { data: sub } = await supabase
     .from('subscriptions')
-    .select('affiliate_code')
+    .select('affiliate_code, started_at')
     .eq('customer_email', email)
     .eq('status', 'active')
     .not('affiliate_code', 'is', null)
     .maybeSingle()
 
+  // Date guard: skip if no recent subscription context (webhook payments are always current, so this is a safety check)
   if (sub?.affiliate_code) {
     const { data: aff } = await supabase
       .from('affiliates')

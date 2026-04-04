@@ -102,7 +102,10 @@ export default function AdminAffiliates() {
   const totalPaidOut = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
 
   const getAffiliateEmail = (id: string) => affiliates.find((a) => a.id === id)?.email || "—";
-  const getAffiliateReferralCount = (id: string) => referrals.filter((r) => r.affiliate_id === id).length;
+  const getAffiliateReferralCount = (id: string) => {
+    const emails = new Set(referrals.filter((r) => r.affiliate_id === id && r.customer_email).map((r) => r.customer_email));
+    return emails.size;
+  };
   const getAffiliateEarnings = (id: string) => referrals.filter((r) => r.affiliate_id === id).reduce((s, r) => s + Number(r.commission_amount), 0);
 
   const handleCreatePayout = async () => {
@@ -181,7 +184,7 @@ export default function AdminAffiliates() {
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <KPICard title="Affiliates" value={affiliates.length.toString()} icon={Users} />
-        <KPICard title="Total Referrals" value={referrals.length.toString()} icon={TrendingUp} delay={0.05} />
+        <KPICard title="Total Referrals" value={new Set(referrals.filter(r => r.customer_email).map(r => r.customer_email)).size.toString()} icon={TrendingUp} delay={0.05} />
         <KPICard title="Total Commissions" value={`€${totalCommissions.toFixed(2)}`} icon={DollarSign} delay={0.1} />
         <KPICard title="Paid Out" value={`€${totalPaidOut.toFixed(2)}`} icon={CreditCard} change={`€${pendingCommissions.toFixed(2)} pending`} changeType="neutral" delay={0.15} />
       </div>

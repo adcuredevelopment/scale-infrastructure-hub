@@ -24,7 +24,8 @@ async function handleAffiliateCommission(
   email: string,
   planName: string,
   amount: number,
-  affiliateCode: string | null
+  affiliateCode: string | null,
+  orderCreatedAt: string | null
 ) {
   // Case 1: First-time referral via affiliate link
   if (affiliateCode && typeof affiliateCode === 'string') {
@@ -93,11 +94,21 @@ async function handleAffiliateCommission(
   // Case 2: Recurring payment — check if customer has active subscription with affiliate_code
   const { data: sub } = await supabase
     .from('subscriptions')
-    .select('affiliate_code')
+    .select('affiliate_code, started_at')
     .eq('customer_email', email)
     .eq('status', 'active')
     .not('affiliate_code', 'is', null)
     .maybeSingle()
+
+  // Date guard: only attribute if order was created after the affiliate was linked
+  if (sub?.affiliate_code && orderCreatedAt) {
+    const orderDate = new Date(orderCreatedAt)
+    const subStartDate = new Date(sub.started_at)
+    if (orderDate < subStartDate) {
+      console.log(`Skipping recurring commission: order ${orderCreatedAt} is before subscription ${sub.started_at}`)
+      return
+    }
+  }
 
   if (sub?.affiliate_code) {
     const { data: aff } = await supabase
@@ -256,8 +267,6 @@ Deno.serve(async (req) => {
     for (const order of orders) {
       const orderId = order.id
       const email = order.email || order.customer?.email || null
-      const existingEmailFromPayload = (existingPayment?.payload as any)?.email || null
-      const finalEmail = email || existingEmailFromPayload
       const amount = order.order_amount?.value
         ? (order.order_amount.value / 100)
         : (order.amount ? order.amount / 100 : 0)
@@ -265,8 +274,6 @@ Deno.serve(async (req) => {
       const state = (order.state || 'unknown').toUpperCase()
       const createdAt = order.created_at || new Date().toISOString()
       const description = order.description || ''
-
-      console.log(`Order ${orderId}: state=${state}, amount=${amount}, email=${finalEmail}, desc=${description}`)
 
       let planName = 'Unknown'
       const descLower = description.toLowerCase()
@@ -280,12 +287,15 @@ Deno.serve(async (req) => {
       else if (state === 'FAILED' || state === 'CANCELLED') dbStatus = 'failed'
       else if (state === 'AUTHORISED') dbStatus = 'authorised'
 
-      // Read existing payment to preserve affiliateCode
+      // Read existing payment FIRST to preserve email and affiliateCode
       const { data: existingPayment } = await supabaseAdmin
         .from('payments')
         .select('id, payload')
         .eq('revolut_order_id', orderId)
         .maybeSingle()
+
+      const existingEmailFromPayload = (existingPayment?.payload as any)?.email || null
+      const finalEmail = email || existingEmailFromPayload
 
       // Preserve affiliateCode from existing payload
       const existingAffiliateCode = (existingPayment?.payload as any)?.affiliateCode || null
@@ -394,7 +404,8 @@ Deno.serve(async (req) => {
             finalEmail,
             planName,
             amount,
-            existingAffiliateCode
+            existingAffiliateCode,
+            createdAt
           )
         }
       }
