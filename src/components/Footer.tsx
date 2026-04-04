@@ -7,6 +7,7 @@ const footerLinks = {
     { label: "Services", path: "/#services" },
     { label: "Pricing", path: "/#pricing" },
     { label: "Contact", path: "/contact" },
+    { label: "Affiliate Program", path: "/affiliate" },
   ],
   Shop: [
     { label: "Facebook Accounts", path: "/facebook-accounts" },

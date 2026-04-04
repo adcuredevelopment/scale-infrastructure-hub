@@ -17,6 +17,7 @@ import FacebookPages from "./pages/FacebookPages";
 import FacebookStructures from "./pages/FacebookStructures";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import Affiliate from "./pages/Affiliate";
 import AdminLogin from "./pages/AdminLogin";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/facebook-pages" element={<FacebookPages />} />
             <Route path="/facebook-structures" element={<FacebookStructures />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/affiliate" element={<Affiliate />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />
