@@ -186,7 +186,34 @@ Deno.serve(async (req) => {
           })
 
           console.log(`Synced customer & subscription for ${email}`)
-        }
+
+          // Affiliate referral tracking
+          const affiliateCode = prevPayload?.affiliateCode
+          if (affiliateCode && typeof affiliateCode === 'string') {
+            const { data: aff } = await supabase
+              .from('affiliates')
+              .select('id')
+              .eq('affiliate_code', affiliateCode)
+              .eq('status', 'active')
+              .maybeSingle()
+
+            if (aff) {
+              const commissionRate = 0.20
+              const commissionAmount = amount * commissionRate
+
+              await supabase.from('affiliate_referrals').insert({
+                affiliate_id: aff.id,
+                payment_id: existing.id,
+                customer_email: email,
+                plan_name: planName,
+                payment_amount: amount,
+                commission_rate: commissionRate,
+                commission_amount: commissionAmount,
+                status: 'pending',
+              })
+              console.log(`Affiliate referral created for code ${affiliateCode}, commission €${commissionAmount}`)
+            }
+          }
       }
 
       if (event === 'ORDER_PAYMENT_FAILED' || event === 'ORDER_PAYMENT_DECLINED') {
