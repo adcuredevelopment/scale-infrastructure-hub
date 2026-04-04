@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import {
@@ -7,6 +7,8 @@ import {
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, subDays, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { LastRefreshed } from "@/components/admin/LastRefreshed";
 
 const COLORS = ["hsl(213, 94%, 52%)", "hsl(150, 60%, 50%)", "hsl(40, 90%, 60%)", "hsl(0, 72%, 51%)"];
 
@@ -15,17 +17,12 @@ export default function AdminAnalytics() {
   const [planDist, setPlanDist] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     const { data: subs } = await supabase.from("subscriptions").select("*");
     const { data: payments } = await supabase.from("payments").select("*");
     const allSubs = subs || [];
     const allPayments = payments || [];
 
-    // Daily revenue (last 30 days)
     const daily: Record<string, number> = {};
     for (let i = 29; i >= 0; i--) {
       daily[format(subDays(new Date(), i), "MMM dd")] = 0;
@@ -38,14 +35,12 @@ export default function AdminAnalytics() {
     });
     setDailyData(Object.entries(daily).map(([date, revenue]) => ({ date, revenue })));
 
-    // Plan distribution
     const plans: Record<string, number> = {};
     allSubs.forEach((s) => {
       plans[s.plan_name] = (plans[s.plan_name] || 0) + 1;
     });
     setPlanDist(Object.entries(plans).map(([name, value]) => ({ name, value })));
 
-    // Monthly revenue (last 6 months)
     const monthly: { month: string; revenue: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = subMonths(new Date(), i);
@@ -60,13 +55,19 @@ export default function AdminAnalytics() {
       monthly.push({ month: format(d, "MMM yyyy"), revenue: rev });
     }
     setMonthlyData(monthly);
-  };
+  }, []);
+
+  useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
+  const { lastRefreshed } = useAutoRefresh(fetchAnalytics);
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Revenue Analytics</h1>
-        <p className="text-sm text-muted-foreground mt-1">Deep dive into your revenue data</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Revenue Analytics</h1>
+          <p className="text-sm text-muted-foreground mt-1">Deep dive into your revenue data</p>
+        </div>
+        <LastRefreshed timestamp={lastRefreshed} />
       </div>
 
       <Tabs defaultValue="daily" className="space-y-4">

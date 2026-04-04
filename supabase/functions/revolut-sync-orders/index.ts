@@ -256,6 +256,8 @@ Deno.serve(async (req) => {
     for (const order of orders) {
       const orderId = order.id
       const email = order.email || order.customer?.email || null
+      const existingEmailFromPayload = (existingPayment?.payload as any)?.email || null
+      const finalEmail = email || existingEmailFromPayload
       const amount = order.order_amount?.value
         ? (order.order_amount.value / 100)
         : (order.amount ? order.amount / 100 : 0)
@@ -264,7 +266,7 @@ Deno.serve(async (req) => {
       const createdAt = order.created_at || new Date().toISOString()
       const description = order.description || ''
 
-      console.log(`Order ${orderId}: state=${state}, amount=${amount}, email=${email}, desc=${description}`)
+      console.log(`Order ${orderId}: state=${state}, amount=${amount}, email=${finalEmail}, desc=${description}`)
 
       let planName = 'Unknown'
       const descLower = description.toLowerCase()
@@ -295,7 +297,7 @@ Deno.serve(async (req) => {
             plan: planName,
             amount,
             currency,
-            email,
+            email: finalEmail,
             revolut_state: state,
             synced_at: new Date().toISOString(),
             // Preserve affiliateCode
@@ -312,7 +314,7 @@ Deno.serve(async (req) => {
             plan: planName,
             amount,
             currency,
-            email,
+            email: finalEmail,
             revolut_state: state,
             synced_at: new Date().toISOString(),
           },
@@ -322,11 +324,11 @@ Deno.serve(async (req) => {
       }
 
       // Sync completed orders to customers & subscriptions + affiliate commissions
-      if (dbStatus === 'completed' && email) {
+      if (dbStatus === 'completed' && finalEmail) {
         const { data: existingCustomer } = await supabaseAdmin
           .from('customers')
           .select('id, total_spent, subscription_count')
-          .eq('email', email)
+          .eq('email', finalEmail)
           .maybeSingle()
 
         if (existingCustomer) {
@@ -347,7 +349,7 @@ Deno.serve(async (req) => {
           }
         } else {
           await supabaseAdmin.from('customers').insert({
-            email,
+            email: finalEmail,
             name: order.customer?.full_name || order.customer?.name || null,
             plan: planName,
             total_spent: amount,
@@ -370,7 +372,7 @@ Deno.serve(async (req) => {
           expiresAt.setMonth(expiresAt.getMonth() + 1)
 
           await supabaseAdmin.from('subscriptions').insert({
-            customer_email: email,
+            customer_email: finalEmail,
             customer_name: order.customer?.full_name || order.customer?.name || null,
             plan_name: planName,
             status: 'active',
@@ -389,7 +391,7 @@ Deno.serve(async (req) => {
           await handleAffiliateCommission(
             supabaseAdmin,
             paymentId,
-            email,
+            finalEmail,
             planName,
             amount,
             existingAffiliateCode

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { LastRefreshed } from "@/components/admin/LastRefreshed";
 
 export default function AdminOverview() {
   const [stats, setStats] = useState({
@@ -87,7 +88,7 @@ export default function AdminOverview() {
     setChartData(Object.entries(days).map(([date, amount]) => ({ date, amount })));
   }, []);
 
-  useAutoRefresh(fetchDashboardData);
+  const { lastRefreshed } = useAutoRefresh(fetchDashboardData);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -104,6 +105,7 @@ export default function AdminOverview() {
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Dashboard Overview</h1>
           <p className="text-sm text-muted-foreground mt-1">Real-time view of your business metrics</p>
+          <LastRefreshed timestamp={lastRefreshed} />
         </div>
         <Button onClick={handleSync} disabled={syncing} variant="outline" size="sm" className="gap-2">
           <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />

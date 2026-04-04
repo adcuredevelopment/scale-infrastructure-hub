@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { KPICard } from "@/components/admin/KPICard";
 import { toast } from "sonner";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { LastRefreshed } from "@/components/admin/LastRefreshed";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -88,7 +89,7 @@ export default function AdminAffiliates() {
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
-  useAutoRefresh(fetchAll);
+  const { lastRefreshed } = useAutoRefresh(fetchAll);
 
   const filtered = affiliates.filter((a) =>
     a.email?.toLowerCase().includes(search.toLowerCase()) ||
@@ -171,6 +172,7 @@ export default function AdminAffiliates() {
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Affiliates</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage affiliates, referrals and payouts</p>
+          <LastRefreshed timestamp={lastRefreshed} />
         </div>
         <Button onClick={() => setPayoutDialog(true)} size="sm">
           <Plus className="w-4 h-4 mr-2" /> Create Payout
