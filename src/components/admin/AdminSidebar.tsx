@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, CreditCard, TrendingUp, Bell, Settings, LogOut, ChevronLeft
+  LayoutDashboard, Users, CreditCard, TrendingUp, Bell, Settings, LogOut, ChevronLeft, Share2
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ const navItems = [
   { title: "Payments", url: "/admin/payments", icon: TrendingUp },
   { title: "Customers", url: "/admin/customers", icon: Users },
   { title: "Analytics", url: "/admin/analytics", icon: TrendingUp },
+  { title: "Affiliates", url: "/admin/affiliates", icon: Share2 },
   
   { title: "Notifications", url: "/admin/notifications", icon: Bell },
   { title: "Settings", url: "/admin/settings", icon: Settings },
