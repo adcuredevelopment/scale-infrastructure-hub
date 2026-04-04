@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { KPICard } from "@/components/admin/KPICard";
 import { Users, CreditCard, TrendingUp, Wallet, Bell, RefreshCw } from "lucide-react";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 export default function AdminOverview() {
   const [stats, setStats] = useState({
@@ -39,7 +40,7 @@ export default function AdminOverview() {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     const [subsRes, custRes, paymentsRes, notifsRes, allPaymentsRes] = await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("customers").select("*"),
@@ -84,7 +85,9 @@ export default function AdminOverview() {
         }
       });
     setChartData(Object.entries(days).map(([date, amount]) => ({ date, amount })));
-  };
+  }, []);
+
+  useAutoRefresh(fetchDashboardData);
 
   const statusColor = (status: string) => {
     switch (status) {

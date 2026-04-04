@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { Search, Filter } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<any[]>([]);
@@ -13,17 +14,17 @@ export default function AdminPayments() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPayments = async () => {
-      const { data } = await supabase
-        .from("payments")
-        .select("*")
-        .order("created_at", { ascending: false });
-      setPayments(data || []);
-      setLoading(false);
-    };
-    fetchPayments();
+  const fetchPayments = useCallback(async () => {
+    const { data } = await supabase
+      .from("payments")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setPayments(data || []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { fetchPayments(); }, [fetchPayments]);
+  useAutoRefresh(fetchPayments);
 
   const filtered = payments.filter((p) => {
     const payload = p.payload as any;

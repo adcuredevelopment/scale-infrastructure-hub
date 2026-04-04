@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -7,20 +7,21 @@ import { Search, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { KPICard } from "@/components/admin/KPICard";
 import { CreditCard, Wallet } from "lucide-react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
-      setCustomers(data || []);
-      setLoading(false);
-    };
-    fetch();
+  const fetchCustomers = useCallback(async () => {
+    const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
+    setCustomers(data || []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+  useAutoRefresh(fetchCustomers);
 
   const filtered = customers.filter((c) =>
     c.email?.toLowerCase().includes(search.toLowerCase()) ||

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { Search, Filter } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 export default function AdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -18,14 +19,17 @@ export default function AdminSubscriptions() {
     fetchSubscriptions();
   }, []);
 
-  const fetchSubscriptions = async () => {
+  const fetchSubscriptions = useCallback(async () => {
     const { data } = await supabase
       .from("subscriptions")
       .select("*")
       .order("created_at", { ascending: false });
     setSubscriptions(data || []);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => { fetchSubscriptions(); }, [fetchSubscriptions]);
+  useAutoRefresh(fetchSubscriptions);
 
   const filtered = subscriptions.filter((s) => {
     const matchesSearch =
