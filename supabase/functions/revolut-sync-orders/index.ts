@@ -349,7 +349,7 @@ Deno.serve(async (req) => {
           }
         } else {
           await supabaseAdmin.from('customers').insert({
-            email,
+            email: finalEmail,
             name: order.customer?.full_name || order.customer?.name || null,
             plan: planName,
             total_spent: amount,
