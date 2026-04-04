@@ -69,6 +69,11 @@ const App = () => (
             <Route path="/facebook-structures" element={<FacebookStructures />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/affiliate" element={<Affiliate />} />
+            <Route path="/affiliate/login" element={<AffiliateLogin />} />
+            <Route path="/affiliate/register" element={<AffiliateRegister />} />
+            <Route path="/affiliate" element={<AffiliateLayout />}>
+              <Route path="dashboard" element={<AffiliateDashboard />} />
+            </Route>
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />
