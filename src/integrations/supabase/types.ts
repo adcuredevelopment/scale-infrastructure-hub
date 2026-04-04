@@ -14,7 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      payments: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_ref: string | null
+          payload: Json | null
+          revolut_order_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_ref?: string | null
+          payload?: Json | null
+          revolut_order_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_ref?: string | null
+          payload?: Json | null
+          revolut_order_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

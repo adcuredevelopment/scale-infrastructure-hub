@@ -1,7 +1,10 @@
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const plans = [
   {
@@ -11,7 +14,8 @@ const plans = [
     period: "/mo",
     topUp: "5% Top-Up Fee",
     popular: false,
-    checkoutUrl: "https://checkout.revolut.com/subscription/0d6b1ba4-3865-4820-a4ae-44a1ae5c0bdb",
+    amount: 79,
+    currency: "EUR",
     features: [
       "24/7 Top-Up Service",
       "Mon–Sun Support (08:00-22:00)",
@@ -27,7 +31,8 @@ const plans = [
     period: "/mo",
     topUp: "3% Top-Up Fee",
     popular: true,
-    checkoutUrl: "https://checkout.revolut.com/subscription/38554aa4-d15d-4246-b1c7-9a6cb6c606a3",
+    amount: 119,
+    currency: "EUR",
     features: [
       "24/7 Top-Up Service",
       "Mon–Sun Support (08:00-22:00)",
@@ -43,7 +48,8 @@ const plans = [
     period: "/mo",
     topUp: "2% Top-Up Fee",
     popular: false,
-    checkoutUrl: "https://checkout.revolut.com/subscription/d905f7d4-fa9f-450d-b9e8-b2b397fc36a7",
+    amount: 149,
+    currency: "EUR",
     features: [
       "24/7 Top-Up Service",
       "Mon–Sun Support (08:00-22:00)",
@@ -55,6 +61,34 @@ const plans = [
 ];
 
 export const PricingSection = () => {
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleGetStarted = async (plan: typeof plans[0]) => {
+    setLoadingPlan(plan.name);
+    try {
+      const { data, error } = await supabase.functions.invoke('revolut-create-order', {
+        body: {
+          planName: plan.name,
+          amount: plan.amount,
+          currency: plan.currency,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      toast.error('Unable to start checkout. Please try again.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
   return (
     <section className="py-16 md:py-32 px-5 md:px-8 bg-card/30">
       <div className="container mx-auto">
@@ -106,29 +140,23 @@ export const PricingSection = () => {
                   ))}
                 </ul>
 
-                {plan.checkoutUrl ? (
-                  <a href={plan.checkoutUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
-                    <Button
-                      className={`w-full min-h-[48px] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
-                        plan.popular ? "glow-primary-sm" : ""
-                      }`}
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      Get Started
-                    </Button>
-                  </a>
-                ) : (
-                  <Link to="/contact">
-                    <Button
-                      className={`w-full min-h-[48px] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
-                        plan.popular ? "glow-primary-sm" : ""
-                      }`}
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      Get Started
-                    </Button>
-                  </Link>
-                )}
+                <Button
+                  onClick={() => handleGetStarted(plan)}
+                  disabled={loadingPlan === plan.name}
+                  className={`w-full min-h-[48px] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
+                    plan.popular ? "glow-primary-sm" : ""
+                  }`}
+                  variant={plan.popular ? "default" : "outline"}
+                >
+                  {loadingPlan === plan.name ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Get Started"
+                  )}
+                </Button>
               </div>
             </ScrollReveal>
           ))}

@@ -15,6 +15,7 @@ import BusinessManagers from "./pages/BusinessManagers";
 import FacebookPages from "./pages/FacebookPages";
 import FacebookStructures from "./pages/FacebookStructures";
 import NotFound from "./pages/NotFound";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/business-managers" element={<BusinessManagers />} />
           <Route path="/facebook-pages" element={<FacebookPages />} />
           <Route path="/facebook-structures" element={<FacebookStructures />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
