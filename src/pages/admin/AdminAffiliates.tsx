@@ -13,6 +13,7 @@ import { Search, Users, DollarSign, TrendingUp, CreditCard, Plus } from "lucide-
 import { motion } from "framer-motion";
 import { KPICard } from "@/components/admin/KPICard";
 import { toast } from "sonner";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
