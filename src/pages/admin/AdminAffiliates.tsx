@@ -102,7 +102,10 @@ export default function AdminAffiliates() {
   const totalPaidOut = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
 
   const getAffiliateEmail = (id: string) => affiliates.find((a) => a.id === id)?.email || "—";
-  const getAffiliateReferralCount = (id: string) => referrals.filter((r) => r.affiliate_id === id).length;
+  const getAffiliateReferralCount = (id: string) => {
+    const emails = new Set(referrals.filter((r) => r.affiliate_id === id && r.customer_email).map((r) => r.customer_email));
+    return emails.size;
+  };
   const getAffiliateEarnings = (id: string) => referrals.filter((r) => r.affiliate_id === id).reduce((s, r) => s + Number(r.commission_amount), 0);
 
   const handleCreatePayout = async () => {
