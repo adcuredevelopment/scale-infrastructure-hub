@@ -1,54 +1,85 @@
 
+## Admin Dashboard — Volledig Plan
 
-## Problem Analysis
+### Phase 1: Database & Auth Setup
 
-The payment workflow fails because:
+**New tables (migration):**
+- `profiles` — admin user profiles (user_id, display_name, avatar_url, role)
+- `user_roles` — role management (user_id, role enum: admin/moderator/user)
+- `subscriptions` — subscription tracking (customer_email, plan_name, status, started_at, expires_at, revolut_subscription_id)
+- `customers` — customer management (email, name, plan, status, created_at, total_spent)
+- `notifications` — system notifications (type, title, message, read, created_at)
+- `revenue_milestones` — gamification milestones (name, target_amount, achieved_at, badge_icon)
 
-1. **Starter plan** uses a direct Revolut checkout link that bypasses the edge function entirely — no DB record, no webhook, no redirect to `/payment-success`
-2. **All plans** need to use the Merchant API, but `revolut-create-order` requires JWT authentication — new paying users aren't logged in (this site has no auth)
-3. **Webhook** endpoint exists but Revolut may not be configured to call it
+**Auth:**
+- Admin login page with email/password
+- RLS policies: only authenticated admins can access dashboard data
+- Auto-confirm disabled, manual admin approval
 
-## Plan
+### Phase 2: Edge Functions (Revolut API)
 
-### 1. Make `revolut-create-order` work without authentication
+**New edge functions:**
+- `revolut-fetch-orders` — fetch all orders/transactions from Revolut Merchant API
+- `revolut-fetch-subscriptions` — fetch subscription data from Revolut
+- `revolut-manage-subscription` — cancel/upgrade subscriptions via Revolut API
 
-Since paying users are anonymous visitors (not logged into your site), the edge function must accept unauthenticated requests. We'll:
-- Remove the JWT/auth requirement from the edge function
-- Add rate-limiting protection via input validation (email required, amount must match known plans)
-- Add a server-side allowlist of valid plan configurations so callers can't create arbitrary orders
-- Store payments with `user_id = null` (already nullable)
+**Update existing:**
+- `revolut-webhook` — sync incoming payment events to subscriptions & customers tables
 
-### 2. Update all 3 plans to use the Merchant API
+### Phase 3: Dashboard Pages & Components
 
-- Remove the `checkoutUrl` from Starter Advertiser
-- Add `amount: 79` to Starter plan config
-- All plans will call the edge function, which creates a Revolut order and returns a checkout URL
+**Route: `/admin` (protected)**
 
-### 3. Add email collection before checkout
+1. **Overview Dashboard (`/admin`)**
+   - KPI cards: MRR, active subscribers, churn rate, total revenue
+   - Revenue chart (daily/weekly/monthly toggle)
+   - Recent transactions table
+   - Gamification section: milestone progress bars, achievement badges, streak counter
 
-Since we need the user's email for the Revolut order and for post-payment portal signup:
-- Add a simple email input dialog/modal that appears when clicking "Get Started"
-- Email is passed to the edge function and included in the Revolut order
-- Email is also passed as a query param to the success page for display
+2. **Subscriptions (`/admin/subscriptions`)**
+   - Table: all subscriptions with filters (status, plan, date range)
+   - Actions: view details, cancel, upgrade
+   - Subscription growth chart
 
-### 4. Verify webhook configuration
+3. **Payments (`/admin/payments`)**
+   - Transaction history table with filters
+   - Status badges (completed, pending, failed, refunded)
+   - Export functionality
 
-- Confirm the webhook edge function is deployed
-- Provide the webhook URL you need to register in Revolut Business dashboard:
-  `https://uwncaohygevjvtgkazvv.supabase.co/functions/v1/revolut-webhook`
+4. **Customers (`/admin/customers`)**
+   - Customer list with search & filters
+   - Customer detail view (payment history, subscription info)
+   - Lifetime value tracking
 
-### Technical details
+5. **Notifications (`/admin/notifications`)**
+   - Failed payment alerts
+   - Renewal reminders
+   - System notifications
+   - Mark as read/unread
 
-**Edge function changes (`revolut-create-order`):**
-- Remove `getClaims()` auth check
-- Add server-side plan validation (only allow known plan/amount/currency combos)
-- Require email field
-- Keep service-role insert for DB tracking
+6. **Revenue Analytics (`/admin/analytics`)**
+   - Revenue breakdown charts (recharts)
+   - Cohort analysis
+   - Plan distribution pie chart
+   - Growth trends
 
-**Frontend changes (`PricingSection.tsx`):**
-- Remove `checkoutUrl` from Starter plan, add `amount: 79`
-- Add email collection dialog before calling the edge function
-- Pass email to success page via query param
+7. **Gamification Panel**
+   - Revenue milestones with progress bars
+   - Achievement badges (first €1K, first €10K, etc.)
+   - Monthly streak tracking
+   - Goal setting & rewards
 
-**No database changes needed** — `user_id` is already nullable.
+### Phase 4: UI/UX
 
+- Sidebar navigation with collapsible menu
+- Dark theme matching existing brand
+- Smooth framer-motion animations
+- Responsive mobile layout
+- Real-time data refresh
+
+### Tech Stack
+- React + TypeScript + Tailwind CSS (existing)
+- Recharts for charts/graphs
+- Framer Motion for animations
+- Lovable Cloud for backend
+- Revolut Merchant API for live data

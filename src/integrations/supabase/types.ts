@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      customers: {
+        Row: {
+          created_at: string
+          email: string
+          first_payment_at: string | null
+          id: string
+          last_payment_at: string | null
+          name: string | null
+          plan: string | null
+          status: string
+          subscription_count: number
+          total_spent: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_payment_at?: string | null
+          id?: string
+          last_payment_at?: string | null
+          name?: string | null
+          plan?: string | null
+          status?: string
+          subscription_count?: number
+          total_spent?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_payment_at?: string | null
+          id?: string
+          last_payment_at?: string | null
+          name?: string | null
+          plan?: string | null
+          status?: string
+          subscription_count?: number
+          total_spent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          read: boolean
+          related_entity_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          read?: boolean
+          related_entity_id?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          read?: boolean
+          related_entity_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           created_at: string
@@ -44,15 +116,147 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      revenue_milestones: {
+        Row: {
+          achieved: boolean
+          achieved_at: string | null
+          badge_icon: string
+          created_at: string
+          current_amount: number
+          id: string
+          name: string
+          target_amount: number
+        }
+        Insert: {
+          achieved?: boolean
+          achieved_at?: string | null
+          badge_icon?: string
+          created_at?: string
+          current_amount?: number
+          id?: string
+          name: string
+          target_amount: number
+        }
+        Update: {
+          achieved?: boolean
+          achieved_at?: string | null
+          badge_icon?: string
+          created_at?: string
+          current_amount?: number
+          id?: string
+          name?: string
+          target_amount?: number
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          cancelled_at: string | null
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_name: string | null
+          expires_at: string | null
+          id: string
+          plan_name: string
+          revolut_subscription_id: string | null
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_name?: string | null
+          expires_at?: string | null
+          id?: string
+          plan_name: string
+          revolut_subscription_id?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_name?: string | null
+          expires_at?: string | null
+          id?: string
+          plan_name?: string
+          revolut_subscription_id?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -179,6 +383,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
