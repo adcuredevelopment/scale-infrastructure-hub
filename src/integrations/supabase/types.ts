@@ -14,6 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_payouts: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          payout_date: string | null
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          payout_date?: string | null
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          payout_date?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payouts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_referrals: {
+        Row: {
+          affiliate_id: string
+          commission_amount: number
+          commission_rate: number
+          created_at: string
+          customer_email: string | null
+          id: string
+          payment_amount: number
+          payment_id: string | null
+          plan_name: string | null
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          customer_email?: string | null
+          id?: string
+          payment_amount?: number
+          payment_id?: string | null
+          plan_name?: string | null
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          customer_email?: string | null
+          id?: string
+          payment_amount?: number
+          payment_id?: string | null
+          plan_name?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_referrals_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          affiliate_code: string
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          payout_details: string | null
+          payout_method: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          affiliate_code: string
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id?: string
+          payout_details?: string | null
+          payout_method?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          affiliate_code?: string
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          payout_details?: string | null
+          payout_method?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
@@ -247,6 +381,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_affiliate_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
