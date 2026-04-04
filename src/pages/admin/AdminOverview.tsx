@@ -105,6 +105,7 @@ export default function AdminOverview() {
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Dashboard Overview</h1>
           <p className="text-sm text-muted-foreground mt-1">Real-time view of your business metrics</p>
+          <LastRefreshed timestamp={lastRefreshed} />
         </div>
         <Button onClick={handleSync} disabled={syncing} variant="outline" size="sm" className="gap-2">
           <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />

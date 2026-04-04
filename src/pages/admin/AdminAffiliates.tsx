@@ -171,6 +171,7 @@ export default function AdminAffiliates() {
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Affiliates</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage affiliates, referrals and payouts</p>
+          <LastRefreshed timestamp={lastRefreshed} />
         </div>
         <Button onClick={() => setPayoutDialog(true)} size="sm">
           <Plus className="w-4 h-4 mr-2" /> Create Payout

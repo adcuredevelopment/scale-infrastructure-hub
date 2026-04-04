@@ -52,9 +52,12 @@ export default function AdminSubscriptions() {
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Subscriptions</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage all customer subscriptions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Subscriptions</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage all customer subscriptions</p>
+        </div>
+        <LastRefreshed timestamp={lastRefreshed} />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
