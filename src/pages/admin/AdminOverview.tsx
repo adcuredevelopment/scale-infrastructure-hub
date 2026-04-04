@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { KPICard } from "@/components/admin/KPICard";
-import { Users, CreditCard, TrendingUp, Wallet, Bell } from "lucide-react";
+import { Users, CreditCard, TrendingUp, Wallet, Bell, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function AdminOverview() {
   const [stats, setStats] = useState({
@@ -17,10 +19,25 @@ export default function AdminOverview() {
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('revolut-sync-orders');
+      if (error) throw error;
+      toast.success(`Synced! ${data.new_synced} new, ${data.updated} updated from ${data.total_orders} orders`);
+      await fetchDashboardData();
+    } catch (err: any) {
+      toast.error('Sync failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const fetchDashboardData = async () => {
     const [subsRes, custRes, paymentsRes, notifsRes] = await Promise.all([
@@ -76,9 +93,15 @@ export default function AdminOverview() {
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Dashboard Overview</h1>
-        <p className="text-sm text-muted-foreground mt-1">Real-time view of your business metrics</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Dashboard Overview</h1>
+          <p className="text-sm text-muted-foreground mt-1">Real-time view of your business metrics</p>
+        </div>
+        <Button onClick={handleSync} disabled={syncing} variant="outline" size="sm" className="gap-2">
+          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? 'Syncing...' : 'Sync Revolut'}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
