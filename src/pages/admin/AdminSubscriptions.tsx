@@ -30,7 +30,7 @@ export default function AdminSubscriptions() {
   }, []);
 
   useEffect(() => { fetchSubscriptions(); }, [fetchSubscriptions]);
-  useAutoRefresh(fetchSubscriptions);
+  const { lastRefreshed } = useAutoRefresh(fetchSubscriptions);
 
   const filtered = subscriptions.filter((s) => {
     const matchesSearch =
