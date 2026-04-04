@@ -7,6 +7,7 @@ import { Search, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { KPICard } from "@/components/admin/KPICard";
 import { CreditCard, Wallet } from "lucide-react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState<any[]>([]);
