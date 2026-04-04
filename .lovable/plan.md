@@ -1,85 +1,87 @@
 
-## Admin Dashboard — Volledig Plan
 
-### Phase 1: Database & Auth Setup
+## Affiliate Dashboard — Plan
 
-**New tables (migration):**
-- `profiles` — admin user profiles (user_id, display_name, avatar_url, role)
-- `user_roles` — role management (user_id, role enum: admin/moderator/user)
-- `subscriptions` — subscription tracking (customer_email, plan_name, status, started_at, expires_at, revolut_subscription_id)
-- `customers` — customer management (email, name, plan, status, created_at, total_spent)
-- `notifications` — system notifications (type, title, message, read, created_at)
-- `revenue_milestones` — gamification milestones (name, target_amount, achieved_at, badge_icon)
+### Overview
+Build a full affiliate tracking system: affiliates register/login, get a unique referral link, and earn commissions on payments made through that link. They see earnings, graphs, and payout history on a dedicated dashboard.
 
-**Auth:**
-- Admin login page with email/password
-- RLS policies: only authenticated admins can access dashboard data
-- Auto-confirm disabled, manual admin approval
+### Phase 1: Database Tables (Migration)
 
-### Phase 2: Edge Functions (Revolut API)
+**New tables:**
 
-**New edge functions:**
-- `revolut-fetch-orders` — fetch all orders/transactions from Revolut Merchant API
-- `revolut-fetch-subscriptions` — fetch subscription data from Revolut
-- `revolut-manage-subscription` — cancel/upgrade subscriptions via Revolut API
+1. **`affiliates`** — stores affiliate accounts
+   - `id` (uuid, PK), `user_id` (uuid, references auth.users), `affiliate_code` (text, unique — used in referral URLs), `display_name`, `email`, `payout_method` (text), `payout_details` (text), `status` (active/suspended), `created_at`, `updated_at`
 
-**Update existing:**
-- `revolut-webhook` — sync incoming payment events to subscriptions & customers tables
+2. **`affiliate_referrals`** — tracks each referred payment
+   - `id` (uuid, PK), `affiliate_id` (uuid, FK → affiliates), `payment_id` (uuid, FK → payments), `customer_email`, `plan_name`, `payment_amount` (numeric), `commission_rate` (numeric, default 0.20), `commission_amount` (numeric), `status` (pending/approved/paid), `created_at`
 
-### Phase 3: Dashboard Pages & Components
+3. **`affiliate_payouts`** — payout records
+   - `id` (uuid, PK), `affiliate_id` (uuid, FK → affiliates), `amount` (numeric), `currency` (text, default EUR), `status` (pending/processing/paid/failed), `payout_date`, `notes`, `created_at`
 
-**Route: `/admin` (protected)**
+**RLS policies:**
+- Affiliates can only read their own data (affiliate record, referrals, payouts) via `auth.uid() = user_id`
+- Admins get full access via `has_role()`
+- Service role gets full access for edge functions
 
-1. **Overview Dashboard (`/admin`)**
-   - KPI cards: MRR, active subscribers, churn rate, total revenue
-   - Revenue chart (daily/weekly/monthly toggle)
-   - Recent transactions table
-   - Gamification section: milestone progress bars, achievement badges, streak counter
+### Phase 2: Referral Link Tracking
 
-2. **Subscriptions (`/admin/subscriptions`)**
-   - Table: all subscriptions with filters (status, plan, date range)
-   - Actions: view details, cancel, upgrade
-   - Subscription growth chart
+**How it works:**
+- Each affiliate gets a unique code (e.g. `adcure.agency/?ref=ABC123`)
+- When a visitor lands with `?ref=`, the code is stored in `localStorage` (persists 30 days)
+- At checkout (PricingSection), the `ref` code is sent along with `planName` and `email` to `revolut-create-order`
 
-3. **Payments (`/admin/payments`)**
-   - Transaction history table with filters
-   - Status badges (completed, pending, failed, refunded)
-   - Export functionality
+**Edge function changes:**
+- **`revolut-create-order`**: Accept optional `affiliateCode` param, store it in the payment `payload`
+- **`revolut-webhook`**: On `ORDER_COMPLETED`, check if payment has an `affiliateCode` in payload → look up affiliate → create `affiliate_referrals` record with calculated commission
 
-4. **Customers (`/admin/customers`)**
-   - Customer list with search & filters
-   - Customer detail view (payment history, subscription info)
-   - Lifetime value tracking
+### Phase 3: Affiliate Auth
 
-5. **Notifications (`/admin/notifications`)**
-   - Failed payment alerts
-   - Renewal reminders
-   - System notifications
-   - Mark as read/unread
+- Affiliates register and login via standard email/password auth (same Supabase auth)
+- On signup, create an `affiliates` record with a generated unique code
+- Route: `/affiliate/dashboard` (protected, requires authenticated affiliate)
+- Route: `/affiliate/login` and `/affiliate/register`
 
-6. **Revenue Analytics (`/admin/analytics`)**
-   - Revenue breakdown charts (recharts)
-   - Cohort analysis
-   - Plan distribution pie chart
-   - Growth trends
+### Phase 4: Affiliate Dashboard Page
 
-7. **Gamification Panel**
-   - Revenue milestones with progress bars
-   - Achievement badges (first €1K, first €10K, etc.)
-   - Monthly streak tracking
-   - Goal setting & rewards
+Single page at `/affiliate/dashboard` containing:
 
-### Phase 4: UI/UX
+1. **KPI Cards** — Total earnings, pending payouts, total referrals, conversion rate
+2. **Earnings Chart** — Line graph (Recharts) showing commissions over time (monthly)
+3. **Referral Link** — Copyable affiliate link with share button
+4. **Recent Referrals Table** — Customer email (masked), plan, commission, status, date
+5. **Payouts Section** — Table of payouts with status badges (pending/processing/paid)
 
-- Sidebar navigation with collapsible menu
-- Dark theme matching existing brand
-- Smooth framer-motion animations
-- Responsive mobile layout
-- Real-time data refresh
+### Phase 5: Admin Integration
 
-### Tech Stack
-- React + TypeScript + Tailwind CSS (existing)
-- Recharts for charts/graphs
-- Framer Motion for animations
-- Lovable Cloud for backend
-- Revolut Merchant API for live data
+- Add affiliate management to the existing admin dashboard (view affiliates, approve payouts, see referral stats)
+- Admin can create payouts for affiliates and update payout status
+
+### Technical Details
+
+- Referral code capture: `useEffect` in App.tsx reads `?ref=` from URL and stores in localStorage with a 30-day expiry
+- Commission calculation: 20% recurring, done server-side in the webhook
+- The affiliate dashboard uses the same dark theme and design system as the admin dashboard
+- Charts use Recharts (already installed)
+- No new edge functions needed beyond modifying existing ones
+
+### Files to Create/Modify
+
+**New files:**
+- `src/pages/affiliate/AffiliateDashboard.tsx`
+- `src/pages/affiliate/AffiliateLogin.tsx`
+- `src/pages/affiliate/AffiliateRegister.tsx`
+- `src/components/affiliate/AffiliateLayout.tsx`
+- `src/components/affiliate/EarningsChart.tsx`
+- `src/components/affiliate/ReferralLink.tsx`
+- `src/components/affiliate/ReferralsTable.tsx`
+- `src/components/affiliate/PayoutsTable.tsx`
+- `src/hooks/useAffiliate.ts`
+
+**Modified files:**
+- `src/App.tsx` — add affiliate routes
+- `src/components/home/PricingSection.tsx` — pass affiliate code to checkout
+- `supabase/functions/revolut-create-order/index.ts` — accept & store affiliate code
+- `supabase/functions/revolut-webhook/index.ts` — create referral on completed payment
+- `src/pages/Affiliate.tsx` — update CTA buttons to link to register/login
+- Database migration for new tables + RLS
+
