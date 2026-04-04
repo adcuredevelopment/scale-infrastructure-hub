@@ -53,7 +53,6 @@ export default function AdminOverview() {
     const payments = paymentsRes.data || [];
     const allPayments = allPaymentsRes.data || [];
     const notifs = notifsRes.data || [];
-    const notifs = notifsRes.data || [];
 
     const activeSubs = subs.filter((s) => s.status === "active").length;
     const totalRevenue = subs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
