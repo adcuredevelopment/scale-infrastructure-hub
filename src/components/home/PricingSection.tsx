@@ -61,6 +61,34 @@ const plans = [
 ];
 
 export const PricingSection = () => {
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleGetStarted = async (plan: typeof plans[0]) => {
+    setLoadingPlan(plan.name);
+    try {
+      const { data, error } = await supabase.functions.invoke('revolut-create-order', {
+        body: {
+          planName: plan.name,
+          amount: plan.amount,
+          currency: plan.currency,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      toast.error('Unable to start checkout. Please try again.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
   return (
     <section className="py-16 md:py-32 px-5 md:px-8 bg-card/30">
       <div className="container mx-auto">
@@ -112,29 +140,23 @@ export const PricingSection = () => {
                   ))}
                 </ul>
 
-                {plan.checkoutUrl ? (
-                  <a href={plan.checkoutUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
-                    <Button
-                      className={`w-full min-h-[48px] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
-                        plan.popular ? "glow-primary-sm" : ""
-                      }`}
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      Get Started
-                    </Button>
-                  </a>
-                ) : (
-                  <Link to="/contact">
-                    <Button
-                      className={`w-full min-h-[48px] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
-                        plan.popular ? "glow-primary-sm" : ""
-                      }`}
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      Get Started
-                    </Button>
-                  </Link>
-                )}
+                <Button
+                  onClick={() => handleGetStarted(plan)}
+                  disabled={loadingPlan === plan.name}
+                  className={`w-full min-h-[48px] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
+                    plan.popular ? "glow-primary-sm" : ""
+                  }`}
+                  variant={plan.popular ? "default" : "outline"}
+                >
+                  {loadingPlan === plan.name ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Get Started"
+                  )}
+                </Button>
               </div>
             </ScrollReveal>
           ))}
