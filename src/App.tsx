@@ -15,6 +15,7 @@ import BusinessManagers from "./pages/BusinessManagers";
 import FacebookPages from "./pages/FacebookPages";
 import FacebookStructures from "./pages/FacebookStructures";
 import NotFound from "./pages/NotFound";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
