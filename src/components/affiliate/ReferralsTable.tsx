@@ -1,6 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import type { AffiliateReferral } from "@/hooks/useAffiliate";
 
+const typeLabels: Record<string, string> = {
+  signup_bonus: "Bonus",
+  recurring: "Recurring",
+};
+
 interface Props {
   referrals: AffiliateReferral[];
 }
