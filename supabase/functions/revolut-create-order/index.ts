@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
         currency: plan.currency,
         email,
         revolut_state: data.state,
+        affiliateCode: (typeof affiliateCode === 'string' && affiliateCode.length <= 20) ? affiliateCode : null,
       },
     })
 

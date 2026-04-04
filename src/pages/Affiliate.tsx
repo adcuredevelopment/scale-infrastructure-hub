@@ -156,7 +156,7 @@ export default function Affiliate() {
           <ScrollReveal delay={0.3}>
             <div className="text-center mt-12">
               <Button size="lg" className="min-h-[48px] glow-primary-sm" asChild>
-                <a href="mailto:affiliate@adcure.agency">
+                <a href="/affiliate/register">
                   Apply Now
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </a>

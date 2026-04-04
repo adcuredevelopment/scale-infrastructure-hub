@@ -103,6 +103,19 @@ export const PricingSection = () => {
         body: JSON.stringify({
           planName: plan.name,
           email: trimmed,
+          affiliateCode: (() => {
+            try {
+              const stored = localStorage.getItem("adcure_ref");
+              if (!stored) return undefined;
+              const { code, ts } = JSON.parse(stored);
+              // 30-day expiry
+              if (Date.now() - ts > 30 * 24 * 60 * 60 * 1000) {
+                localStorage.removeItem("adcure_ref");
+                return undefined;
+              }
+              return code;
+            } catch { return undefined; }
+          })(),
         }),
       });
 
