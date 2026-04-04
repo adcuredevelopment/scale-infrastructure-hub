@@ -88,7 +88,7 @@ export default function AdminOverview() {
     setChartData(Object.entries(days).map(([date, amount]) => ({ date, amount })));
   }, []);
 
-  useAutoRefresh(fetchDashboardData);
+  const { lastRefreshed } = useAutoRefresh(fetchDashboardData);
 
   const statusColor = (status: string) => {
     switch (status) {
