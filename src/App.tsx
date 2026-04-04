@@ -25,7 +25,7 @@ import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminGamification from "./pages/admin/AdminGamification";
+
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSettings from "./pages/admin/AdminSettings";
 
@@ -59,7 +59,7 @@ const App = () => (
               <Route path="payments" element={<AdminPayments />} />
               <Route path="customers" element={<AdminCustomers />} />
               <Route path="analytics" element={<AdminAnalytics />} />
-              <Route path="gamification" element={<AdminGamification />} />
+              
               <Route path="notifications" element={<AdminNotifications />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
