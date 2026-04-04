@@ -391,7 +391,7 @@ Deno.serve(async (req) => {
           await handleAffiliateCommission(
             supabaseAdmin,
             paymentId,
-            email,
+            finalEmail,
             planName,
             amount,
             existingAffiliateCode
