@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AuthProvider } from "@/hooks/useAuth";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
@@ -28,8 +29,23 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
+import AffiliateLogin from "./pages/affiliate/AffiliateLogin";
+import AffiliateRegister from "./pages/affiliate/AffiliateRegister";
+import { AffiliateLayout } from "@/components/affiliate/AffiliateLayout";
 
 const queryClient = new QueryClient();
+
+function RefCapture() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      localStorage.setItem("adcure_ref", JSON.stringify({ code: ref, ts: Date.now() }));
+    }
+  }, []);
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -39,6 +55,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ScrollToTop />
+          <RefCapture />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/contact" element={<Contact />} />
@@ -52,6 +69,11 @@ const App = () => (
             <Route path="/facebook-structures" element={<FacebookStructures />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/affiliate" element={<Affiliate />} />
+            <Route path="/affiliate/login" element={<AffiliateLogin />} />
+            <Route path="/affiliate/register" element={<AffiliateRegister />} />
+            <Route path="/affiliate/dashboard" element={<AffiliateLayout />}>
+              <Route index element={<AffiliateDashboard />} />
+            </Route>
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />

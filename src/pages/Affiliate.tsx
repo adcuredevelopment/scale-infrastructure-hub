@@ -57,10 +57,10 @@ export default function Affiliate() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button size="lg" className="min-h-[48px] glow-primary-sm" asChild>
-                <a href="mailto:affiliate@adcure.agency">Apply Now</a>
+                <a href="/affiliate/register">Apply Now</a>
               </Button>
               <Button size="lg" variant="outline" className="min-h-[48px]" asChild>
-                <a href="https://portal.adcure.agency/login" target="_blank" rel="noopener noreferrer">
+                <a href="/affiliate/login">
                   <LogIn className="w-4 h-4 mr-2" />
                   Affiliate Login
                 </a>
@@ -156,7 +156,7 @@ export default function Affiliate() {
           <ScrollReveal delay={0.3}>
             <div className="text-center mt-12">
               <Button size="lg" className="min-h-[48px] glow-primary-sm" asChild>
-                <a href="mailto:affiliate@adcure.agency">
+                <a href="/affiliate/register">
                   Apply Now
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </a>

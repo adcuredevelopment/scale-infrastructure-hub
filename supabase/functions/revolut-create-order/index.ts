@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   try {
     // --- Validate input ---
     const body = await req.json()
-    const { planName, email } = body
+    const { planName, email, affiliateCode } = body
 
     if (!planName || typeof planName !== 'string') {
       return new Response(
@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
         currency: plan.currency,
         email,
         revolut_state: data.state,
+        affiliateCode: (typeof affiliateCode === 'string' && affiliateCode.length <= 20) ? affiliateCode : null,
       },
     })
 
