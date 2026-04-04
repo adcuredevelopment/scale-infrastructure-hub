@@ -35,6 +35,7 @@ export function ReferralsTable({ referrals }: Props) {
               <tr className="text-muted-foreground text-xs border-b border-border">
                 <th className="text-left py-2 font-medium">Customer</th>
                 <th className="text-left py-2 font-medium">Plan</th>
+                <th className="text-center py-2 font-medium">Type</th>
                 <th className="text-right py-2 font-medium">Commission</th>
                 <th className="text-center py-2 font-medium">Status</th>
                 <th className="text-right py-2 font-medium">Date</th>
