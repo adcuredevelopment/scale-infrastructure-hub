@@ -83,7 +83,11 @@ Deno.serve(async (req) => {
       })
     }
 
-    const orders = await revolutRes.json()
+    const rawData = await revolutRes.json()
+    console.log('Revolut response type:', typeof rawData, 'isArray:', Array.isArray(rawData), 'keys:', rawData ? Object.keys(rawData) : 'null')
+    
+    // Revolut may return array directly or wrapped in an object
+    const orders = Array.isArray(rawData) ? rawData : (rawData?.orders || rawData?.items || [rawData]).filter(Boolean)
 
     // Use service role for DB writes
     const supabaseAdmin = createClient(
