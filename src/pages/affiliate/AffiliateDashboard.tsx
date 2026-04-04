@@ -76,10 +76,10 @@ export default function AffiliateDashboard() {
 
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6">
+            <KPI icon={Users} label="Total Referrals" value={String(totalReferrals)} />
             <KPI icon={DollarSign} label="Total Earnings" value={`€${totalEarnings.toFixed(2)}`} />
             <KPI icon={Gift} label="Signup Bonuses" value={`€${bonusEarnings.toFixed(2)}`} />
             <KPI icon={Clock} label="Pending" value={`€${pendingEarnings.toFixed(2)}`} />
-            <KPI icon={Users} label="Total Referrals" value={String(totalReferrals)} />
             <KPI icon={CreditCard} label="Paid Out" value={`€${totalPaidOut.toFixed(2)}`} />
           </div>
 
