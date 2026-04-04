@@ -94,11 +94,21 @@ async function handleAffiliateCommission(
   // Case 2: Recurring payment — check if customer has active subscription with affiliate_code
   const { data: sub } = await supabase
     .from('subscriptions')
-    .select('affiliate_code')
+    .select('affiliate_code, started_at')
     .eq('customer_email', email)
     .eq('status', 'active')
     .not('affiliate_code', 'is', null)
     .maybeSingle()
+
+  // Date guard: only attribute if order was created after the affiliate was linked
+  if (sub?.affiliate_code && orderCreatedAt) {
+    const orderDate = new Date(orderCreatedAt)
+    const subStartDate = new Date(sub.started_at)
+    if (orderDate < subStartDate) {
+      console.log(`Skipping recurring commission: order ${orderCreatedAt} is before subscription ${sub.started_at}`)
+      return
+    }
+  }
 
   if (sub?.affiliate_code) {
     const { data: aff } = await supabase
