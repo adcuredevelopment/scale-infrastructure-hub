@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AuthProvider } from "@/hooks/useAuth";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
