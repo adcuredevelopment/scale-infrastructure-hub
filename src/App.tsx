@@ -17,6 +17,7 @@ import FacebookPages from "./pages/FacebookPages";
 import FacebookStructures from "./pages/FacebookStructures";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import Affiliate from "./pages/Affiliate";
 import AdminLogin from "./pages/AdminLogin";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
