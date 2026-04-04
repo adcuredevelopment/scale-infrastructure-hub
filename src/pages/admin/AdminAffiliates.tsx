@@ -37,6 +37,7 @@ interface Referral {
   commission_rate: number;
   commission_amount: number;
   status: string;
+  referral_type: string;
   created_at: string;
 }
 
