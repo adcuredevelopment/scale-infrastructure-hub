@@ -5,7 +5,7 @@ import { ReferralsTable } from "@/components/affiliate/ReferralsTable";
 import { PayoutsTable } from "@/components/affiliate/PayoutsTable";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { DollarSign, Clock, Users, CreditCard, LogOut, Loader2 } from "lucide-react";
+import { DollarSign, Clock, Users, CreditCard, LogOut, Loader2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
