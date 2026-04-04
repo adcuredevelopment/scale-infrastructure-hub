@@ -101,23 +101,24 @@ Deno.serve(async (req) => {
     for (const order of orders) {
       const orderId = order.id
       const email = order.email || order.customer?.email || null
-      const amount = (order.order_amount?.value || 0) / 100
-      const currency = order.order_amount?.currency || 'EUR'
-      const state = order.state || 'unknown'
+      // Revolut uses order_amount.value in minor units, OR amount in major units
+      const amount = order.order_amount?.value 
+        ? (order.order_amount.value / 100) 
+        : (order.amount ? order.amount / 100 : 0)
+      const currency = order.order_amount?.currency || order.currency || 'EUR'
+      const state = (order.state || 'unknown').toUpperCase()
       const createdAt = order.created_at || new Date().toISOString()
       const description = order.description || ''
 
+      console.log(`Order ${orderId}: state=${state}, amount=${amount}, email=${email}, desc=${description}`)
+
       // Determine plan from description or merchant ref
       let planName = 'Unknown'
-      if (description.includes('Starter')) planName = 'Starter Advertiser'
-      else if (description.includes('Growth')) planName = 'Growth Advertiser'
-      else if (description.includes('Advanced')) planName = 'Advanced Advertiser'
-      else if (order.merchant_order_ext_ref) {
-        const ref = order.merchant_order_ext_ref
-        if (ref.includes('starter')) planName = 'Starter Advertiser'
-        else if (ref.includes('growth')) planName = 'Growth Advertiser'
-        else if (ref.includes('advanced')) planName = 'Advanced Advertiser'
-      }
+      const descLower = description.toLowerCase()
+      const refLower = (order.merchant_order_ext_ref || '').toLowerCase()
+      if (descLower.includes('starter') || refLower.includes('starter')) planName = 'Starter Advertiser'
+      else if (descLower.includes('growth') || refLower.includes('growth')) planName = 'Growth Advertiser'
+      else if (descLower.includes('advanced') || refLower.includes('advanced')) planName = 'Advanced Advertiser'
 
       let dbStatus = 'pending'
       if (state === 'COMPLETED') dbStatus = 'completed'
