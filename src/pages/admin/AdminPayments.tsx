@@ -25,7 +25,7 @@ export default function AdminPayments() {
   }, []);
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
-  useAutoRefresh(fetchPayments);
+  const { lastRefreshed } = useAutoRefresh(fetchPayments);
 
   const filtered = payments.filter((p) => {
     const payload = p.payload as any;
