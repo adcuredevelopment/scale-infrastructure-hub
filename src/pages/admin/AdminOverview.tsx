@@ -40,11 +40,12 @@ export default function AdminOverview() {
   };
 
   const fetchDashboardData = async () => {
-    const [subsRes, custRes, paymentsRes, notifsRes] = await Promise.all([
+    const [subsRes, custRes, paymentsRes, notifsRes, allPaymentsRes] = await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("customers").select("*"),
       supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(10),
       supabase.from("notifications").select("*").eq("read", false).order("created_at", { ascending: false }).limit(5),
+      supabase.from("payments").select("*").order("created_at", { ascending: false }),
     ]);
 
     const subs = subsRes.data || [];
