@@ -2,6 +2,7 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import { CreditCard, UserCheck, Rocket, ArrowLeft, ArrowRight } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { stepMockups } from "./StepMockups";
 
 const steps = [
   {
