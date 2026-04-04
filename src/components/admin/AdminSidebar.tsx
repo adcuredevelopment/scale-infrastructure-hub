@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, CreditCard, TrendingUp, Bell, Trophy, Settings, LogOut, ChevronLeft
+  LayoutDashboard, Users, CreditCard, TrendingUp, Bell, Settings, LogOut, ChevronLeft
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
