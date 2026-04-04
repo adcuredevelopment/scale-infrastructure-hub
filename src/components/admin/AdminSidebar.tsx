@@ -14,6 +14,7 @@ const navItems = [
   { title: "Payments", url: "/admin/payments", icon: TrendingUp },
   { title: "Customers", url: "/admin/customers", icon: Users },
   { title: "Analytics", url: "/admin/analytics", icon: TrendingUp },
+  { title: "Affiliates", url: "/admin/affiliates", icon: Share2 },
   
   { title: "Notifications", url: "/admin/notifications", icon: Bell },
   { title: "Settings", url: "/admin/settings", icon: Settings },
