@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
       const createdAt = order.created_at || new Date().toISOString()
       const description = order.description || ''
 
-      console.log(`Order ${orderId}: state=${state}, amount=${amount}, email=${email}, desc=${description}`)
+      console.log(`Order ${orderId}: state=${state}, amount=${amount}, email=${finalEmail}, desc=${description}`)
 
       let planName = 'Unknown'
       const descLower = description.toLowerCase()
