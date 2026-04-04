@@ -197,30 +197,53 @@ Deno.serve(async (req) => {
     const fromDate = new Date()
     fromDate.setDate(fromDate.getDate() - 90)
 
-    const revolutRes = await fetch(
-      `${REVOLUT_API_URL}?from_created_date=${fromDate.toISOString()}&limit=500`,
-      {
-        headers: {
-          'Authorization': `Bearer ${REVOLUT_API_KEY}`,
-          'Content-Type': 'application/json',
-          'Revolut-Api-Version': '2024-09-01',
-        },
-      }
-    )
+    // Paginate through all Revolut orders
+    const orders: any[] = []
+    let cursor = fromDate.toISOString()
+    let hasMore = true
 
-    if (!revolutRes.ok) {
-      const errText = await revolutRes.text()
-      console.error('Revolut API error:', errText)
-      return new Response(JSON.stringify({ error: 'Failed to fetch from Revolut' }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    while (hasMore) {
+      const revolutRes = await fetch(
+        `${REVOLUT_API_URL}?from_created_date=${cursor}&limit=500`,
+        {
+          headers: {
+            'Authorization': `Bearer ${REVOLUT_API_KEY}`,
+            'Content-Type': 'application/json',
+            'Revolut-Api-Version': '2024-09-01',
+          },
+        }
+      )
+
+      if (!revolutRes.ok) {
+        const errText = await revolutRes.text()
+        console.error('Revolut API error:', errText)
+        return new Response(JSON.stringify({ error: 'Failed to fetch from Revolut' }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const rawData = await revolutRes.json()
+      const batch = Array.isArray(rawData) ? rawData : (rawData?.orders || rawData?.items || [rawData]).filter(Boolean)
+
+      console.log(`Fetched batch of ${batch.length} orders (cursor: ${cursor})`)
+      orders.push(...batch)
+
+      if (batch.length < 500) {
+        hasMore = false
+      } else {
+        // Use last order's created_at as cursor for next page
+        const lastOrder = batch[batch.length - 1]
+        const lastCreatedAt = lastOrder.created_at
+        if (!lastCreatedAt || lastCreatedAt === cursor) {
+          hasMore = false
+        } else {
+          cursor = lastCreatedAt
+        }
+      }
     }
 
-    const rawData = await revolutRes.json()
-    console.log('Revolut response type:', typeof rawData, 'isArray:', Array.isArray(rawData), 'keys:', rawData ? Object.keys(rawData) : 'null')
-
-    const orders = Array.isArray(rawData) ? rawData : (rawData?.orders || rawData?.items || [rawData]).filter(Boolean)
+    console.log(`Total orders fetched: ${orders.length}`)
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
