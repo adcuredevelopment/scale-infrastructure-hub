@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
             plan: planName,
             amount,
             currency,
-            email,
+            email: finalEmail,
             revolut_state: state,
             synced_at: new Date().toISOString(),
           },
