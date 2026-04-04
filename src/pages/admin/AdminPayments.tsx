@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { Search, Filter } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<any[]>([]);
