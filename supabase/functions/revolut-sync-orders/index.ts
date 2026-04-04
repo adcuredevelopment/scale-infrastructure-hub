@@ -24,7 +24,8 @@ async function handleAffiliateCommission(
   email: string,
   planName: string,
   amount: number,
-  affiliateCode: string | null
+  affiliateCode: string | null,
+  orderCreatedAt: string | null
 ) {
   // Case 1: First-time referral via affiliate link
   if (affiliateCode && typeof affiliateCode === 'string') {
