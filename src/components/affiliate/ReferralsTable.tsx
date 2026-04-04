@@ -46,6 +46,11 @@ export function ReferralsTable({ referrals }: Props) {
                 <tr key={r.id} className="border-b border-border/50">
                   <td className="py-2.5">{maskEmail(r.customer_email)}</td>
                   <td className="py-2.5">{r.plan_name || "—"}</td>
+                  <td className="py-2.5 text-center">
+                    <Badge variant="outline" className={r.referral_type === "signup_bonus" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}>
+                      {typeLabels[r.referral_type] || r.referral_type}
+                    </Badge>
+                  </td>
                   <td className="py-2.5 text-right">€{Number(r.commission_amount).toFixed(2)}</td>
                   <td className="py-2.5 text-center">
                     <Badge variant="outline" className={statusColors[r.status] || ""}>

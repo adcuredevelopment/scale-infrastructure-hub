@@ -267,7 +267,12 @@ export default function AdminAffiliates() {
                       <TableCell className="text-sm">{getAffiliateEmail(r.affiliate_id)}</TableCell>
                       <TableCell className="text-sm">{r.customer_email || "—"}</TableCell>
                       <TableCell className="text-sm">{r.plan_name || "—"}</TableCell>
-                      <TableCell className="text-sm">€{Number(r.payment_amount).toFixed(2)}</TableCell>
+                       <TableCell>
+                         <Badge variant="outline" className={r.referral_type === "signup_bonus" ? "bg-purple-500/15 text-purple-400 border-purple-500/20" : "bg-blue-500/15 text-blue-400 border-blue-500/20"}>
+                           {r.referral_type === "signup_bonus" ? "Bonus" : "Recurring"}
+                         </Badge>
+                       </TableCell>
+                       <TableCell className="text-sm">€{Number(r.payment_amount).toFixed(2)}</TableCell>
                       <TableCell className="text-sm font-medium">€{Number(r.commission_amount).toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>

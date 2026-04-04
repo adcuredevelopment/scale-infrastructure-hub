@@ -118,6 +118,7 @@ export function useAffiliate() {
     pendingEarnings,
     totalPaidOut,
     totalReferrals: referrals.length,
+    bonusEarnings,
     refetch: fetchAffiliateData,
   };
 }
