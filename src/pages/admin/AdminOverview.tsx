@@ -19,10 +19,25 @@ export default function AdminOverview() {
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('revolut-sync-orders');
+      if (error) throw error;
+      toast.success(`Synced! ${data.new_synced} new, ${data.updated} updated from ${data.total_orders} orders`);
+      await fetchDashboardData();
+    } catch (err: any) {
+      toast.error('Sync failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const fetchDashboardData = async () => {
     const [subsRes, custRes, paymentsRes, notifsRes] = await Promise.all([
