@@ -58,19 +58,50 @@ export default function AdminOverview() {
     const payments = paymentsRes.data || [];
     const allPayments = allPaymentsRes.data || [];
 
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
     const activeSubs = subs.filter((s) => s.status === "active");
     const totalRevenue = subs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
     const mrr = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+
+    // Last month's MRR: subs that were active at end of last month
+    // (started before this month AND not cancelled before this month)
+    const lastMonthActiveSubs = subs.filter((s) => {
+      const started = new Date(s.started_at);
+      if (started >= thisMonthStart) return false;
+      if (s.status === "cancelled" && s.cancelled_at) {
+        return new Date(s.cancelled_at) >= thisMonthStart;
+      }
+      return true;
+    });
+    const lastMonthMrr = lastMonthActiveSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const mrrChange = lastMonthMrr > 0 ? ((mrr - lastMonthMrr) / lastMonthMrr) * 100 : (mrr > 0 ? 100 : 0);
+
+    // Revenue this month vs last month
+    const revenueThisMonth = subs.filter((s) => new Date(s.started_at) >= thisMonthStart).reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const revenueLastMonth = subs.filter((s) => { const d = new Date(s.started_at); return d >= lastMonthStart && d < thisMonthStart; }).reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const revenueChange = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : (revenueThisMonth > 0 ? 100 : 0);
+
+    // New subs this month
+    const subsThisMonth = subs.filter((s) => new Date(s.started_at) >= thisMonthStart && s.status === "active").length;
+
+    // New customers this month
+    const custsThisMonth = custs.filter((c) => new Date(c.created_at) >= thisMonthStart).length;
 
     setStats({
       totalRevenue,
       activeSubscriptions: activeSubs.length,
       totalCustomers: custs.length,
       mrr,
+      mrrChange: Math.round(mrrChange),
+      revenueChange: Math.round(revenueChange),
+      subsChange: subsThisMonth,
+      custChange: custsThisMonth,
     });
 
     setRecentPayments(payments);
-    
 
     // Build chart data from ALL payments (last 7 days)
     const days: Record<string, number> = {};
