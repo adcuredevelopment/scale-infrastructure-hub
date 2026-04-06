@@ -149,9 +149,9 @@ export default function AdminOverview() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Total Revenue" value={`€${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={Wallet} change={`${stats.revenueChange >= 0 ? '+' : ''}${stats.revenueChange}% this month`} changeType={stats.revenueChange >= 0 ? "positive" : "negative"} delay={0} />
-        <KPICard title="Active Subscriptions" value={stats.activeSubscriptions.toString()} icon={CreditCard} change={`+${stats.subsChange} this month`} changeType="positive" delay={0.05} />
-        <KPICard title="Total Customers" value={stats.totalCustomers.toString()} icon={Users} change={`+${stats.custChange} new`} changeType="positive" delay={0.1} />
-        <KPICard title="MRR" value={`€${stats.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={TrendingUp} change={`${stats.mrrChange >= 0 ? '+' : ''}${stats.mrrChange}% vs last month`} changeType={stats.mrrChange >= 0 ? "positive" : "negative"} delay={0.15} />
+        <KPICard title="MRR" value={`€${stats.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={TrendingUp} change={`${stats.mrrChange >= 0 ? '+' : ''}${stats.mrrChange}% vs last month`} changeType={stats.mrrChange >= 0 ? "positive" : "negative"} delay={0.05} />
+        <KPICard title="Active Subscriptions" value={stats.activeSubscriptions.toString()} icon={CreditCard} change={`+${stats.subsChange} this month`} changeType="positive" delay={0.1} />
+        <KPICard title="Total Customers" value={stats.totalCustomers.toString()} icon={Users} change={`+${stats.custChange} new`} changeType="positive" delay={0.15} />
       </div>
 
       {/* Revenue Chart */}
