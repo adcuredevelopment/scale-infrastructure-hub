@@ -203,8 +203,29 @@ Deno.serve(async (req) => {
       )
     }
 
-    const validEvents = ['ORDER_COMPLETED', 'ORDER_AUTHORISED', 'ORDER_PAYMENT_FAILED', 'ORDER_PAYMENT_DECLINED']
+    const validEvents = ['ORDER_COMPLETED', 'ORDER_AUTHORISED', 'ORDER_PAYMENT_FAILED', 'ORDER_PAYMENT_DECLINED', 'SUBSCRIPTION_ACTIVATED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_RENEWED']
     if (!validEvents.includes(event)) {
+      return new Response(
+        JSON.stringify({ received: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Handle subscription-specific events
+    if (event === 'SUBSCRIPTION_ACTIVATED' || event === 'SUBSCRIPTION_CANCELLED' || event === 'SUBSCRIPTION_RENEWED') {
+      const subscriptionId = rawPayload.subscription_id || rawPayload.id
+      console.log(`Subscription event: ${event}, subscription: ${subscriptionId}`)
+
+      if (subscriptionId) {
+        if (event === 'SUBSCRIPTION_CANCELLED') {
+          await supabase
+            .from('subscriptions')
+            .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+            .eq('revolut_subscription_id', subscriptionId)
+          console.log(`Subscription ${subscriptionId} cancelled via webhook`)
+        }
+      }
+
       return new Response(
         JSON.stringify({ received: true }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
