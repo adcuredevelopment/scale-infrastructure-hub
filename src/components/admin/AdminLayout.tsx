@@ -1,6 +1,7 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminSidebar } from "./AdminSidebar";
+import { AdminMobileHeader } from "./AdminMobileHeader";
 import { Loader2 } from "lucide-react";
 
 export function AdminLayout() {
@@ -27,8 +28,13 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <AdminSidebar />
+    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+      {/* Mobile top bar */}
+      <AdminMobileHeader />
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex">
+        <AdminSidebar />
+      </div>
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
