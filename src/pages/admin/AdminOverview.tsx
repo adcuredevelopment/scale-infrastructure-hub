@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { KPICard } from "@/components/admin/KPICard";
-import { Users, CreditCard, TrendingUp, Wallet, Bell, RefreshCw } from "lucide-react";
+import { Users, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,7 @@ export default function AdminOverview() {
     pendingPayments: 0,
   });
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  
   const [chartData, setChartData] = useState<any[]>([]);
   const [syncing, setSyncing] = useState(false);
 
@@ -46,7 +46,7 @@ export default function AdminOverview() {
       supabase.from("subscriptions").select("*"),
       supabase.from("customers").select("*"),
       supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(10),
-      supabase.from("notifications").select("*").eq("read", false).order("created_at", { ascending: false }).limit(5),
+      
       supabase.from("payments").select("*").order("created_at", { ascending: false }),
     ]);
 
