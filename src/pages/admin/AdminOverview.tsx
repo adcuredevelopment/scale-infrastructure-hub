@@ -16,7 +16,7 @@ export default function AdminOverview() {
     totalRevenue: 0,
     activeSubscriptions: 0,
     totalCustomers: 0,
-    pendingPayments: 0,
+    mrr: 0,
   });
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   
@@ -54,14 +54,15 @@ export default function AdminOverview() {
     const payments = paymentsRes.data || [];
     const allPayments = allPaymentsRes.data || [];
 
-    const activeSubs = subs.filter((s) => s.status === "active").length;
+    const activeSubs = subs.filter((s) => s.status === "active");
     const totalRevenue = subs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const mrr = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
 
     setStats({
       totalRevenue,
-      activeSubscriptions: activeSubs,
+      activeSubscriptions: activeSubs.length,
       totalCustomers: custs.length,
-      pendingPayments: payments.filter((p) => p.status === "pending").length,
+      mrr,
     });
 
     setRecentPayments(payments);
@@ -115,7 +116,7 @@ export default function AdminOverview() {
         <KPICard title="Total Revenue" value={`€${stats.totalRevenue.toLocaleString()}`} icon={Wallet} change="+12% this month" changeType="positive" delay={0} />
         <KPICard title="Active Subscriptions" value={stats.activeSubscriptions.toString()} icon={CreditCard} change="+3 this week" changeType="positive" delay={0.05} />
         <KPICard title="Total Customers" value={stats.totalCustomers.toString()} icon={Users} change="+5 new" changeType="positive" delay={0.1} />
-        <KPICard title="Pending Payments" value={stats.pendingPayments.toString()} icon={TrendingUp} delay={0.15} />
+        <KPICard title="MRR" value={`€${stats.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={TrendingUp} change="Monthly Recurring Revenue" delay={0.15} />
       </div>
 
       {/* Revenue Chart */}
