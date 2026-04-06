@@ -42,6 +42,7 @@ export default function AdminPayments() {
       case "completed": return "bg-emerald-500/15 text-emerald-500";
       case "authorised": return "bg-primary/15 text-primary";
       case "pending": return "bg-amber-500/15 text-amber-500";
+      case "expired": return "bg-muted text-muted-foreground";
       case "failed": return "bg-destructive/15 text-destructive";
       default: return "bg-muted text-muted-foreground";
     }
@@ -73,6 +74,7 @@ export default function AdminPayments() {
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="authorised">Authorised</SelectItem>
             <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
           </SelectContent>
         </Select>
       </div>
