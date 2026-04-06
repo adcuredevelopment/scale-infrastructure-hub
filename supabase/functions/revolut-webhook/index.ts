@@ -328,6 +328,26 @@ Deno.serve(async (req) => {
 
           console.log(`Synced customer & subscription for ${email}`)
 
+          // Send subscription confirmed email
+          try {
+            await supabase.functions.invoke('send-transactional-email', {
+              body: {
+                templateName: 'subscription-confirmed',
+                recipientEmail: email,
+                idempotencyKey: `sub-confirmed-${existing.id}`,
+                templateData: {
+                  customerName,
+                  planName,
+                  amount,
+                  currency: 'EUR',
+                },
+              },
+            })
+            console.log(`Subscription confirmation email queued for ${email}`)
+          } catch (emailErr) {
+            console.error('Failed to send subscription confirmation email', emailErr)
+          }
+
           // Affiliate commission handling (auto-approved)
           const affiliateCode = prevPayload?.affiliateCode
           await handleAffiliateCommission(supabase, existing.id, email, planName, amount, affiliateCode || null)
