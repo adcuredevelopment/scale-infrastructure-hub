@@ -17,6 +17,10 @@ export default function AdminOverview() {
     activeSubscriptions: 0,
     totalCustomers: 0,
     mrr: 0,
+    mrrChange: 0,
+    revenueChange: 0,
+    subsChange: 0,
+    custChange: 0,
   });
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   
@@ -54,19 +58,50 @@ export default function AdminOverview() {
     const payments = paymentsRes.data || [];
     const allPayments = allPaymentsRes.data || [];
 
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
     const activeSubs = subs.filter((s) => s.status === "active");
     const totalRevenue = subs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
     const mrr = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+
+    // Last month's MRR: subs that were active at end of last month
+    // (started before this month AND not cancelled before this month)
+    const lastMonthActiveSubs = subs.filter((s) => {
+      const started = new Date(s.started_at);
+      if (started >= thisMonthStart) return false;
+      if (s.status === "cancelled" && s.cancelled_at) {
+        return new Date(s.cancelled_at) >= thisMonthStart;
+      }
+      return true;
+    });
+    const lastMonthMrr = lastMonthActiveSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const mrrChange = lastMonthMrr > 0 ? ((mrr - lastMonthMrr) / lastMonthMrr) * 100 : (mrr > 0 ? 100 : 0);
+
+    // Revenue this month vs last month
+    const revenueThisMonth = subs.filter((s) => new Date(s.started_at) >= thisMonthStart).reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const revenueLastMonth = subs.filter((s) => { const d = new Date(s.started_at); return d >= lastMonthStart && d < thisMonthStart; }).reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const revenueChange = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : (revenueThisMonth > 0 ? 100 : 0);
+
+    // New subs this month
+    const subsThisMonth = subs.filter((s) => new Date(s.started_at) >= thisMonthStart && s.status === "active").length;
+
+    // New customers this month
+    const custsThisMonth = custs.filter((c) => new Date(c.created_at) >= thisMonthStart).length;
 
     setStats({
       totalRevenue,
       activeSubscriptions: activeSubs.length,
       totalCustomers: custs.length,
       mrr,
+      mrrChange: Math.round(mrrChange),
+      revenueChange: Math.round(revenueChange),
+      subsChange: subsThisMonth,
+      custChange: custsThisMonth,
     });
 
     setRecentPayments(payments);
-    
 
     // Build chart data from ALL payments (last 7 days)
     const days: Record<string, number> = {};
@@ -113,10 +148,10 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Revenue" value={`€${stats.totalRevenue.toLocaleString()}`} icon={Wallet} change="+12% this month" changeType="positive" delay={0} />
-        <KPICard title="Active Subscriptions" value={stats.activeSubscriptions.toString()} icon={CreditCard} change="+3 this week" changeType="positive" delay={0.05} />
-        <KPICard title="Total Customers" value={stats.totalCustomers.toString()} icon={Users} change="+5 new" changeType="positive" delay={0.1} />
-        <KPICard title="MRR" value={`€${stats.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={TrendingUp} change="Monthly Recurring Revenue" delay={0.15} />
+        <KPICard title="Total Revenue" value={`€${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={Wallet} change={`${stats.revenueChange >= 0 ? '+' : ''}${stats.revenueChange}% this month`} changeType={stats.revenueChange >= 0 ? "positive" : "negative"} delay={0} />
+        <KPICard title="Active Subscriptions" value={stats.activeSubscriptions.toString()} icon={CreditCard} change={`+${stats.subsChange} this month`} changeType="positive" delay={0.05} />
+        <KPICard title="Total Customers" value={stats.totalCustomers.toString()} icon={Users} change={`+${stats.custChange} new`} changeType="positive" delay={0.1} />
+        <KPICard title="MRR" value={`€${stats.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={TrendingUp} change={`${stats.mrrChange >= 0 ? '+' : ''}${stats.mrrChange}% vs last month`} changeType={stats.mrrChange >= 0 ? "positive" : "negative"} delay={0.15} />
       </div>
 
       {/* Revenue Chart */}
