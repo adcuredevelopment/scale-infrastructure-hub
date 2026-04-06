@@ -28,7 +28,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminAffiliates from "./pages/admin/AdminAffiliates";
 
-import AdminNotifications from "./pages/admin/AdminNotifications";
+
 import AdminSettings from "./pages/admin/AdminSettings";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateLogin from "./pages/affiliate/AffiliateLogin";
@@ -84,7 +84,7 @@ const App = () => (
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="affiliates" element={<AdminAffiliates />} />
               
-              <Route path="notifications" element={<AdminNotifications />} />
+              
               <Route path="settings" element={<AdminSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
