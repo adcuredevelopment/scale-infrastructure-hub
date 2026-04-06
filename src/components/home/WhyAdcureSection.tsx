@@ -49,11 +49,11 @@ export const WhyAdcureSection = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 max-w-4xl mx-auto">
           {reasons.map((r, i) => (
             <ScrollReveal key={r.title} delay={i * 0.08}>
-              <div className="group relative rounded-xl p-4 sm:p-5 md:p-6 text-center bg-card/40 border border-border/30 hover:border-primary/20 transition-all duration-500 overflow-hidden">
+              <div className="group relative rounded-xl p-3 sm:p-4 md:p-6 text-center bg-card/40 border border-border/30 hover:border-primary/20 transition-all duration-500 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 
                 <div className="relative">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3 md:mb-4 group-hover:bg-primary/15 transition-all duration-300">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2 sm:mb-3 md:mb-4 group-hover:bg-primary/15 transition-all duration-300">
                     <r.icon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                   </div>
                   <div className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-primary mb-1">{r.value}</div>
