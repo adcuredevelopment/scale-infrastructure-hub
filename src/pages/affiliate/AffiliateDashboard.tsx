@@ -63,14 +63,14 @@ export default function AffiliateDashboard() {
       <Navbar />
       <div className="pt-24 md:pt-32 pb-16 px-5 md:px-8">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
             <div>
-              <h1 className="text-2xl md:text-3xl font-display font-bold">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold">
                 Welcome back, {affiliate.display_name || affiliate.email.split("@")[0]}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">Your affiliate dashboard</p>
             </div>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="self-start sm:self-auto">
               <LogOut className="w-4 h-4 mr-2" /> Sign Out
             </Button>
           </div>

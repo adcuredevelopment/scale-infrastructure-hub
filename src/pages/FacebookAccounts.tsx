@@ -64,14 +64,14 @@ const FacebookAccounts = () => {
           products={products}
         />
 
-        <section className="section-padding">
-          <div className="container mx-auto px-4 md:px-8 max-w-3xl">
+        <section className="py-12 md:py-24 px-5 md:px-8">
+          <div className="container mx-auto max-w-3xl">
             <ScrollReveal>
-              <h2 className="text-3xl font-display font-bold mb-6">About Facebook Accounts</h2>
+              <h2 className="text-2xl sm:text-3xl font-display font-bold mb-6">About Facebook Accounts</h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
                 Our Facebook Accounts are carefully aged and verified profiles designed for advertisers who need reliable, stable accounts for scaling their campaigns.
               </p>
-              <div className="rounded-xl p-6 mb-6 bg-card/40 border border-border/30">
+              <div className="rounded-xl p-4 sm:p-5 md:p-6 mb-6 bg-card/40 border border-border/30">
                 <h3 className="font-display font-semibold mb-4 text-foreground">Each account comes with:</h3>
                 <ul className="space-y-3">
                   {[
