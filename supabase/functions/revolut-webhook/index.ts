@@ -270,6 +270,10 @@ Deno.serve(async (req) => {
         const amount = Number(prevPayload?.amount || 0)
 
         if (email && planName) {
+          const customerName = prevPayload?.firstName && prevPayload?.lastName
+            ? `${prevPayload.firstName} ${prevPayload.lastName}`
+            : null
+
           const { data: existingCustomer } = await supabase
             .from('customers')
             .select('id, total_spent, subscription_count')
@@ -283,10 +287,12 @@ Deno.serve(async (req) => {
               last_payment_at: new Date().toISOString(),
               plan: planName,
               status: 'active',
+              ...(customerName ? { name: customerName } : {}),
             }).eq('id', existingCustomer.id)
           } else {
             await supabase.from('customers').insert({
               email,
+              name: customerName,
               plan: planName,
               total_spent: amount,
               subscription_count: 1,
