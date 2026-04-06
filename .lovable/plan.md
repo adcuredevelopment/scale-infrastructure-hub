@@ -1,59 +1,84 @@
 
 
-## Fix: Inaccurate Affiliate Referral Count & Data Integrity
+## Responsive UI/UX Optimization — All Pages
 
-### Root Cause
+### Overview
+After reviewing every page and component, the site is already well-built with responsive classes. However, there are specific areas where mobile (390px), tablet (768-834px), and desktop layouts need refinement. No text or design changes — only layout, spacing, and sizing adjustments.
 
-There are **4 referral records** in the database for affiliate `50C8FA41` (David), but only **1 actual customer** (`dobzakelijk@gmail.com`) was referred. Here's what happened:
+### Issues Found & Fixes
 
-1. The customer made 3 payments: €79 (Starter Advertiser), €12.10 (test), and €1 (test)
-2. When the sync ran for the €79 order, it correctly created a recurring commission (€15.80) and signup bonus (€20)
-3. But the sync also processed the old €12.10 and €1 test payments. Because the customer's subscription now had `affiliate_code = 50C8FA41`, the recurring attribution logic created commissions for those too (€2.42 and €0.20)
-4. Those 2 extra commissions are incorrect — the test payments happened before the affiliate link was used
+#### 1. Legal Pages (Privacy, Terms, Refund, SubscriptionPolicy)
+**Issue:** `pt-32` is fixed regardless of device — on mobile the top padding is too large after the shorter navbar. The `h1` uses `text-4xl` on mobile which can be large for long titles like "Refund & Warranty Policy".
+**Fix:** Change `pt-32` to `pt-24 sm:pt-28 md:pt-32`. Add responsive heading: `text-3xl sm:text-4xl md:text-5xl`.
 
-Additionally, there's a **critical bug** in the sync function: `existingPayment` is referenced on line 259 before it's declared on line 284, which would cause a runtime error.
+**Files:** `Privacy.tsx`, `Terms.tsx`, `Refund.tsx`, `SubscriptionPolicy.tsx`
 
-### Fix Plan
+#### 2. Shop "About" Sections (FacebookAccounts, BusinessManagers, FacebookPages, FacebookStructures)
+**Issue:** The "About" content section uses `section-padding` (which may have large vertical padding) and `text-3xl` heading without mobile breakpoints. The `p-6` on info cards can feel cramped on small screens.
+**Fix:** Add responsive heading `text-2xl sm:text-3xl`. Add `py-12 md:py-24` instead of `section-padding`. Use `p-4 sm:p-5 md:p-6` on info cards.
 
-#### 1. Fix the sync function bug + prevent false attribution
-**File:** `supabase/functions/revolut-sync-orders/index.ts`
+**Files:** `FacebookAccounts.tsx`, `BusinessManagers.tsx`, `FacebookPages.tsx`, `FacebookStructures.tsx`
 
-- Move `existingPayment` query before its first usage
-- Add a guard to recurring commission attribution: only create commissions for orders placed **after** the subscription's `affiliate_code` was set. Compare the order's `created_at` with the subscription's `started_at` that has the affiliate code
-- This prevents old/test payments from getting retroactive commissions
+#### 3. NotFound Page
+**Issue:** Uses `bg-muted` instead of `bg-background`, inconsistent with the rest of the site. No responsive text sizing.
+**Fix:** Use `bg-background`, add responsive sizing, and match site styling with `font-display`.
 
-#### 2. Clean up bogus referral data
-**Migration:** Delete the 2 incorrect referral records (€2.42 and €0.20 for "Unknown" plan) and the corresponding test subscriptions
+**File:** `NotFound.tsx`
 
-#### 3. Fix referral count to show unique customers
-**File:** `src/pages/admin/AdminAffiliates.tsx`
+#### 4. Affiliate Dashboard — Referral Link
+**Issue:** On mobile (390px), the referral link URL overflows or gets cut. The copy button and URL field flex layout can feel cramped.
+**Fix:** Stack the URL and copy button vertically on mobile: `flex-col sm:flex-row`.
 
-- Change `getAffiliateReferralCount` to count **unique customer emails** instead of total referral records
-- Change the KPI "Total Referrals" to also show unique customers
-- This gives an accurate picture: 1 customer referred = 1 referral, regardless of how many commission records exist (recurring + bonus)
+**File:** `src/components/affiliate/ReferralLink.tsx`
 
-#### 4. Fix webhook recurring attribution with same guard
-**File:** `supabase/functions/revolut-webhook/index.ts`
+#### 5. Affiliate Dashboard — Earnings Chart
+**Issue:** The YAxis labels (`€XX`) can clip on narrow screens. The chart height of 250px is fine but the X-axis font size (12px) is slightly large for mobile.
+**Fix:** Reduce XAxis/YAxis font size on mobile by using a smaller default (10px). Hide YAxis on very small screens or reduce width.
 
-Add the same date-based guard to prevent retroactive commissions on old payments.
+**File:** `src/components/affiliate/EarningsChart.tsx`
 
-### Data Cleanup (Migration)
+#### 6. Footer — Mobile Grid
+**Issue:** On mobile the 3 link columns (Product, Shop, Legal) use `grid-cols-2`, which means the 3rd column wraps awkwardly underneath. The brand column spans full width which is fine, but the link columns should be consistent.
+**Fix:** Make link columns `grid-cols-2 sm:grid-cols-3` for the link section, or keep the existing layout but ensure even spacing. Currently the `md:col-span-2` creates uneven distribution on tablet.
 
-```sql
--- Delete bogus referral records for test payments
-DELETE FROM affiliate_referrals 
-WHERE customer_email = 'dobzakelijk@gmail.com' 
-  AND plan_name = 'Unknown';
+**File:** `src/components/Footer.tsx`
 
--- Delete test subscriptions
-DELETE FROM subscriptions 
-WHERE customer_email = 'dobzakelijk@gmail.com' 
-  AND plan_name = 'Unknown';
-```
+#### 7. DashboardMockup — Mobile Polish
+**Issue:** On small mobile screens the KPI card text sizes (`text-[6px]`, `text-[5px]`) are extremely small and may be illegible. The mockup is decorative, so this is acceptable, but the minimum height could be reduced on mobile.
+**Fix:** Slightly increase minimum text sizes in KPI cards. Reduce `min-h` on mobile from `220px` to `200px`.
 
-### Files to modify
-- **Modify:** `supabase/functions/revolut-sync-orders/index.ts` — fix variable ordering bug, add date guard for recurring attribution
-- **Modify:** `supabase/functions/revolut-webhook/index.ts` — add date guard for recurring attribution
-- **Modify:** `src/pages/admin/AdminAffiliates.tsx` — count unique customers for referral metrics
-- **Migration:** Clean up bogus referral and subscription records
+**File:** `src/components/home/DashboardMockup.tsx`
+
+#### 8. Admin Pages — Mobile Sidebar
+**Issue:** The admin sidebar is always visible and doesn't collapse on mobile. There's no mobile hamburger menu for admin.
+**Fix:** Hide the sidebar on mobile (`hidden md:flex`) and add a mobile top bar with a hamburger that opens the sidebar as a sheet/drawer.
+
+**Files:** `src/components/admin/AdminSidebar.tsx`, `src/components/admin/AdminLayout.tsx`
+
+#### 9. Contact Page
+**Issue:** The `pt-24 sm:pt-32 py-16` creates conflicting padding. On mobile the top padding should be consistent with other pages.
+**Fix:** Change to `pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-32`.
+
+**File:** `src/pages/Contact.tsx`
+
+#### 10. Affiliate Dashboard — Header
+**Issue:** On mobile, the "Welcome back, {name}" heading and Sign Out button can collide if the name is long.
+**Fix:** Stack the header on mobile: `flex-col sm:flex-row items-start sm:items-center`. Move sign out button below on mobile.
+
+**File:** `src/pages/affiliate/AffiliateDashboard.tsx`
+
+### Summary of Files to Modify
+
+| File | Change |
+|------|--------|
+| `Privacy.tsx`, `Terms.tsx`, `Refund.tsx`, `SubscriptionPolicy.tsx` | Responsive top padding + heading size |
+| `FacebookAccounts.tsx`, `BusinessManagers.tsx`, `FacebookPages.tsx`, `FacebookStructures.tsx` | Responsive "About" section headings + padding |
+| `NotFound.tsx` | Match site styling |
+| `ReferralLink.tsx` | Stack layout on mobile |
+| `EarningsChart.tsx` | Smaller axis fonts on mobile |
+| `Footer.tsx` | Better mobile column distribution |
+| `DashboardMockup.tsx` | Minor mobile text size tweaks |
+| `AdminSidebar.tsx` + `AdminLayout.tsx` | Mobile sidebar as drawer |
+| `Contact.tsx` | Fix padding conflict |
+| `AffiliateDashboard.tsx` | Stack header on mobile |
 
