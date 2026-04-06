@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
             phases: [
               {
                 ordinal: 1,
-                billing_period: 'P1M',
+                cycle_duration: 'P1M',
                 amount: plan.baseAmount,
                 currency: plan.currency,
               }
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
             phases: [
               {
                 ordinal: 1,
-                billing_period: 'P1M',
+                cycle_duration: 'P1M',
                 amount: plan.baseAmount + plan.taxAmount,
                 currency: plan.currency,
               }
