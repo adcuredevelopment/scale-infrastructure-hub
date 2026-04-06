@@ -1,49 +1,56 @@
 
+## Upgrade Checkout: Customer Details, Tax & Revolut Recurring Subscriptions
 
-## Subscription Detail Drawer with Cancellation & Email Notification
+### What Changes
 
-### What We're Building
-1. Clickable subscription rows that open a sidebar drawer with full subscription details
-2. A "Cancel Subscription" button inside the drawer
-3. An edge function to handle cancellation (update DB + send cancellation email)
-4. A branded cancellation email sent to the subscriber
+**Current flow**: Email-only dialog → Revolut one-time order → redirect to checkout
+**New flow**: Full details dialog (first name, last name, email, country) → Create Revolut customer → Create Revolut subscription → redirect to Hosted Payment Page
 
-### Prerequisites: Email Domain
-This project has no email domain configured yet. To send branded cancellation emails, we need to set up an email domain first. Without it, we can still build the cancellation logic and queue the email — it will start sending once the domain is verified.
+### 1. Expand Checkout Dialog (`PricingSection.tsx`)
+- Add fields: **First Name**, **Last Name**, **Email**, **Country** (dropdown with NL pre-selected)
+- When country = Netherlands, show 21% BTW breakdown below the price
+- Display: "€79.00 + €16.59 BTW = **€95.59** /mo" for Dutch customers
+- Non-NL customers pay the base price without tax
 
-### Changes
+### 2. New Edge Function: `revolut-create-subscription`
+Replaces `revolut-create-order` for plan purchases. Steps:
+1. Validate input (firstName, lastName, email, country, planName)
+2. **Create Revolut Customer** via `POST /customers` with name + email
+3. **Create Revolut Subscription** via `POST /subscriptions` with:
+   - `customer_id` from step 2
+   - `plan_variation_id` (pre-configured plan variation)
+   - `setup_order_redirect_url` pointing to `/payment-success`
+4. Store payment record in DB with full customer details in payload
+5. Return the `setup_order.checkout_url` for redirect
 
-#### 1. New Edge Function: `cancel-subscription`
-**File:** `supabase/functions/cancel-subscription/index.ts`
+### 3. One-Time Setup: Create Subscription Plans in Revolut
+Before the edge function works, we need to create 3 subscription plans via the Revolut API:
+- **Starter Advertiser**: €79/mo (€95.59 incl. BTW for NL)
+- **Growth Advertiser**: €119/mo (€143.99 incl. BTW for NL)
+- **Advanced Advertiser**: €149/mo (€180.29 incl. BTW for NL)
 
-- Accepts `{ subscriptionId }` in the request body
-- Validates the admin is authenticated (checks `user_roles` for admin)
-- Updates the subscription in the `subscriptions` table: sets `status = 'cancelled'`, `cancelled_at = now()`
-- Updates the corresponding `customers` table record (decrement `subscription_count`, update status if no active subs remain)
-- Sends a branded cancellation email to `customer_email` using `send-transactional-email` (once email infra is set up)
-- Returns success/error response
+Each plan needs 2 variations: one with tax (NL) and one without.
 
-#### 2. Modify `AdminSubscriptions.tsx`
-- Add a Sheet drawer that opens when clicking a subscription row
-- Show full subscription details: customer email, plan name, amount, status, dates, affiliate code
-- Add a red "Cancel Subscription" button (only shown for active subscriptions)
-- Add confirmation dialog before cancellation
-- On cancel: call the edge function, show toast, refresh data, close drawer
+**Question**: Do you want me to create these plans automatically via a script, or do you prefer to set them up manually in your Revolut Business dashboard?
 
-#### 3. Email Setup (requires user action)
-Since no email domain is configured, I'll first need you to set up a sender domain. After that, I'll scaffold the email templates and create a branded cancellation email matching your dark theme (blue primary `hsl(213, 94%, 52%)`, Plus Jakarta Sans font).
+### 4. Update `revolut-webhook` and `revolut-sync-orders`
+- Handle new subscription webhook events (`SUBSCRIPTION_ACTIVATED`, `SUBSCRIPTION_CANCELLED`, `ORDER_COMPLETED` for recurring charges)
+- Store `customer_name` from the new data in subscriptions table
 
-### Implementation Order
-1. Set up email domain (user action required)
-2. Set up email infrastructure + scaffold transactional email templates
-3. Create cancellation email template
-4. Create `cancel-subscription` edge function
-5. Update `AdminSubscriptions.tsx` with drawer + cancel button
+### 5. Store Customer Details
+- Update the `payments.payload` to include `firstName`, `lastName`, `country`
+- Update `customers` table with `name` field from checkout data
+- Update `subscriptions` table with `customer_name`
 
 ### Files to Create/Modify
 | File | Action |
 |------|--------|
-| `supabase/functions/cancel-subscription/index.ts` | Create — handles DB update |
-| `src/pages/admin/AdminSubscriptions.tsx` | Modify — add Sheet drawer + cancel flow |
-| Transactional email template | Create — branded cancellation email |
+| `supabase/functions/revolut-create-subscription/index.ts` | Create — new subscription flow |
+| `src/components/home/PricingSection.tsx` | Modify — expanded checkout dialog |
+| `supabase/functions/revolut-webhook/index.ts` | Modify — handle subscription events |
+| `supabase/functions/revolut-sync-orders/index.ts` | Modify — sync subscription data |
 
+### Important Notes
+- The existing `revolut-create-order` stays for any future one-time product purchases (shop page)
+- Revolut subscription plans need to be created once via API before this works
+- Tax is calculated server-side to prevent manipulation
