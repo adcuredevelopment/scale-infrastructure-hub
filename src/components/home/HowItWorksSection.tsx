@@ -133,7 +133,7 @@ export const HowItWorksSection = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: direction * -20 }}
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="relative rounded-xl md:rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent aspect-[16/9] sm:aspect-[16/10] md:aspect-[4/3] flex items-center justify-center overflow-hidden"
+                className="relative rounded-xl md:rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent aspect-[3/4] sm:aspect-[16/10] md:aspect-[4/3] flex items-center justify-center overflow-hidden"
               >
                 <span className="absolute right-4 md:right-5 top-2 md:top-3 text-5xl md:text-6xl font-display font-bold text-primary/15 select-none leading-none">
                   {steps[active].number}
