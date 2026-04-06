@@ -12,14 +12,14 @@ import { useNavigate } from "react-router-dom";
 
 function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <div className="glass rounded-xl p-3 sm:p-4 md:p-5">
-      <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
-        <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+    <div className="glass rounded-xl p-5">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Icon className="w-4 h-4 text-primary" />
         </div>
-        <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight">{label}</span>
+        <span className="text-xs text-muted-foreground">{label}</span>
       </div>
-      <p className="text-lg sm:text-xl md:text-2xl font-display font-bold">{value}</p>
+      <p className="text-2xl font-display font-bold">{value}</p>
     </div>
   );
 }
@@ -60,35 +60,22 @@ export default function AffiliateDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="pt-24 md:pt-32 pb-16 px-4 sm:px-5 md:px-8">
+      <div className="pt-24 md:pt-32 pb-16 px-5 md:px-8">
         <div className="container mx-auto max-w-6xl">
-          {/* Header */}
-          <div className="mb-6 sm:mb-8">
-            <div className="flex items-start sm:items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold truncate">
-                  Welcome back, {affiliate.display_name || affiliate.email.split("@")[0]}
-                </h1>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">Your affiliate dashboard</p>
-              </div>
-              {/* Sign out: icon-only on mobile, full button on sm+ */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                className="sm:hidden shrink-0 text-muted-foreground hover:text-foreground"
-                aria-label="Sign Out"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout} className="hidden sm:inline-flex shrink-0">
-                <LogOut className="w-4 h-4 mr-2" /> Sign Out
-              </Button>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-display font-bold">
+                Welcome back, {affiliate.display_name || affiliate.email.split("@")[0]}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">Your affiliate dashboard</p>
             </div>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" /> Sign Out
+            </Button>
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 md:gap-4 mb-5 sm:mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6">
             <KPI icon={Users} label="Total Referrals" value={String(totalReferrals)} />
             <KPI icon={DollarSign} label="Total Earnings" value={`€${totalEarnings.toFixed(2)}`} />
             <KPI icon={Gift} label="Signup Bonuses" value={`€${bonusEarnings.toFixed(2)}`} />
@@ -97,12 +84,12 @@ export default function AffiliateDashboard() {
           </div>
 
           {/* Referral Link */}
-          <div className="mb-5 sm:mb-6">
+          <div className="mb-6">
             <ReferralLink affiliateCode={affiliate.affiliate_code} />
           </div>
 
           {/* Chart */}
-          <div className="mb-5 sm:mb-6">
+          <div className="mb-6">
             <EarningsChart referrals={referrals} />
           </div>
 
