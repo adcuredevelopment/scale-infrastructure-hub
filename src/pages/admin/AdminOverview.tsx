@@ -4,7 +4,7 @@ import { KPICard } from "@/components/admin/KPICard";
 import { Users, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "sonner";
