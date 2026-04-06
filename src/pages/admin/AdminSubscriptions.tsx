@@ -132,7 +132,7 @@ export default function AdminSubscriptions() {
               <TableHead className="text-xs">Amount</TableHead>
               <TableHead className="text-xs">Status</TableHead>
               <TableHead className="text-xs">Started</TableHead>
-              <TableHead className="text-xs">Expires</TableHead>
+              <TableHead className="text-xs">Next Billing</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -156,7 +156,7 @@ export default function AdminSubscriptions() {
                     </span>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{format(new Date(s.started_at), "MMM dd, yyyy")}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{s.expires_at ? format(new Date(s.expires_at), "MMM dd, yyyy") : "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{s.expires_at && s.status === "active" ? format(new Date(s.expires_at), "MMM dd, yyyy") : "—"}</TableCell>
                 </TableRow>
               ))
             )}
@@ -187,7 +187,7 @@ export default function AdminSubscriptions() {
               <DetailRow icon={Mail} label="Customer Email" value={selected.customer_email} />
               <DetailRow icon={CreditCard} label="Plan" value={selected.plan_name} />
               <DetailRow icon={CalendarDays} label="Started" value={format(new Date(selected.started_at), "MMMM dd, yyyy")} />
-              <DetailRow icon={Clock} label="Expires" value={selected.expires_at ? format(new Date(selected.expires_at), "MMMM dd, yyyy") : "No expiration"} />
+              <DetailRow icon={Clock} label="Next Billing" value={selected.expires_at && selected.status === "active" ? format(new Date(selected.expires_at), "MMMM dd, yyyy") : "—"} />
               {selected.cancelled_at && (
                 <DetailRow icon={Ban} label="Cancelled" value={format(new Date(selected.cancelled_at), "MMMM dd, yyyy")} />
               )}
