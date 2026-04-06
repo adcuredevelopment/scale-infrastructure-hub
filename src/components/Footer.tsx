@@ -47,9 +47,9 @@ export const Footer = () => {
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
       <div className="container mx-auto px-5 md:px-8 py-12 md:py-20">
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6 md:gap-8">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-12 gap-y-8 gap-x-4 sm:gap-x-6 md:gap-8">
           {/* Brand column */}
-          <div className="col-span-2 sm:col-span-2 md:col-span-4">
+          <div className="col-span-3 sm:col-span-3 md:col-span-4">
             <div className="flex items-center gap-2.5 mb-4 md:mb-5">
               <img src={adcureIcon} alt="Adcure Agency" className="h-8 md:h-9" style={{ imageRendering: 'auto' }} />
               <span className="font-display font-bold text-lg text-foreground">Adcure</span>

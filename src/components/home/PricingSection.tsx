@@ -158,7 +158,7 @@ export const PricingSection = () => {
                 <div
                   className={`rounded-xl p-5 sm:p-6 md:p-8 hover-lift h-full flex flex-col relative ${
                     plan.popular
-                      ? "border-2 border-primary/50 bg-card/80 backdrop-blur-xl glow-primary"
+                      ? "border-2 border-primary/50 bg-card/80 backdrop-blur-xl glow-primary mt-4 sm:mt-0"
                       : "glass"
                   }`}
                 >

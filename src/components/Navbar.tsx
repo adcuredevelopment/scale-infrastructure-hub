@@ -270,11 +270,11 @@ export const Navbar = () => {
                 </Link>
               ))}
 
-              <a href="https://portal.adcure.agency/" target="_blank" rel="noopener noreferrer" className="block">
-                <Button variant="outline" className="w-full mt-3 min-h-[48px]">Sign In</Button>
+              <a href="https://portal.adcure.agency/" target="_blank" rel="noopener noreferrer" className="block mt-2">
+                <Button variant="outline" className="w-full min-h-[48px]">Sign In</Button>
               </a>
-              <a href="/#pricing" onClick={(e) => { e.preventDefault(); setMobileOpen(false); if (window.location.pathname === '/') { document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); } else { window.location.href = '/#pricing'; } }}>
-                <Button className="w-full mt-2 min-h-[48px]">Get Started</Button>
+              <a href="/#pricing" className="block mt-2" onClick={(e) => { e.preventDefault(); setMobileOpen(false); if (window.location.pathname === '/') { document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); } else { window.location.href = '/#pricing'; } }}>
+                <Button className="w-full min-h-[48px]">Get Started</Button>
               </a>
             </div>
           </motion.div>

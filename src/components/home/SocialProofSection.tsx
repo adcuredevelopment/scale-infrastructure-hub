@@ -88,19 +88,25 @@ export const SocialProofSection = () => {
         </ScrollReveal>
       </div>
 
-      <div
-        ref={scrollRef}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-        onTouchStart={() => setIsPaused(true)}
-        onTouchEnd={() => setTimeout(() => setIsPaused(false), 3000)}
-        className="overflow-hidden"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        <div className="flex gap-4 md:gap-6 px-4 w-max">
-          {doubled.map((t, i) => (
-            <TestimonialCard key={i} t={t} />
-          ))}
+      <div className="relative">
+        {/* Scroll hint gradients */}
+        <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+
+        <div
+          ref={scrollRef}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setTimeout(() => setIsPaused(false), 3000)}
+          className="overflow-hidden"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          <div className="flex gap-4 md:gap-6 px-4 w-max">
+            {doubled.map((t, i) => (
+              <TestimonialCard key={i} t={t} />
+            ))}
+          </div>
         </div>
       </div>
     </section>
