@@ -1,8 +1,8 @@
 import { CreditCard, UserCheck, Rocket } from "lucide-react";
 
 export const SubscribeMockup = () => (
-  <div className="w-full h-full flex items-center justify-center p-4 md:p-6">
-    <div className="w-full max-w-[280px] md:max-w-[320px] space-y-3 md:space-y-4">
+  <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 md:p-6">
+    <div className="w-full max-w-[280px] md:max-w-[320px] space-y-2 sm:space-y-3 md:space-y-4 scale-[0.85] sm:scale-100 origin-center">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -42,8 +42,8 @@ export const SubscribeMockup = () => (
 );
 
 export const OnboardMockup = () => (
-  <div className="w-full h-full flex items-center justify-center p-4 md:p-6">
-    <div className="w-full max-w-[280px] md:max-w-[320px] space-y-3 md:space-y-4">
+  <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 md:p-6">
+    <div className="w-full max-w-[280px] md:max-w-[320px] space-y-2 sm:space-y-3 md:space-y-4 scale-[0.85] sm:scale-100 origin-center">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -90,8 +90,8 @@ export const OnboardMockup = () => (
 );
 
 export const LaunchMockup = () => (
-  <div className="w-full h-full flex items-center justify-center p-4 md:p-6">
-    <div className="w-full max-w-[280px] md:max-w-[320px] space-y-3 md:space-y-4">
+  <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 md:p-6">
+    <div className="w-full max-w-[280px] md:max-w-[320px] space-y-2 sm:space-y-3 md:space-y-4 scale-[0.85] sm:scale-100 origin-center">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
