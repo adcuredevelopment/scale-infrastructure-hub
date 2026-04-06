@@ -9,7 +9,7 @@ const PaymentSuccess = () => {
   const plan = searchParams.get("plan") || "your plan";
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-background flex items-center justify-center px-5 py-12">
       <div className="max-w-lg w-full text-center space-y-8">
         {/* Success icon */}
         <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
