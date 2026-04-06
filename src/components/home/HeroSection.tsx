@@ -108,7 +108,7 @@ export const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.9 }}
-            className="grid grid-cols-3 gap-4 sm:gap-8 max-w-lg mx-auto mt-12 md:mt-16 pt-6 md:pt-8 border-t border-border/30"
+            className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-8 max-w-lg mx-auto mt-12 md:mt-16 pt-6 md:pt-8 border-t border-border/30"
           >
             <div className="text-center">
               <div className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground">
