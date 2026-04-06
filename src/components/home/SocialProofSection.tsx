@@ -81,8 +81,7 @@ export const SocialProofSection = () => {
                 />
               ))}
               <span className="ml-1.5 text-sm font-medium text-foreground">4.4</span>
-              <span className="text-sm text-muted-foreground ml-1">on Trustpilot</span>
-              <span className="text-xs text-muted-foreground ml-1">• 13 reviews</span>
+              <span className="text-sm text-muted-foreground ml-1">on Trustpilot • 13 reviews</span>
             </div>
           </div>
         </ScrollReveal>

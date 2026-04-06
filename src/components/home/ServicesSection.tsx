@@ -130,7 +130,7 @@ export const ServicesSection = () => {
                   >
                     <Button
                       variant="outline"
-                      className="w-full border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 group/btn min-h-[44px]"
+                      className="w-full border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 group/btn min-h-[44px] text-sm"
                     >
                       {platform.cta}
                       <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
