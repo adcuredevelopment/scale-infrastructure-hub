@@ -42,11 +42,10 @@ export default function AdminOverview() {
   };
 
   const fetchDashboardData = useCallback(async () => {
-    const [subsRes, custRes, paymentsRes, notifsRes, allPaymentsRes] = await Promise.all([
+    const [subsRes, custRes, paymentsRes, allPaymentsRes] = await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("customers").select("*"),
       supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(10),
-      
       supabase.from("payments").select("*").order("created_at", { ascending: false }),
     ]);
 
@@ -54,7 +53,6 @@ export default function AdminOverview() {
     const custs = custRes.data || [];
     const payments = paymentsRes.data || [];
     const allPayments = allPaymentsRes.data || [];
-    const notifs = notifsRes.data || [];
 
     const activeSubs = subs.filter((s) => s.status === "active").length;
     const totalRevenue = subs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
@@ -67,7 +65,7 @@ export default function AdminOverview() {
     });
 
     setRecentPayments(payments);
-    setNotifications(notifs);
+    
 
     // Build chart data from ALL payments (last 7 days)
     const days: Record<string, number> = {};
@@ -150,7 +148,7 @@ export default function AdminOverview() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {/* Recent Payments */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -184,38 +182,6 @@ export default function AdminOverview() {
           </div>
         </motion.div>
 
-        {/* Notifications */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="rounded-xl border border-border/30 bg-card/60 overflow-hidden"
-        >
-          <div className="px-5 py-4 border-b border-border/20 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              Notifications
-              {notifications.length > 0 && (
-                <Badge className="text-[10px] px-1.5 py-0">{notifications.length}</Badge>
-              )}
-            </h2>
-            <a href="/admin/notifications" className="text-xs text-primary font-medium">View all →</a>
-          </div>
-          <div className="divide-y divide-border/10">
-            {notifications.length === 0 ? (
-              <p className="p-5 text-sm text-muted-foreground">No new notifications</p>
-            ) : (
-              notifications.map((n) => (
-                <div key={n.id} className="flex items-start gap-3 px-5 py-3">
-                  <Bell className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{n.title}</p>
-                    <p className="text-xs text-muted-foreground">{n.message}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </motion.div>
       </div>
     </div>
   );
