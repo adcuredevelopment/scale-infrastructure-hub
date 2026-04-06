@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const plans = [
   {
@@ -67,22 +68,73 @@ const plans = [
   },
 ];
 
+const EU_COUNTRIES = [
+  { code: "NL", name: "Netherlands" },
+  { code: "BE", name: "Belgium" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "PT", name: "Portugal" },
+  { code: "AT", name: "Austria" },
+  { code: "IE", name: "Ireland" },
+  { code: "FI", name: "Finland" },
+  { code: "SE", name: "Sweden" },
+  { code: "DK", name: "Denmark" },
+  { code: "PL", name: "Poland" },
+  { code: "CZ", name: "Czech Republic" },
+  { code: "RO", name: "Romania" },
+  { code: "HU", name: "Hungary" },
+  { code: "GR", name: "Greece" },
+  { code: "BG", name: "Bulgaria" },
+  { code: "HR", name: "Croatia" },
+  { code: "SK", name: "Slovakia" },
+  { code: "SI", name: "Slovenia" },
+  { code: "LT", name: "Lithuania" },
+  { code: "LV", name: "Latvia" },
+  { code: "EE", name: "Estonia" },
+  { code: "LU", name: "Luxembourg" },
+  { code: "MT", name: "Malta" },
+  { code: "CY", name: "Cyprus" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "US", name: "United States" },
+  { code: "OTHER", name: "Other" },
+];
+
 export const PricingSection = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState("");
+  const [country, setCountry] = useState("NL");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleGetStarted = (plan: typeof plans[0]) => {
     setSelectedPlan(plan);
+    setFirstName("");
+    setLastName("");
     setEmail("");
-    setEmailError("");
+    setCountry("NL");
+    setErrors({});
   };
 
-  const handleSubmitEmail = async () => {
-    const trimmed = email.trim();
-    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setEmailError("Please enter a valid email address");
+  const isNL = country === "NL";
+  const taxRate = 0.21;
+  const taxAmount = selectedPlan ? selectedPlan.amount * taxRate : 0;
+  const totalAmount = selectedPlan ? (isNL ? selectedPlan.amount + taxAmount : selectedPlan.amount) : 0;
+
+  const handleSubmit = async () => {
+    const newErrors: Record<string, string> = {};
+    if (!firstName.trim()) newErrors.firstName = "First name is required";
+    if (!lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = "Valid email is required";
+    }
+    if (!country) newErrors.country = "Country is required";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -94,7 +146,7 @@ export const PricingSection = () => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      const res = await fetch(`${supabaseUrl}/functions/v1/revolut-create-order`, {
+      const res = await fetch(`${supabaseUrl}/functions/v1/revolut-create-subscription`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,13 +154,15 @@ export const PricingSection = () => {
         },
         body: JSON.stringify({
           planName: plan.name,
-          email: trimmed,
+          email: email.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          country,
           affiliateCode: (() => {
             try {
               const stored = localStorage.getItem("adcure_ref");
               if (!stored) return undefined;
               const { code, ts } = JSON.parse(stored);
-              // 30-day expiry
               if (Date.now() - ts > 30 * 24 * 60 * 60 * 1000) {
                 localStorage.removeItem("adcure_ref");
                 return undefined;
@@ -121,7 +175,7 @@ export const PricingSection = () => {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data?.error || 'Failed to create order');
+      if (!res.ok) throw new Error(data?.error || 'Failed to create subscription');
 
       if (data?.checkout_url) {
         window.location.href = data.checkout_url;
@@ -218,34 +272,93 @@ export const PricingSection = () => {
         </div>
       </section>
 
-      {/* Email collection dialog */}
+      {/* Checkout dialog */}
       <Dialog open={!!selectedPlan} onOpenChange={(open) => !open && setSelectedPlan(null)}>
         <DialogContent className="sm:max-w-md p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="font-display">Enter your email to continue</DialogTitle>
+            <DialogTitle className="font-display">Complete your subscription</DialogTitle>
             <DialogDescription>
-              We'll use this email for your {selectedPlan?.name} subscription and portal account.
+              Enter your details for the {selectedPlan?.name} plan.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label htmlFor="checkout-email">Email address</Label>
+          <div className="space-y-3 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="checkout-firstname">First Name</Label>
+                <Input
+                  id="checkout-firstname"
+                  placeholder="John"
+                  value={firstName}
+                  onChange={(e) => { setFirstName(e.target.value); setErrors((p) => ({ ...p, firstName: "" })); }}
+                />
+                {errors.firstName && <p className="text-xs text-destructive">{errors.firstName}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="checkout-lastname">Last Name</Label>
+                <Input
+                  id="checkout-lastname"
+                  placeholder="Doe"
+                  value={lastName}
+                  onChange={(e) => { setLastName(e.target.value); setErrors((p) => ({ ...p, lastName: "" })); }}
+                />
+                {errors.lastName && <p className="text-xs text-destructive">{errors.lastName}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="checkout-email">Email Address</Label>
               <Input
                 id="checkout-email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setEmailError("");
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmitEmail()}
+                onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: "" })); }}
               />
-              {emailError && <p className="text-sm text-destructive">{emailError}</p>}
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
-            <Button onClick={handleSubmitEmail} className="w-full">
+
+            <div className="space-y-1.5">
+              <Label htmlFor="checkout-country">Country</Label>
+              <Select value={country} onValueChange={(val) => setCountry(val)}>
+                <SelectTrigger id="checkout-country">
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EU_COUNTRIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.country && <p className="text-xs text-destructive">{errors.country}</p>}
+            </div>
+
+            {/* Price breakdown */}
+            {selectedPlan && (
+              <div className="rounded-lg bg-muted/50 border border-border/30 p-3 space-y-1.5">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{selectedPlan.name}</span>
+                  <span className="text-foreground">€{selectedPlan.amount.toFixed(2)}</span>
+                </div>
+                {isNL && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">BTW (21%)</span>
+                    <span className="text-foreground">€{taxAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="border-t border-border/30 pt-1.5 flex justify-between text-sm font-semibold">
+                  <span className="text-foreground">Total / month</span>
+                  <span className="text-primary">€{totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+
+            <Button onClick={handleSubmit} className="w-full">
               Continue to Payment
             </Button>
+
+            <p className="text-[10px] text-muted-foreground text-center">
+              Monthly subscription • Cancel anytime • 7-day money-back guarantee
+            </p>
           </div>
         </DialogContent>
       </Dialog>

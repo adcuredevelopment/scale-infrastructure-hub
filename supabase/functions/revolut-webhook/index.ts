@@ -203,8 +203,29 @@ Deno.serve(async (req) => {
       )
     }
 
-    const validEvents = ['ORDER_COMPLETED', 'ORDER_AUTHORISED', 'ORDER_PAYMENT_FAILED', 'ORDER_PAYMENT_DECLINED']
+    const validEvents = ['ORDER_COMPLETED', 'ORDER_AUTHORISED', 'ORDER_PAYMENT_FAILED', 'ORDER_PAYMENT_DECLINED', 'SUBSCRIPTION_ACTIVATED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_RENEWED']
     if (!validEvents.includes(event)) {
+      return new Response(
+        JSON.stringify({ received: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Handle subscription-specific events
+    if (event === 'SUBSCRIPTION_ACTIVATED' || event === 'SUBSCRIPTION_CANCELLED' || event === 'SUBSCRIPTION_RENEWED') {
+      const subscriptionId = rawPayload.subscription_id || rawPayload.id
+      console.log(`Subscription event: ${event}, subscription: ${subscriptionId}`)
+
+      if (subscriptionId) {
+        if (event === 'SUBSCRIPTION_CANCELLED') {
+          await supabase
+            .from('subscriptions')
+            .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+            .eq('revolut_subscription_id', subscriptionId)
+          console.log(`Subscription ${subscriptionId} cancelled via webhook`)
+        }
+      }
+
       return new Response(
         JSON.stringify({ received: true }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -249,6 +270,10 @@ Deno.serve(async (req) => {
         const amount = Number(prevPayload?.amount || 0)
 
         if (email && planName) {
+          const customerName = prevPayload?.firstName && prevPayload?.lastName
+            ? `${prevPayload.firstName} ${prevPayload.lastName}`
+            : null
+
           const { data: existingCustomer } = await supabase
             .from('customers')
             .select('id, total_spent, subscription_count')
@@ -262,10 +287,12 @@ Deno.serve(async (req) => {
               last_payment_at: new Date().toISOString(),
               plan: planName,
               status: 'active',
+              ...(customerName ? { name: customerName } : {}),
             }).eq('id', existingCustomer.id)
           } else {
             await supabase.from('customers').insert({
               email,
+              name: customerName,
               plan: planName,
               total_spent: amount,
               subscription_count: 1,
@@ -278,14 +305,18 @@ Deno.serve(async (req) => {
           const expiresAt = new Date()
           expiresAt.setMonth(expiresAt.getMonth() + 1)
 
+          const revolutSubId = prevPayload?.subscriptionId || order_id
+
           await supabase.from('subscriptions').insert({
             customer_email: email,
+            customer_name: customerName,
             plan_name: planName,
             status: 'active',
             amount,
             currency: 'EUR',
-            revolut_subscription_id: order_id,
+            revolut_subscription_id: revolutSubId,
             expires_at: expiresAt.toISOString(),
+            affiliate_code: prevPayload?.affiliateCode || null,
           })
 
           await supabase.from('notifications').insert({
