@@ -305,14 +305,18 @@ Deno.serve(async (req) => {
           const expiresAt = new Date()
           expiresAt.setMonth(expiresAt.getMonth() + 1)
 
+          const revolutSubId = prevPayload?.subscriptionId || order_id
+
           await supabase.from('subscriptions').insert({
             customer_email: email,
+            customer_name: customerName,
             plan_name: planName,
             status: 'active',
             amount,
             currency: 'EUR',
-            revolut_subscription_id: order_id,
+            revolut_subscription_id: revolutSubId,
             expires_at: expiresAt.toISOString(),
+            affiliate_code: prevPayload?.affiliateCode || null,
           })
 
           await supabase.from('notifications').insert({
