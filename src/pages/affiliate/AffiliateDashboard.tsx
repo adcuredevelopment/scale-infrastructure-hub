@@ -111,10 +111,14 @@ export default function AffiliateDashboard() {
             <EarningsChart referrals={referrals} />
           </div>
 
-          {/* Tables */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-            <ReferralsTable referrals={referrals} />
-            <PayoutsTable payouts={payouts} />
+          {/* Tables — stacked vertically with scroll */}
+          <div className="space-y-6">
+            <div className="max-h-[500px] overflow-y-auto rounded-xl">
+              <ReferralsTable referrals={referrals} />
+            </div>
+            <div className="max-h-[400px] overflow-y-auto rounded-xl">
+              <PayoutsTable payouts={payouts} />
+            </div>
           </div>
         </div>
       </div>
