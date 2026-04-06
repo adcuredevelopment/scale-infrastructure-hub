@@ -24,7 +24,7 @@ const Contact = () => {
   return (
     <div className="noise-overlay">
       <Navbar />
-      <main className="pt-24 sm:pt-32 py-16 md:py-32 px-5 md:px-8">
+      <main className="pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-32 px-5 md:px-8">
         <div className="container mx-auto max-w-4xl">
           <ScrollReveal>
             <div className="text-center mb-10 md:mb-16">

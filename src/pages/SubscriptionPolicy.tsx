@@ -5,10 +5,10 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 const SubscriptionPolicy = () => (
   <div className="noise-overlay">
     <Navbar />
-    <main className="pt-32 section-padding">
+    <main className="pt-24 sm:pt-28 md:pt-32 section-padding">
       <div className="container mx-auto max-w-3xl">
         <ScrollReveal>
-          <h1 className="text-4xl md:text-5xl font-display font-bold mb-8">Subscription Policy</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold mb-8">Subscription Policy</h1>
           <div className="prose prose-invert prose-sm max-w-none space-y-6 text-muted-foreground">
             <p>Last updated: December 2025</p>
 
