@@ -152,7 +152,7 @@ export const PricingSection = () => {
             </div>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-6 max-w-5xl mx-auto">
             {plans.map((plan, i) => (
               <ScrollReveal key={plan.name} delay={i * 0.08}>
                 <div
