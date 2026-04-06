@@ -220,7 +220,7 @@ export const PricingSection = () => {
 
       {/* Email collection dialog */}
       <Dialog open={!!selectedPlan} onOpenChange={(open) => !open && setSelectedPlan(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="font-display">Enter your email to continue</DialogTitle>
             <DialogDescription>
