@@ -42,13 +42,13 @@ export default function Affiliate() {
       <Navbar />
 
       {/* Hero */}
-      <section className="pt-28 md:pt-40 pb-16 md:pb-24 px-5 md:px-8">
+      <section className="pt-24 sm:pt-28 md:pt-40 pb-16 md:pb-24 px-5 md:px-8">
         <div className="container mx-auto text-center max-w-3xl">
           <ScrollReveal>
             <span className="text-[11px] sm:text-xs font-medium text-primary uppercase tracking-widest">
               Affiliate Program
             </span>
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-display font-bold mt-4 mb-5">
+            <h1 className="text-2xl sm:text-4xl md:text-6xl font-display font-bold mt-4 mb-5">
               Join the Adcure{" "}
               <span className="text-gradient">Affiliate Program</span>
             </h1>

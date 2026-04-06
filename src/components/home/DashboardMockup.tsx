@@ -94,7 +94,7 @@ export const DashboardMockup = () => {
           </div>
 
           {/* Main content */}
-          <div className="flex-1 p-3 sm:p-4 md:p-5 min-h-[220px] md:min-h-[340px]">
+          <div className="flex-1 p-3 sm:p-4 md:p-5 min-h-[200px] md:min-h-[340px]">
             {/* Header */}
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="min-w-0">
@@ -114,13 +114,13 @@ export const DashboardMockup = () => {
                   className="rounded-md md:rounded-lg border border-border/30 bg-card/60 p-1.5 sm:p-2 md:p-3"
                 >
                   <div className="flex items-start justify-between mb-0.5 md:mb-1">
-                    <span className="text-[6px] sm:text-[8px] md:text-[9px] font-medium text-muted-foreground uppercase tracking-wider">{kpi.label}</span>
+                    <span className="text-[7px] sm:text-[8px] md:text-[9px] font-medium text-muted-foreground uppercase tracking-wider">{kpi.label}</span>
                     <kpi.icon className="w-2.5 md:w-3 h-2.5 md:h-3 text-primary" />
                   </div>
                   <div className="text-[10px] sm:text-sm md:text-base font-bold text-foreground">{kpi.value}</div>
                   <div className="flex items-center gap-0.5 md:gap-1 mt-0.5 md:mt-1">
                     <TrendingUp className="w-1.5 md:w-2 h-1.5 md:h-2 text-emerald-500" />
-                    <span className="text-[5px] sm:text-[7px] md:text-[8px] font-medium text-emerald-500">{kpi.trend}</span>
+                    <span className="text-[6px] sm:text-[7px] md:text-[8px] font-medium text-emerald-500">{kpi.trend}</span>
                   </div>
                 </div>
               ))}
