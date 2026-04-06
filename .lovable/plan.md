@@ -1,84 +1,57 @@
 
 
-## Responsive UI/UX Optimization — All Pages
+## Mobile Optimization — Home Page & All Remaining Pages
 
-### Overview
-After reviewing every page and component, the site is already well-built with responsive classes. However, there are specific areas where mobile (390px), tablet (768-834px), and desktop layouts need refinement. No text or design changes — only layout, spacing, and sizing adjustments.
+### Assessment
+After reviewing every component and page, the site already has solid responsive foundations. The browser testing showed what appeared to be missing sections, but this is due to ScrollReveal's `whileInView` not triggering in the headless browser — real users will see all content correctly.
 
-### Issues Found & Fixes
+That said, there are specific mobile refinements still needed:
 
-#### 1. Legal Pages (Privacy, Terms, Refund, SubscriptionPolicy)
-**Issue:** `pt-32` is fixed regardless of device — on mobile the top padding is too large after the shorter navbar. The `h1` uses `text-4xl` on mobile which can be large for long titles like "Refund & Warranty Policy".
-**Fix:** Change `pt-32` to `pt-24 sm:pt-28 md:pt-32`. Add responsive heading: `text-3xl sm:text-4xl md:text-5xl`.
+### Changes
 
-**Files:** `Privacy.tsx`, `Terms.tsx`, `Refund.tsx`, `SubscriptionPolicy.tsx`
+#### 1. Home Page — HowItWorksSection (mobile layout)
+**Issue:** On mobile, the detail card (mockup) shows first (`order-1`) then steps below (`order-2`). The mockup animation area uses `aspect-[16/10]` on mobile which takes too much vertical space. The step list buttons have generous padding that could be tighter on mobile.
+**Fix:** Reduce mockup aspect ratio on mobile to `aspect-[16/9]`. Tighten step button padding on mobile.
 
-#### 2. Shop "About" Sections (FacebookAccounts, BusinessManagers, FacebookPages, FacebookStructures)
-**Issue:** The "About" content section uses `section-padding` (which may have large vertical padding) and `text-3xl` heading without mobile breakpoints. The `p-6` on info cards can feel cramped on small screens.
-**Fix:** Add responsive heading `text-2xl sm:text-3xl`. Add `py-12 md:py-24` instead of `section-padding`. Use `p-4 sm:p-5 md:p-6` on info cards.
+**File:** `src/components/home/HowItWorksSection.tsx`
 
-**Files:** `FacebookAccounts.tsx`, `BusinessManagers.tsx`, `FacebookPages.tsx`, `FacebookStructures.tsx`
+#### 2. Home Page — PricingSection (mobile card spacing)
+**Issue:** The 3-column grid goes to `grid-cols-1` on mobile, which is fine, but the card padding `p-5 sm:p-6 md:p-8` and internal spacing could be slightly tighter on very small screens. The "Most Popular" badge could clip.
+**Fix:** Add `mt-2` on the popular card on mobile to prevent badge clipping on the top. Minor padding refinement.
 
-#### 3. NotFound Page
-**Issue:** Uses `bg-muted` instead of `bg-background`, inconsistent with the rest of the site. No responsive text sizing.
-**Fix:** Use `bg-background`, add responsive sizing, and match site styling with `font-display`.
+**File:** `src/components/home/PricingSection.tsx`
 
-**File:** `NotFound.tsx`
+#### 3. Home Page — SocialProofSection (touch scroll hint)
+**Issue:** No visual hint that the testimonial carousel is scrollable on mobile. Users may not realize they can swipe.
+**Fix:** Add a subtle gradient fade on the right edge to hint at more content.
 
-#### 4. Affiliate Dashboard — Referral Link
-**Issue:** On mobile (390px), the referral link URL overflows or gets cut. The copy button and URL field flex layout can feel cramped.
-**Fix:** Stack the URL and copy button vertically on mobile: `flex-col sm:flex-row`.
+**File:** `src/components/home/SocialProofSection.tsx`
 
-**File:** `src/components/affiliate/ReferralLink.tsx`
+#### 4. Shop Pages — ShopProductGrid (mobile card layout)
+**Issue:** Product cards go to `grid-cols-1` which is correct, but the "Most Popular" badge uses `absolute -top-px` which can clip at the container edge. The price and name share a single row which can be cramped with long names on 390px.
+**Fix:** Stack name and price vertically on very small screens. Add `mt-2` on popular cards.
 
-#### 5. Affiliate Dashboard — Earnings Chart
-**Issue:** The YAxis labels (`€XX`) can clip on narrow screens. The chart height of 250px is fine but the X-axis font size (12px) is slightly large for mobile.
-**Fix:** Reduce XAxis/YAxis font size on mobile by using a smaller default (10px). Hide YAxis on very small screens or reduce width.
+**File:** `src/components/shop/ShopProductGrid.tsx`
 
-**File:** `src/components/affiliate/EarningsChart.tsx`
-
-#### 6. Footer — Mobile Grid
-**Issue:** On mobile the 3 link columns (Product, Shop, Legal) use `grid-cols-2`, which means the 3rd column wraps awkwardly underneath. The brand column spans full width which is fine, but the link columns should be consistent.
-**Fix:** Make link columns `grid-cols-2 sm:grid-cols-3` for the link section, or keep the existing layout but ensure even spacing. Currently the `md:col-span-2` creates uneven distribution on tablet.
+#### 5. Footer — Legal column wrapping
+**Issue:** On mobile (`grid-cols-2`), the 3 link columns (Product, Shop, Legal) means Legal wraps to a new row and sits alone on the left, creating visual imbalance.
+**Fix:** Use `grid-cols-3` for just the link columns on small screens so all 3 fit side by side, or stack all to single column on very small screens.
 
 **File:** `src/components/Footer.tsx`
 
-#### 7. DashboardMockup — Mobile Polish
-**Issue:** On small mobile screens the KPI card text sizes (`text-[6px]`, `text-[5px]`) are extremely small and may be illegible. The mockup is decorative, so this is acceptable, but the minimum height could be reduced on mobile.
-**Fix:** Slightly increase minimum text sizes in KPI cards. Reduce `min-h` on mobile from `220px` to `200px`.
+#### 6. Navbar — Mobile menu shop items
+**Issue:** Mobile shop dropdown items only show labels without icons or descriptions, which is fine functionally. But the mobile CTA buttons `mt-3` and `mt-2` create inconsistent spacing.
+**Fix:** Unify mobile CTA button spacing with `mt-2` on both.
 
-**File:** `src/components/home/DashboardMockup.tsx`
+**File:** `src/components/Navbar.tsx`
 
-#### 8. Admin Pages — Mobile Sidebar
-**Issue:** The admin sidebar is always visible and doesn't collapse on mobile. There's no mobile hamburger menu for admin.
-**Fix:** Hide the sidebar on mobile (`hidden md:flex`) and add a mobile top bar with a hamburger that opens the sidebar as a sheet/drawer.
-
-**Files:** `src/components/admin/AdminSidebar.tsx`, `src/components/admin/AdminLayout.tsx`
-
-#### 9. Contact Page
-**Issue:** The `pt-24 sm:pt-32 py-16` creates conflicting padding. On mobile the top padding should be consistent with other pages.
-**Fix:** Change to `pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-32`.
-
-**File:** `src/pages/Contact.tsx`
-
-#### 10. Affiliate Dashboard — Header
-**Issue:** On mobile, the "Welcome back, {name}" heading and Sign Out button can collide if the name is long.
-**Fix:** Stack the header on mobile: `flex-col sm:flex-row items-start sm:items-center`. Move sign out button below on mobile.
-
-**File:** `src/pages/affiliate/AffiliateDashboard.tsx`
-
-### Summary of Files to Modify
-
+### Files to Modify
 | File | Change |
 |------|--------|
-| `Privacy.tsx`, `Terms.tsx`, `Refund.tsx`, `SubscriptionPolicy.tsx` | Responsive top padding + heading size |
-| `FacebookAccounts.tsx`, `BusinessManagers.tsx`, `FacebookPages.tsx`, `FacebookStructures.tsx` | Responsive "About" section headings + padding |
-| `NotFound.tsx` | Match site styling |
-| `ReferralLink.tsx` | Stack layout on mobile |
-| `EarningsChart.tsx` | Smaller axis fonts on mobile |
-| `Footer.tsx` | Better mobile column distribution |
-| `DashboardMockup.tsx` | Minor mobile text size tweaks |
-| `AdminSidebar.tsx` + `AdminLayout.tsx` | Mobile sidebar as drawer |
-| `Contact.tsx` | Fix padding conflict |
-| `AffiliateDashboard.tsx` | Stack header on mobile |
+| `src/components/home/HowItWorksSection.tsx` | Tighter mobile mockup aspect ratio and step padding |
+| `src/components/home/PricingSection.tsx` | Popular badge spacing fix on mobile |
+| `src/components/home/SocialProofSection.tsx` | Scroll hint gradient on edges |
+| `src/components/shop/ShopProductGrid.tsx` | Stack price/name on small screens, popular card margin |
+| `src/components/Footer.tsx` | Better 3-column link distribution on mobile |
+| `src/components/Navbar.tsx` | Consistent mobile CTA spacing |
 
