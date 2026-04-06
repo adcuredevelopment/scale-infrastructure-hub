@@ -37,7 +37,7 @@ export const SignupEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
-          <Text style={logoText}>⚡ Adcure</Text>
+          <Img src={LOGO_URL} alt="Adcure Agency" width="180" height="auto" style={{ margin: '0' }} />
         </Section>
         <Heading style={h1}>Confirm your email</Heading>
         <Text style={text}>
