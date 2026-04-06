@@ -1,10 +1,11 @@
 import * as React from 'npm:react@18.3.1'
 import {
-  Body, Container, Head, Heading, Html, Preview, Text, Section, Hr, Link,
+  Body, Container, Head, Heading, Html, Preview, Text, Section, Hr, Img,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
 const SITE_NAME = 'Adcure'
+const LOGO_URL = 'https://uwncaohygevjvtgkazvv.supabase.co/storage/v1/object/public/email-assets/adcure-logo.png'
 
 interface SubscriptionCancelledProps {
   customerName?: string
@@ -25,7 +26,7 @@ const SubscriptionCancelledEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
-          <Text style={logoText}>⚡ {SITE_NAME}</Text>
+          <Img src={LOGO_URL} alt="Adcure Agency" width="180" height="auto" style={{ margin: '0' }} />
         </Section>
 
         <Heading style={h1}>
@@ -98,13 +99,6 @@ const container = {
 
 const logoSection = {
   marginBottom: '24px',
-}
-
-const logoText = {
-  fontSize: '20px',
-  fontWeight: '700' as const,
-  color: '#2563eb',
-  margin: '0',
 }
 
 const h1 = {
