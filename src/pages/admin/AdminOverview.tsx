@@ -17,6 +17,10 @@ export default function AdminOverview() {
     activeSubscriptions: 0,
     totalCustomers: 0,
     mrr: 0,
+    mrrChange: 0,
+    revenueChange: 0,
+    subsChange: 0,
+    custChange: 0,
   });
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   
