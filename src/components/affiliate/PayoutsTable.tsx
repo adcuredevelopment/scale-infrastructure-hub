@@ -14,41 +14,62 @@ const statusColors: Record<string, string> = {
 
 export function PayoutsTable({ payouts }: Props) {
   return (
-    <div className="glass rounded-xl p-5 md:p-6">
+    <div className="glass rounded-xl p-4 sm:p-5 md:p-6">
       <h3 className="font-display font-semibold text-sm mb-4">Payout History</h3>
       {payouts.length === 0 ? (
         <p className="text-sm text-muted-foreground">No payouts yet.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-muted-foreground text-xs border-b border-border">
-                <th className="text-left py-2 font-medium">Amount</th>
-                <th className="text-center py-2 font-medium">Status</th>
-                <th className="text-right py-2 font-medium">Date</th>
-                <th className="text-right py-2 font-medium">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payouts.map((p) => (
-                <tr key={p.id} className="border-b border-border/50">
-                  <td className="py-2.5">€{Number(p.amount).toFixed(2)}</td>
-                  <td className="py-2.5 text-center">
-                    <Badge variant="outline" className={statusColors[p.status] || ""}>
-                      {p.status}
-                    </Badge>
-                  </td>
-                  <td className="py-2.5 text-right text-muted-foreground">
-                    {p.payout_date ? new Date(p.payout_date).toLocaleDateString() : "—"}
-                  </td>
-                  <td className="py-2.5 text-right text-muted-foreground truncate max-w-[150px]">
-                    {p.notes || "—"}
-                  </td>
+        <>
+          {/* Mobile card layout */}
+          <div className="space-y-3 md:hidden">
+            {payouts.map((p) => (
+              <div key={p.id} className="rounded-lg border border-border/50 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">€{Number(p.amount).toFixed(2)}</span>
+                  <Badge variant="outline" className={statusColors[p.status] || ""}>
+                    {p.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{p.payout_date ? new Date(p.payout_date).toLocaleDateString() : "—"}</span>
+                  <span className="truncate max-w-[60%] text-right">{p.notes || "—"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table layout */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-muted-foreground text-xs border-b border-border">
+                  <th className="text-left py-2 font-medium">Amount</th>
+                  <th className="text-center py-2 font-medium">Status</th>
+                  <th className="text-right py-2 font-medium">Date</th>
+                  <th className="text-right py-2 font-medium">Notes</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {payouts.map((p) => (
+                  <tr key={p.id} className="border-b border-border/50">
+                    <td className="py-2.5">€{Number(p.amount).toFixed(2)}</td>
+                    <td className="py-2.5 text-center">
+                      <Badge variant="outline" className={statusColors[p.status] || ""}>
+                        {p.status}
+                      </Badge>
+                    </td>
+                    <td className="py-2.5 text-right text-muted-foreground">
+                      {p.payout_date ? new Date(p.payout_date).toLocaleDateString() : "—"}
+                    </td>
+                    <td className="py-2.5 text-right text-muted-foreground truncate max-w-[150px]">
+                      {p.notes || "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
