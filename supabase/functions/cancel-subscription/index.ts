@@ -155,33 +155,57 @@ Deno.serve(async (req) => {
         .eq('id', customer.id)
     }
 
-    // Send cancellation email via direct HTTP call (bypasses JWT verification issue with functions.invoke)
+    // Send cancellation email by enqueuing directly (avoids JWT issues with cross-function calls)
     try {
-      const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-      const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${serviceRoleKey}`,
-          'apikey': anonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          templateName: 'subscription-cancelled',
-          recipientEmail: subscription.customer_email,
-          idempotencyKey: `sub-cancel-${subscriptionId}`,
-          templateData: {
-            planName: subscription.plan_name,
-            amount: subscription.amount,
-            currency: subscription.currency,
-            customerName: subscription.customer_name,
-          },
-        }),
+      const templateData = {
+        planName: subscription.plan_name,
+        amount: subscription.amount,
+        currency: subscription.currency,
+        customerName: subscription.customer_name,
+      }
+
+      const html = await renderAsync(
+        React.createElement(cancelledTemplate.component, templateData)
+      )
+      const plainText = await renderAsync(
+        React.createElement(cancelledTemplate.component, templateData),
+        { plainText: true }
+      )
+
+      const resolvedSubject = typeof cancelledTemplate.subject === 'function'
+        ? cancelledTemplate.subject(templateData)
+        : cancelledTemplate.subject
+
+      const messageId = crypto.randomUUID()
+
+      await supabaseAdmin.from('email_send_log').insert({
+        message_id: messageId,
+        template_name: 'subscription-cancelled',
+        recipient_email: subscription.customer_email,
+        status: 'pending',
       })
-      const emailBody = await emailRes.text()
-      if (!emailRes.ok) {
-        console.error('Cancellation email failed:', emailRes.status, emailBody)
+
+      const { error: enqueueError } = await supabaseAdmin.rpc('enqueue_email', {
+        queue_name: 'transactional_emails',
+        payload: {
+          message_id: messageId,
+          to: subscription.customer_email,
+          from: 'scale-infrastructure-hub <noreply@adcure.agency>',
+          sender_domain: 'notify.adcure.agency',
+          subject: resolvedSubject,
+          html,
+          text: plainText,
+          purpose: 'transactional',
+          label: 'subscription-cancelled',
+          idempotency_key: `sub-cancel-${subscriptionId}`,
+          queued_at: new Date().toISOString(),
+        },
+      })
+
+      if (enqueueError) {
+        console.error('Failed to enqueue cancellation email:', enqueueError)
       } else {
-        console.log('Cancellation email queued for:', subscription.customer_email)
+        console.log('Cancellation email enqueued for:', subscription.customer_email)
       }
     } catch (e) {
       console.error('Email sending failed:', e)
