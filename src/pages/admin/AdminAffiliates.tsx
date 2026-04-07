@@ -278,10 +278,21 @@ export default function AdminAffiliates() {
                       <TableCell className="text-sm">{r.customer_email || "—"}</TableCell>
                       <TableCell className="text-sm">{r.plan_name || "—"}</TableCell>
                        <TableCell>
-                         <Badge variant="outline" className={r.referral_type === "signup_bonus" ? "bg-purple-500/15 text-purple-400 border-purple-500/20" : "bg-blue-500/15 text-blue-400 border-blue-500/20"}>
-                           {r.referral_type === "signup_bonus" ? "Bonus" : "Recurring"}
-                         </Badge>
-                       </TableCell>
+                         {(() => {
+                           const isCancelled = r.referral_type === "recurring" && r.customer_email && cancelledEmails.has(r.customer_email.toLowerCase());
+                           return (
+                             <Badge variant="outline" className={
+                               r.referral_type === "signup_bonus"
+                                 ? "bg-purple-500/15 text-purple-400 border-purple-500/20"
+                                 : isCancelled
+                                   ? "bg-red-500/15 text-red-400 border-red-500/20"
+                                   : "bg-blue-500/15 text-blue-400 border-blue-500/20"
+                             }>
+                               {r.referral_type === "signup_bonus" ? "Bonus" : isCancelled ? "Cancelled" : "Recurring"}
+                             </Badge>
+                           );
+                         })()}
+                        </TableCell>
                        <TableCell className="text-sm">€{Number(r.payment_amount).toFixed(2)}</TableCell>
                       <TableCell className="text-sm font-medium">€{Number(r.commission_amount).toFixed(2)}</TableCell>
                       <TableCell>
