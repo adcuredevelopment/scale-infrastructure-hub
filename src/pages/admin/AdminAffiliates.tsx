@@ -102,9 +102,10 @@ export default function AdminAffiliates() {
     a.affiliate_code?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalCommissions = referrals.reduce((s, r) => s + Number(r.commission_amount), 0);
-  const pendingCommissions = referrals.filter((r) => r.status === "pending").reduce((s, r) => s + Number(r.commission_amount), 0);
-  const totalPaidOut = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  // MRR Commissions = sum of recurring commission amounts for active subscribers (not cancelled)
+  const mrrCommissions = referrals
+    .filter((r) => r.referral_type === "recurring" && r.status !== "paid" && r.customer_email && !cancelledEmails.has(r.customer_email.toLowerCase()))
+    .reduce((s, r) => s + Number(r.commission_amount), 0);
 
   const getAffiliateReferralCount = (id: string) => {
     const emails = new Set(referrals.filter((r) => r.affiliate_id === id && r.customer_email).map((r) => r.customer_email));
