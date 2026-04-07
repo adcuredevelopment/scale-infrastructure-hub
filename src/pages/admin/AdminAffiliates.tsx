@@ -151,11 +151,20 @@ export default function AdminAffiliates() {
       if (newStatus === "paid") {
         const payout = payouts.find((p) => p.id === id);
         if (payout) {
+          // Mark referrals as paid
           await supabase
             .from("affiliate_referrals")
             .update({ status: "paid" })
             .eq("affiliate_id", payout.affiliate_id)
             .eq("status", "approved");
+
+          // Auto-remove paid referrals for cancelled subscriptions
+          const affRefs = referrals.filter((r) => r.affiliate_id === payout.affiliate_id && r.customer_email);
+          for (const ref of affRefs) {
+            if (ref.customer_email && cancelledEmails.has(ref.customer_email.toLowerCase())) {
+              await supabase.from("affiliate_referrals").delete().eq("id", ref.id);
+            }
+          }
         }
       }
       fetchAll();
