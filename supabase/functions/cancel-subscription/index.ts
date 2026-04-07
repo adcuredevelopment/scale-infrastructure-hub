@@ -257,7 +257,7 @@ Deno.serve(async (req) => {
       console.error('Email sending failed:', e)
     }
 
-    return new Response(JSON.stringify({ success: true, revolutCancelled }), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
