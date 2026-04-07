@@ -1,9 +1,14 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import * as React from 'npm:react@18.3.1'
+import { renderAsync } from 'npm:@react-email/components@0.0.22'
+import { template as cancelledTemplate } from '../_shared/transactional-email-templates/subscription-cancelled.tsx'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const REVOLUT_API_URL = 'https://merchant.revolut.com/api'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -79,30 +84,30 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Cancel the subscription in Revolut if we have the subscription ID
+    // Cancel the subscription in Revolut
+    let revolutCancelled = false
     if (subscription.revolut_subscription_id && revolutApiKey) {
       try {
         const revolutRes = await fetch(
-          `https://merchant.revolut.com/api/v2/subscriptions/${subscription.revolut_subscription_id}/cancel`,
+          `${REVOLUT_API_URL}/subscriptions/${subscription.revolut_subscription_id}/cancel`,
           {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${revolutApiKey}`,
               'Content-Type': 'application/json',
+              'Revolut-Api-Version': '2024-09-01',
             },
           }
         )
+        const resBody = await revolutRes.text()
         if (!revolutRes.ok) {
-          const errBody = await revolutRes.text()
-          console.error('Revolut cancel failed:', revolutRes.status, errBody)
-          // Continue with local cancellation even if Revolut fails
+          console.error('Revolut cancel failed:', revolutRes.status, resBody)
         } else {
           console.log('Revolut subscription cancelled:', subscription.revolut_subscription_id)
-          await revolutRes.text() // consume body
+          revolutCancelled = true
         }
       } catch (e) {
         console.error('Revolut cancel error:', e)
-        // Continue with local cancellation
       }
     }
 
@@ -150,31 +155,96 @@ Deno.serve(async (req) => {
         .eq('id', customer.id)
     }
 
-    // Send cancellation email
+    // Send cancellation email by enqueuing directly (avoids JWT issues with cross-function calls)
     try {
-      const { error: emailError } = await supabaseAdmin.functions.invoke('send-transactional-email', {
-        body: {
-          templateName: 'subscription-cancelled',
-          recipientEmail: subscription.customer_email,
-          idempotencyKey: `sub-cancel-${subscriptionId}`,
-          templateData: {
-            planName: subscription.plan_name,
-            amount: subscription.amount,
-            currency: subscription.currency,
-            customerName: subscription.customer_name,
-          },
-        },
-      })
-      if (emailError) {
-        console.error('Cancellation email invoke error:', emailError)
+      const templateData = {
+        planName: subscription.plan_name,
+        amount: subscription.amount,
+        currency: subscription.currency,
+        customerName: subscription.customer_name,
+      }
+
+      const html = await renderAsync(
+        React.createElement(cancelledTemplate.component, templateData)
+      )
+      const plainText = await renderAsync(
+        React.createElement(cancelledTemplate.component, templateData),
+        { plainText: true }
+      )
+
+      const resolvedSubject = typeof cancelledTemplate.subject === 'function'
+        ? cancelledTemplate.subject(templateData)
+        : cancelledTemplate.subject
+
+      const messageId = crypto.randomUUID()
+      const normalizedEmail = subscription.customer_email.toLowerCase()
+
+      // Get or create unsubscribe token
+      let unsubscribeToken: string
+      const { data: existingToken } = await supabaseAdmin
+        .from('email_unsubscribe_tokens')
+        .select('token, used_at')
+        .eq('email', normalizedEmail)
+        .maybeSingle()
+
+      if (existingToken && !existingToken.used_at) {
+        unsubscribeToken = existingToken.token
+      } else if (!existingToken) {
+        const bytes = new Uint8Array(32)
+        crypto.getRandomValues(bytes)
+        unsubscribeToken = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+        await supabaseAdmin
+          .from('email_unsubscribe_tokens')
+          .upsert({ token: unsubscribeToken, email: normalizedEmail }, { onConflict: 'email', ignoreDuplicates: true })
+        const { data: storedToken } = await supabaseAdmin
+          .from('email_unsubscribe_tokens')
+          .select('token')
+          .eq('email', normalizedEmail)
+          .maybeSingle()
+        unsubscribeToken = storedToken?.token || unsubscribeToken
       } else {
-        console.log('Cancellation email sent to:', subscription.customer_email)
+        // Token used = suppressed, skip sending
+        console.log('Email suppressed for:', normalizedEmail)
+        unsubscribeToken = ''
+      }
+
+      if (unsubscribeToken) {
+        await supabaseAdmin.from('email_send_log').insert({
+          message_id: messageId,
+          template_name: 'subscription-cancelled',
+          recipient_email: subscription.customer_email,
+          status: 'pending',
+        })
+
+        const { error: enqueueError } = await supabaseAdmin.rpc('enqueue_email', {
+          queue_name: 'transactional_emails',
+          payload: {
+            message_id: messageId,
+            to: subscription.customer_email,
+            from: 'scale-infrastructure-hub <noreply@adcure.agency>',
+            sender_domain: 'notify.adcure.agency',
+            subject: resolvedSubject,
+            html,
+            text: plainText,
+            purpose: 'transactional',
+            label: 'subscription-cancelled',
+            idempotency_key: `sub-cancel-${subscriptionId}`,
+            unsubscribe_token: unsubscribeToken,
+            queued_at: new Date().toISOString(),
+          },
+        })
+
+        if (enqueueError) {
+          console.error('Failed to enqueue cancellation email:', enqueueError)
+        } else {
+          console.log('Cancellation email enqueued for:', subscription.customer_email)
+        }
       }
     } catch (e) {
       console.error('Email sending failed:', e)
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, revolutCancelled }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
