@@ -507,6 +507,12 @@ export type Database = {
         Returns: number
       }
       generate_affiliate_code: { Args: never; Returns: string }
+      get_affiliate_cancelled_emails: {
+        Args: never
+        Returns: {
+          customer_email: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

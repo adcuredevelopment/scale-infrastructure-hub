@@ -83,10 +83,7 @@ export function useAffiliate() {
             .from("affiliate_payouts")
             .select("*")
             .order("created_at", { ascending: false }),
-          supabase
-            .from("subscriptions")
-            .select("customer_email, status")
-            .eq("status", "cancelled"),
+          supabase.rpc("get_affiliate_cancelled_emails"),
         ]);
         setReferrals((refsRes.data as AffiliateReferral[]) || []);
         setPayouts((payRes.data as AffiliatePayout[]) || []);
