@@ -102,8 +102,10 @@ export function useAffiliate() {
     .filter((r) => r.referral_type === "signup_bonus" && r.status !== "paid")
     .reduce((sum, r) => sum + Number(r.commission_amount), 0);
 
-  // Pending: count of referrals not yet paid out
-  const pendingReferralsCount = referrals.filter((r) => r.status !== "paid").length;
+  // Pending: total € amount of referrals not yet paid out
+  const pendingAmount = referrals
+    .filter((r) => r.status !== "paid")
+    .reduce((sum, r) => sum + Number(r.commission_amount), 0);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -119,7 +121,7 @@ export function useAffiliate() {
     loading,
     activeReferrals,
     unpaidSignupBonuses,
-    pendingReferralsCount,
+    pendingAmount,
     monthlyRecurring,
     refetch: fetchAffiliateData,
   };
