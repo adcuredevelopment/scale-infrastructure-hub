@@ -1,56 +1,66 @@
 
-## Upgrade Checkout: Customer Details, Tax & Revolut Recurring Subscriptions
+Problem found:
+- The Sync Revolut function is rebuilding subscriptions from Revolut orders, not from Revolut subscription states.
+- In that sync logic, completed orders are treated as active subscriptions.
+- It checks for an existing subscription using `revolut_subscription_id = order.id`, but for recurring checkout flows the real subscription ID is stored in `payments.payload.subscriptionId`, not the order ID.
+- So when you cancel a subscription correctly, the next sync does not match the cancelled row and creates a brand-new active subscription from the old completed order.
 
-### What Changes
+Why this happens in your code:
+- `cancel-subscription` correctly cancels in Revolut first, then marks the DB row cancelled.
+- But `revolut-sync-orders`:
+  1. fetches only `/api/orders`
+  2. maps `ORDER_COMPLETED` to a completed payment
+  3. then inserts a subscription with `status: 'active'`
+  4. uses `revolut_subscription_id: orderId`
+- That means historical completed orders can keep recreating active subscriptions even after cancellation.
 
-**Current flow**: Email-only dialog → Revolut one-time order → redirect to checkout
-**New flow**: Full details dialog (first name, last name, email, country) → Create Revolut customer → Create Revolut subscription → redirect to Hosted Payment Page
+Implementation plan:
+1. Fix subscription identity in `revolut-sync-orders`
+- Resolve the true subscription ID using:
+  - `existingPayment.payload.subscriptionId` first
+  - fallback to any subscription-specific value returned by Revolut if present
+  - only last-resort fallback to order ID for legacy one-time data
+- Use that resolved subscription ID for lookup and insert, not `order.id`.
 
-### 1. Expand Checkout Dialog (`PricingSection.tsx`)
-- Add fields: **First Name**, **Last Name**, **Email**, **Country** (dropdown with NL pre-selected)
-- When country = Netherlands, show 21% BTW breakdown below the price
-- Display: "€79.00 + €16.59 BTW = **€95.59** /mo" for Dutch customers
-- Non-NL customers pay the base price without tax
+2. Stop sync from reactivating cancelled subscriptions
+- Before inserting/updating, check whether a matching subscription already exists and is `cancelled`.
+- If it is cancelled, do not recreate it as active from a completed order.
+- Preserve `cancelled_at` and keep the row cancelled unless there is an explicit external active subscription status proving otherwise.
 
-### 2. New Edge Function: `revolut-create-subscription`
-Replaces `revolut-create-order` for plan purchases. Steps:
-1. Validate input (firstName, lastName, email, country, planName)
-2. **Create Revolut Customer** via `POST /customers` with name + email
-3. **Create Revolut Subscription** via `POST /subscriptions` with:
-   - `customer_id` from step 2
-   - `plan_variation_id` (pre-configured plan variation)
-   - `setup_order_redirect_url` pointing to `/payment-success`
-4. Store payment record in DB with full customer details in payload
-5. Return the `setup_order.checkout_url` for redirect
+3. Make sync status-aware instead of order-only
+- Extend the sync logic so it can determine whether the subscription itself is active or cancelled.
+- Best approach: fetch subscription details from Revolut for known subscription IDs during sync and map state to DB status.
+- If Revolut says cancelled, update the existing DB row to `cancelled` instead of inserting a new active one.
 
-### 3. One-Time Setup: Create Subscription Plans in Revolut
-Before the edge function works, we need to create 3 subscription plans via the Revolut API:
-- **Starter Advertiser**: €79/mo (€95.59 incl. BTW for NL)
-- **Growth Advertiser**: €119/mo (€143.99 incl. BTW for NL)
-- **Advanced Advertiser**: €149/mo (€180.29 incl. BTW for NL)
+4. Prevent duplicate subscriptions at the data layer
+- Add a database uniqueness guard for `subscriptions.revolut_subscription_id` (likely partial unique index for non-null values).
+- This prevents future duplicate rows for the same real subscription and makes sync safer.
 
-Each plan needs 2 variations: one with tax (NL) and one without.
+5. Backfill existing bad data
+- Add a migration to clean up duplicates already created by the broken sync:
+  - identify duplicate rows sharing customer/order lineage
+  - keep the correct cancelled/real-subscription record
+  - mark/remove wrongly recreated active duplicates in a safe, deterministic way
+- Special care is needed because your current data already contains both cancelled and re-created active rows for the same customers.
 
-**Question**: Do you want me to create these plans automatically via a script, or do you prefer to set them up manually in your Revolut Business dashboard?
+6. Keep related records consistent
+- Recompute customer `subscription_count`/`status` based on true active subscriptions after the sync fix.
+- Ensure affiliate referral display logic continues to reflect cancelled subscriptions correctly once duplicate active rows are gone.
 
-### 4. Update `revolut-webhook` and `revolut-sync-orders`
-- Handle new subscription webhook events (`SUBSCRIPTION_ACTIVATED`, `SUBSCRIPTION_CANCELLED`, `ORDER_COMPLETED` for recurring charges)
-- Store `customer_name` from the new data in subscriptions table
+Files to update:
+- `supabase/functions/revolut-sync-orders/index.ts`
+- `supabase/migrations/...sql`
 
-### 5. Store Customer Details
-- Update the `payments.payload` to include `firstName`, `lastName`, `country`
-- Update `customers` table with `name` field from checkout data
-- Update `subscriptions` table with `customer_name`
+Technical details:
+- Current bug location:
+  - existing lookup: `.eq('revolut_subscription_id', orderId)`
+  - insert: `revolut_subscription_id: orderId`
+- For subscription checkouts, the real subscription identifier is already stored in:
+  - `payments.payload.subscriptionId`
+- Because sync currently processes orders only, an old `ORDER_COMPLETED` event is being misinterpreted as “subscription is active now”.
+- A unique index on `subscriptions.revolut_subscription_id` will also protect against future accidental duplication.
 
-### Files to Create/Modify
-| File | Action |
-|------|--------|
-| `supabase/functions/revolut-create-subscription/index.ts` | Create — new subscription flow |
-| `src/components/home/PricingSection.tsx` | Modify — expanded checkout dialog |
-| `supabase/functions/revolut-webhook/index.ts` | Modify — handle subscription events |
-| `supabase/functions/revolut-sync-orders/index.ts` | Modify — sync subscription data |
-
-### Important Notes
-- The existing `revolut-create-order` stays for any future one-time product purchases (shop page)
-- Revolut subscription plans need to be created once via API before this works
-- Tax is calculated server-side to prevent manipulation
+Expected outcome after the fix:
+- Clicking “Sync Revolut” will no longer turn cancelled subscriptions back to active.
+- Cancelled subscriptions that are also cancelled in Revolut stay cancelled locally.
+- Existing duplicate active rows created by previous syncs are cleaned up.
