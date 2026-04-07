@@ -43,13 +43,18 @@ export const Navbar = () => {
   }, [mobileOpen]);
 
   useEffect(() => {
+    let totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const onResize = () => { totalHeight = document.documentElement.scrollHeight - window.innerHeight; };
     const onScroll = () => {
       setScrolled(window.scrollY > 20);
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
       setScrollProgress(totalHeight > 0 ? (window.scrollY / totalHeight) * 100 : 0);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   useEffect(() => {

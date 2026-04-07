@@ -45,11 +45,16 @@ export const SocialProofSection = () => {
     let animationId: number;
     let scrollPos = 0;
     const speed = 0.4;
+    // Cache scrollWidth to avoid forced reflow every frame
+    let halfWidth = el.scrollWidth / 2;
+
+    // Re-measure on resize only
+    const onResize = () => { halfWidth = el.scrollWidth / 2; };
+    window.addEventListener("resize", onResize);
 
     const step = () => {
       if (!isPaused) {
         scrollPos += speed;
-        const halfWidth = el.scrollWidth / 2;
         if (scrollPos >= halfWidth) {
           scrollPos = 0;
         }
@@ -59,7 +64,10 @@ export const SocialProofSection = () => {
     };
 
     animationId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animationId);
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", onResize);
+    };
   }, [isPaused]);
 
   const doubled = [...testimonials, ...testimonials];
