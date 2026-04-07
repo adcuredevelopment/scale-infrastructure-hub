@@ -1,11 +1,10 @@
 import { useAffiliate } from "@/hooks/useAffiliate";
-import { EarningsChart } from "@/components/affiliate/EarningsChart";
 import { ReferralLink } from "@/components/affiliate/ReferralLink";
 import { ReferralsTable } from "@/components/affiliate/ReferralsTable";
 import { PayoutsTable } from "@/components/affiliate/PayoutsTable";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { DollarSign, Clock, Users, CreditCard, LogOut, Loader2, Gift, TrendingUp } from "lucide-react";
+import { Clock, Users, LogOut, Loader2, Gift, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +25,7 @@ function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: st
 }
 
 export default function AffiliateDashboard() {
-  const { affiliate, referrals, payouts, loading, totalEarnings, pendingEarnings, totalPaidOut, totalReferrals, bonusEarnings, monthlyRecurring } = useAffiliate();
+  const { affiliate, referrals, payouts, loading, activeReferrals, unpaidSignupBonuses, pendingReferralsCount, monthlyRecurring } = useAffiliate();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -76,24 +75,20 @@ export default function AffiliateDashboard() {
           </div>
 
 {/* KPIs - Carousel on mobile/tablet, grid on desktop */}
-          <div className="hidden lg:grid grid-cols-3 gap-4 mb-6">
-            <KPI icon={Users} label="Total Referrals" value={String(totalReferrals)} />
-            <KPI icon={DollarSign} label="Total Earnings" value={`€${totalEarnings.toFixed(2)}`} />
+          <div className="hidden lg:grid grid-cols-4 gap-4 mb-6">
+            <KPI icon={Users} label="Active Referrals" value={String(activeReferrals)} />
             <KPI icon={TrendingUp} label="Monthly Recurring" value={`€${monthlyRecurring.toFixed(2)}`} />
-            <KPI icon={Gift} label="Signup Bonuses" value={`€${bonusEarnings.toFixed(2)}`} />
-            <KPI icon={Clock} label="Pending" value={`€${pendingEarnings.toFixed(2)}`} />
-            <KPI icon={CreditCard} label="Paid Out" value={`€${totalPaidOut.toFixed(2)}`} />
+            <KPI icon={Gift} label="Signup Bonuses" value={`€${unpaidSignupBonuses.toFixed(2)}`} />
+            <KPI icon={Clock} label="Pending" value={String(pendingReferralsCount)} />
           </div>
           <div className="lg:hidden mb-6">
             <Carousel opts={{ align: "start", loop: false }} className="w-full">
               <CarouselContent className="-ml-3">
                 {[
-                  { icon: Users, label: "Total Referrals", value: String(totalReferrals) },
-                  { icon: DollarSign, label: "Total Earnings", value: `€${totalEarnings.toFixed(2)}` },
+                  { icon: Users, label: "Active Referrals", value: String(activeReferrals) },
                   { icon: TrendingUp, label: "Monthly Recurring", value: `€${monthlyRecurring.toFixed(2)}` },
-                  { icon: Gift, label: "Signup Bonuses", value: `€${bonusEarnings.toFixed(2)}` },
-                  { icon: Clock, label: "Pending", value: `€${pendingEarnings.toFixed(2)}` },
-                  { icon: CreditCard, label: "Paid Out", value: `€${totalPaidOut.toFixed(2)}` },
+                  { icon: Gift, label: "Signup Bonuses", value: `€${unpaidSignupBonuses.toFixed(2)}` },
+                  { icon: Clock, label: "Pending", value: String(pendingReferralsCount) },
                 ].map((kpi, i) => (
                   <CarouselItem key={i} className="pl-3 basis-[45%] sm:basis-[35%] md:basis-[30%]">
                     <KPI icon={kpi.icon} label={kpi.label} value={kpi.value} />
@@ -103,14 +98,10 @@ export default function AffiliateDashboard() {
             </Carousel>
           </div>
 
+
           {/* Referral Link */}
           <div className="mb-6">
             <ReferralLink affiliateCode={affiliate.affiliate_code} />
-          </div>
-
-          {/* Chart */}
-          <div className="mb-6">
-            <EarningsChart referrals={referrals} />
           </div>
 
           {/* Tables — stacked vertically with scroll */}

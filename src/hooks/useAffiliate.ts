@@ -92,21 +92,18 @@ export function useAffiliate() {
     }
   }
 
-  const totalEarnings = referrals
-    .filter((r) => r.status === "approved" || r.status === "paid")
+  // Active referrals: only referrals (not signup_bonus) that are not paid
+  const activeReferrals = referrals.filter(
+    (r) => r.referral_type !== "signup_bonus" && r.status !== "paid"
+  ).length;
+
+  // Signup bonuses that haven't been paid out yet
+  const unpaidSignupBonuses = referrals
+    .filter((r) => r.referral_type === "signup_bonus" && r.status !== "paid")
     .reduce((sum, r) => sum + Number(r.commission_amount), 0);
 
-  const pendingEarnings = referrals
-    .filter((r) => r.status === "pending")
-    .reduce((sum, r) => sum + Number(r.commission_amount), 0);
-
-  const totalPaidOut = payouts
-    .filter((p) => p.status === "paid")
-    .reduce((sum, p) => sum + Number(p.amount), 0);
-
-  const bonusEarnings = referrals
-    .filter((r) => r.referral_type === "signup_bonus" && (r.status === "approved" || r.status === "paid"))
-    .reduce((sum, r) => sum + Number(r.commission_amount), 0);
+  // Pending: count of referrals not yet paid out
+  const pendingReferralsCount = referrals.filter((r) => r.status !== "paid").length;
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -120,11 +117,9 @@ export function useAffiliate() {
     referrals,
     payouts,
     loading,
-    totalEarnings,
-    pendingEarnings,
-    totalPaidOut,
-    totalReferrals: referrals.filter((r) => r.referral_type !== "signup_bonus").length,
-    bonusEarnings,
+    activeReferrals,
+    unpaidSignupBonuses,
+    pendingReferralsCount,
     monthlyRecurring,
     refetch: fetchAffiliateData,
   };
