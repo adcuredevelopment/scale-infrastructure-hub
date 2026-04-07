@@ -5,7 +5,7 @@ import { ReferralsTable } from "@/components/affiliate/ReferralsTable";
 import { PayoutsTable } from "@/components/affiliate/PayoutsTable";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { DollarSign, Clock, Users, CreditCard, LogOut, Loader2, Gift } from "lucide-react";
+import { DollarSign, Clock, Users, CreditCard, LogOut, Loader2, Gift, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,7 @@ function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: st
 }
 
 export default function AffiliateDashboard() {
-  const { affiliate, referrals, payouts, loading, totalEarnings, pendingEarnings, totalPaidOut, totalReferrals, bonusEarnings } = useAffiliate();
+  const { affiliate, referrals, payouts, loading, totalEarnings, pendingEarnings, totalPaidOut, totalReferrals, bonusEarnings, monthlyRecurring } = useAffiliate();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -76,9 +76,10 @@ export default function AffiliateDashboard() {
           </div>
 
 {/* KPIs - Carousel on mobile/tablet, grid on desktop */}
-          <div className="hidden lg:grid grid-cols-5 gap-4 mb-6">
+          <div className="hidden lg:grid grid-cols-3 gap-4 mb-6">
             <KPI icon={Users} label="Total Referrals" value={String(totalReferrals)} />
             <KPI icon={DollarSign} label="Total Earnings" value={`€${totalEarnings.toFixed(2)}`} />
+            <KPI icon={TrendingUp} label="Monthly Recurring" value={`€${monthlyRecurring.toFixed(2)}`} />
             <KPI icon={Gift} label="Signup Bonuses" value={`€${bonusEarnings.toFixed(2)}`} />
             <KPI icon={Clock} label="Pending" value={`€${pendingEarnings.toFixed(2)}`} />
             <KPI icon={CreditCard} label="Paid Out" value={`€${totalPaidOut.toFixed(2)}`} />
@@ -89,6 +90,7 @@ export default function AffiliateDashboard() {
                 {[
                   { icon: Users, label: "Total Referrals", value: String(totalReferrals) },
                   { icon: DollarSign, label: "Total Earnings", value: `€${totalEarnings.toFixed(2)}` },
+                  { icon: TrendingUp, label: "Monthly Recurring", value: `€${monthlyRecurring.toFixed(2)}` },
                   { icon: Gift, label: "Signup Bonuses", value: `€${bonusEarnings.toFixed(2)}` },
                   { icon: Clock, label: "Pending", value: `€${pendingEarnings.toFixed(2)}` },
                   { icon: CreditCard, label: "Paid Out", value: `€${totalPaidOut.toFixed(2)}` },
