@@ -311,8 +311,9 @@ Deno.serve(async (req) => {
             email: finalEmail,
             revolut_state: state,
             synced_at: new Date().toISOString(),
-            // Preserve affiliateCode
+            // Preserve affiliateCode and subscriptionId
             ...(existingAffiliateCode ? { affiliateCode: existingAffiliateCode } : {}),
+            ...(existingSubscriptionId ? { subscriptionId: existingSubscriptionId } : {}),
           },
         }).eq('revolut_order_id', orderId)
         updated++
