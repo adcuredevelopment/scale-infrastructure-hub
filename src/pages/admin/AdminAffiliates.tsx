@@ -107,11 +107,12 @@ export default function AdminAffiliates() {
     .filter((r) => r.referral_type === "recurring" && r.status !== "paid" && r.customer_email && !cancelledEmails.has(r.customer_email.toLowerCase()))
     .reduce((s, r) => s + Number(r.commission_amount), 0);
 
+  // Only count referrals with active subscriptions
   const getAffiliateReferralCount = (id: string) => {
-    const emails = new Set(referrals.filter((r) => r.affiliate_id === id && r.customer_email).map((r) => r.customer_email));
+    const emails = new Set(referrals.filter((r) => r.affiliate_id === id && r.customer_email && !cancelledEmails.has(r.customer_email.toLowerCase())).map((r) => r.customer_email));
     return emails.size;
   };
-  const getAffiliateEarnings = (id: string) => referrals.filter((r) => r.affiliate_id === id).reduce((s, r) => s + Number(r.commission_amount), 0);
+  const getAffiliateEarnings = (id: string) => referrals.filter((r) => r.affiliate_id === id && !(r.customer_email && cancelledEmails.has(r.customer_email.toLowerCase()))).reduce((s, r) => s + Number(r.commission_amount), 0);
 
   const getAffiliateReferrals = (id: string) => referrals.filter((r) => r.affiliate_id === id);
   const getAffiliatePayouts = (id: string) => payouts.filter((p) => p.affiliate_id === id);
