@@ -37,6 +37,7 @@ export function useAffiliate() {
   const [affiliate, setAffiliate] = useState<AffiliateData | null>(null);
   const [referrals, setReferrals] = useState<AffiliateReferral[]>([]);
   const [payouts, setPayouts] = useState<AffiliatePayout[]>([]);
+  const [cancelledEmails, setCancelledEmails] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export function useAffiliate() {
       setAffiliate(null);
       setReferrals([]);
       setPayouts([]);
+      setCancelledEmails(new Set());
       setLoading(false);
       return;
     }
@@ -72,7 +74,7 @@ export function useAffiliate() {
       setAffiliate(aff);
 
       if (aff) {
-        const [refsRes, payRes] = await Promise.all([
+        const [refsRes, payRes, subsRes] = await Promise.all([
           supabase
             .from("affiliate_referrals")
             .select("*")
@@ -81,9 +83,17 @@ export function useAffiliate() {
             .from("affiliate_payouts")
             .select("*")
             .order("created_at", { ascending: false }),
+          supabase
+            .from("subscriptions")
+            .select("customer_email, status")
+            .eq("status", "cancelled"),
         ]);
         setReferrals((refsRes.data as AffiliateReferral[]) || []);
         setPayouts((payRes.data as AffiliatePayout[]) || []);
+        const cancelled = new Set<string>(
+          (subsRes.data || []).map((s) => s.customer_email.toLowerCase())
+        );
+        setCancelledEmails(cancelled);
       }
     } catch (err) {
       console.error("Error fetching affiliate data:", err);
