@@ -117,7 +117,7 @@ export function useAffiliate() {
     totalEarnings,
     pendingEarnings,
     totalPaidOut,
-    totalReferrals: referrals.length,
+    totalReferrals: referrals.filter((r) => r.referral_type !== "signup_bonus").length,
     bonusEarnings,
     refetch: fetchAffiliateData,
   };
