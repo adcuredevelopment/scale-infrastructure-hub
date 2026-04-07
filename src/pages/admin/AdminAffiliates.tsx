@@ -204,11 +204,10 @@ export default function AdminAffiliates() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard title="Affiliates" value={affiliates.length.toString()} icon={Users} />
         <KPICard title="Total Referrals" value={new Set(referrals.filter(r => r.customer_email).map(r => r.customer_email)).size.toString()} icon={TrendingUp} delay={0.05} />
-        <KPICard title="Total Commissions" value={`€${totalCommissions.toFixed(2)}`} icon={DollarSign} delay={0.1} />
-        <KPICard title="Paid Out" value={`€${totalPaidOut.toFixed(2)}`} icon={CreditCard} change={`€${pendingCommissions.toFixed(2)} pending`} changeType="neutral" delay={0.15} />
+        <KPICard title="MRR Commissions" value={`€${mrrCommissions.toFixed(2)}`} icon={DollarSign} delay={0.1} />
       </div>
 
       <div className="relative">
