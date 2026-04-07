@@ -6,6 +6,7 @@ const corsHeaders = {
 }
 
 const REVOLUT_API_URL = 'https://merchant.revolut.com/api/orders'
+const REVOLUT_SUBSCRIPTIONS_URL = 'https://merchant.revolut.com/api/1.0/subscriptions'
 
 // Signup bonus amounts by plan price (duplicated from revolut-webhook)
 const SIGNUP_BONUSES: Record<number, number> = {
@@ -37,7 +38,6 @@ async function handleAffiliateCommission(
       .maybeSingle()
 
     if (aff) {
-      // Check if commission already exists for this payment
       const { data: existingRef } = await supabase
         .from('affiliate_referrals')
         .select('id')
@@ -100,7 +100,6 @@ async function handleAffiliateCommission(
     .not('affiliate_code', 'is', null)
     .maybeSingle()
 
-  // Date guard: only attribute if order was created after the affiliate was linked
   if (sub?.affiliate_code && orderCreatedAt) {
     const orderDate = new Date(orderCreatedAt)
     const subStartDate = new Date(sub.started_at)
@@ -119,7 +118,6 @@ async function handleAffiliateCommission(
       .maybeSingle()
 
     if (aff) {
-      // Check if commission already exists for this payment
       const { data: existingRef } = await supabase
         .from('affiliate_referrals')
         .select('id')
@@ -145,6 +143,40 @@ async function handleAffiliateCommission(
       }
     }
   }
+}
+
+/**
+ * Fetch the actual subscription status from Revolut for known subscription IDs.
+ * Returns a map of subscriptionId -> state (e.g. 'ACTIVE', 'CANCELLED', 'INACTIVE').
+ */
+async function fetchRevolutSubscriptionStates(
+  subscriptionIds: string[],
+  apiKey: string
+): Promise<Record<string, string>> {
+  const stateMap: Record<string, string> = {}
+  
+  for (const subId of subscriptionIds) {
+    try {
+      const res = await fetch(`${REVOLUT_SUBSCRIPTIONS_URL}/${subId}`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Revolut-Api-Version': '2024-09-01',
+        },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        stateMap[subId] = (data.state || 'UNKNOWN').toUpperCase()
+        console.log(`Revolut subscription ${subId} state: ${stateMap[subId]}`)
+      } else {
+        console.log(`Could not fetch subscription ${subId}: ${res.status}`)
+      }
+    } catch (e) {
+      console.error(`Error fetching subscription ${subId}:`, e)
+    }
+  }
+  
+  return stateMap
 }
 
 Deno.serve(async (req) => {
@@ -243,7 +275,6 @@ Deno.serve(async (req) => {
       if (batch.length < 500) {
         hasMore = false
       } else {
-        // Use last order's created_at as cursor for next page
         const lastOrder = batch[batch.length - 1]
         const lastCreatedAt = lastOrder.created_at
         if (!lastCreatedAt || lastCreatedAt === cursor) {
@@ -261,8 +292,69 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
+    // Step 1: Collect all known subscription IDs from DB to check their real status in Revolut
+    const { data: allDbSubs } = await supabaseAdmin
+      .from('subscriptions')
+      .select('revolut_subscription_id, status')
+      .not('revolut_subscription_id', 'is', null)
+
+    const knownSubIds = new Set<string>()
+    for (const s of allDbSubs || []) {
+      if (s.revolut_subscription_id) knownSubIds.add(s.revolut_subscription_id)
+    }
+
+    // Also collect subscription IDs from payment payloads
+    const { data: paymentsWithSubId } = await supabaseAdmin
+      .from('payments')
+      .select('payload')
+      .not('payload', 'is', null)
+
+    for (const p of paymentsWithSubId || []) {
+      const subId = (p.payload as any)?.subscriptionId
+      if (subId) knownSubIds.add(subId)
+    }
+
+    // Fetch actual states from Revolut for all known subscription IDs
+    const revolutSubStates = await fetchRevolutSubscriptionStates(
+      Array.from(knownSubIds),
+      REVOLUT_API_KEY
+    )
+
+    // Build a set of cancelled subscription IDs according to Revolut
+    const cancelledSubIds = new Set<string>()
+    for (const [subId, state] of Object.entries(revolutSubStates)) {
+      if (state === 'CANCELLED' || state === 'INACTIVE') {
+        cancelledSubIds.add(subId)
+      }
+    }
+
+    // Update any DB subscriptions that Revolut says are cancelled but DB says active
+    for (const sub of allDbSubs || []) {
+      if (sub.status === 'active' && sub.revolut_subscription_id && cancelledSubIds.has(sub.revolut_subscription_id)) {
+        console.log(`Marking subscription ${sub.revolut_subscription_id} as cancelled (Revolut says so)`)
+        await supabaseAdmin
+          .from('subscriptions')
+          .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+          .eq('revolut_subscription_id', sub.revolut_subscription_id)
+          .eq('status', 'active')
+      }
+    }
+
     let synced = 0
     let updated = 0
+
+    // Build a set of cancelled customer emails from DB (for order-based subscription guard)
+    const { data: cancelledSubs } = await supabaseAdmin
+      .from('subscriptions')
+      .select('customer_email, revolut_subscription_id, amount')
+      .eq('status', 'cancelled')
+
+    // Map order IDs that belong to cancelled subscriptions
+    // We need to know which order IDs should NOT create new active subscriptions
+    const cancelledOrderIds = new Set<string>()
+    for (const cs of cancelledSubs || []) {
+      if (cs.revolut_subscription_id) cancelledOrderIds.add(cs.revolut_subscription_id)
+    }
 
     for (const order of orders) {
       const orderId = order.id
@@ -311,7 +403,6 @@ Deno.serve(async (req) => {
             email: finalEmail,
             revolut_state: state,
             synced_at: new Date().toISOString(),
-            // Preserve affiliateCode and subscriptionId
             ...(existingAffiliateCode ? { affiliateCode: existingAffiliateCode } : {}),
             ...(existingSubscriptionId ? { subscriptionId: existingSubscriptionId } : {}),
           },
@@ -337,6 +428,69 @@ Deno.serve(async (req) => {
 
       // Sync completed orders to customers & subscriptions + affiliate commissions
       if (dbStatus === 'completed' && finalEmail) {
+        // Resolve the true subscription ID: payload > order itself > fallback to orderId
+        const trueSubscriptionId = existingSubscriptionId || orderId
+
+        // *** KEY FIX: Check if this subscription ID or order belongs to a cancelled subscription ***
+        // Check 1: Is the resolved subscription ID cancelled?
+        if (cancelledSubIds.has(trueSubscriptionId) || cancelledOrderIds.has(trueSubscriptionId)) {
+          console.log(`Skipping subscription creation for order ${orderId}: subscription ${trueSubscriptionId} is cancelled`)
+          // Still update customer spending but don't create/reactivate subscription
+          const { data: existingCustomer } = await supabaseAdmin
+            .from('customers')
+            .select('id')
+            .eq('email', finalEmail)
+            .maybeSingle()
+
+          if (!existingCustomer) {
+            await supabaseAdmin.from('customers').insert({
+              email: finalEmail,
+              name: order.customer?.full_name || order.customer?.name || null,
+              plan: planName,
+              total_spent: amount,
+              subscription_count: 0,
+              first_payment_at: createdAt,
+              last_payment_at: createdAt,
+              status: 'cancelled',
+            })
+          }
+          continue
+        }
+
+        // Check 2: Does this customer already have a cancelled subscription with same amount?
+        // This catches cases where the order ID differs from the subscription ID
+        const { data: cancelledForCustomer } = await supabaseAdmin
+          .from('subscriptions')
+          .select('id, revolut_subscription_id')
+          .eq('customer_email', finalEmail)
+          .eq('status', 'cancelled')
+          .eq('amount', amount)
+
+        // If there's a cancelled sub and NO active sub with this order/sub ID, skip
+        if (cancelledForCustomer && cancelledForCustomer.length > 0) {
+          const { data: activeSub } = await supabaseAdmin
+            .from('subscriptions')
+            .select('id')
+            .eq('revolut_subscription_id', trueSubscriptionId)
+            .eq('status', 'active')
+            .maybeSingle()
+
+          if (!activeSub) {
+            // Check if the order was created BEFORE the cancellation — if so, it's a historical order
+            const { data: existingSubById } = await supabaseAdmin
+              .from('subscriptions')
+              .select('id')
+              .eq('revolut_subscription_id', trueSubscriptionId)
+              .maybeSingle()
+
+            if (!existingSubById) {
+              console.log(`Skipping subscription creation for ${finalEmail}: cancelled sub exists with same amount €${amount}`)
+              continue
+            }
+          }
+        }
+
+        // Update/create customer
         const { data: existingCustomer } = await supabaseAdmin
           .from('customers')
           .select('id, total_spent, subscription_count')
@@ -347,7 +501,7 @@ Deno.serve(async (req) => {
           const { data: existingSub } = await supabaseAdmin
             .from('subscriptions')
             .select('id')
-            .eq('revolut_subscription_id', orderId)
+            .eq('revolut_subscription_id', trueSubscriptionId)
             .maybeSingle()
 
           if (!existingSub) {
@@ -372,11 +526,11 @@ Deno.serve(async (req) => {
           })
         }
 
-        // Upsert subscription
+        // Upsert subscription — use true subscription ID
         const { data: existingSub } = await supabaseAdmin
           .from('subscriptions')
-          .select('id')
-          .eq('revolut_subscription_id', orderId)
+          .select('id, status')
+          .eq('revolut_subscription_id', trueSubscriptionId)
           .maybeSingle()
 
         if (!existingSub) {
@@ -390,11 +544,14 @@ Deno.serve(async (req) => {
             status: 'active',
             amount,
             currency,
-            revolut_subscription_id: orderId,
+            revolut_subscription_id: trueSubscriptionId,
             started_at: createdAt,
             expires_at: expiresAt.toISOString(),
             ...(existingAffiliateCode ? { affiliate_code: existingAffiliateCode } : {}),
           })
+        } else if (existingSub.status === 'cancelled') {
+          // *** Never reactivate a cancelled subscription from a historical order ***
+          console.log(`Subscription ${trueSubscriptionId} is cancelled, not reactivating from order ${orderId}`)
         }
 
         // Handle affiliate commissions
@@ -414,7 +571,7 @@ Deno.serve(async (req) => {
     }
 
     // Update revenue milestones
-    const { data: allSubs } = await supabaseAdmin.from('subscriptions').select('amount')
+    const { data: allSubs } = await supabaseAdmin.from('subscriptions').select('amount').eq('status', 'active')
     const totalRevenue = (allSubs || []).reduce((sum, s) => sum + Number(s.amount || 0), 0)
 
     const { data: milestones } = await supabaseAdmin
@@ -433,6 +590,22 @@ Deno.serve(async (req) => {
     await supabaseAdmin.from('revenue_milestones').update({
       current_amount: totalRevenue,
     }).eq('achieved', true)
+
+    // Recompute customer subscription counts based on actual active subscriptions
+    const { data: allCustomers } = await supabaseAdmin.from('customers').select('id, email')
+    for (const c of allCustomers || []) {
+      const { data: activeSubs } = await supabaseAdmin
+        .from('subscriptions')
+        .select('id')
+        .eq('customer_email', c.email)
+        .eq('status', 'active')
+
+      const activeCount = activeSubs?.length || 0
+      await supabaseAdmin.from('customers').update({
+        subscription_count: activeCount,
+        status: activeCount > 0 ? 'active' : 'cancelled',
+      }).eq('id', c.id)
+    }
 
     return new Response(
       JSON.stringify({
