@@ -207,7 +207,7 @@ export default function AdminAffiliates() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard title="Affiliates" value={affiliates.length.toString()} icon={Users} />
-        <KPICard title="Total Referrals" value={new Set(referrals.filter(r => r.customer_email).map(r => r.customer_email)).size.toString()} icon={TrendingUp} delay={0.05} />
+        <KPICard title="Total Referrals" value={new Set(referrals.filter(r => r.customer_email && !cancelledEmails.has(r.customer_email.toLowerCase())).map(r => r.customer_email)).size.toString()} icon={TrendingUp} delay={0.05} />
         <KPICard title="MRR Commissions" value={`€${mrrCommissions.toFixed(2)}`} icon={DollarSign} delay={0.1} />
       </div>
 
