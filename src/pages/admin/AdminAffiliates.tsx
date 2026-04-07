@@ -188,7 +188,10 @@ export default function AdminAffiliates() {
 
   // Only show unpaid referrals (pending or approved, not already paid)
   const affReferrals = selectedAffiliate
-    ? getAffiliateReferrals(selectedAffiliate.id).filter((r) => r.status !== "paid")
+    ? getAffiliateReferrals(selectedAffiliate.id).filter(
+        (r) => r.status !== "paid" && 
+               !(r.customer_email && cancelledEmails.has(r.customer_email.toLowerCase()))
+      )
     : [];
   const affPayouts = selectedAffiliate ? getAffiliatePayouts(selectedAffiliate.id) : [];
 
