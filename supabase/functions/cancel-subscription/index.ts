@@ -84,32 +84,45 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Cancel the subscription in Revolut
-    let revolutCancelled = false
-    if (subscription.revolut_subscription_id && revolutApiKey) {
-      try {
-        const revolutRes = await fetch(
-          `${REVOLUT_API_URL}/subscriptions/${subscription.revolut_subscription_id}/cancel`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${revolutApiKey}`,
-              'Content-Type': 'application/json',
-              'Revolut-Api-Version': '2024-09-01',
-            },
-          }
-        )
-        const resBody = await revolutRes.text()
-        if (!revolutRes.ok) {
-          console.error('Revolut cancel failed:', revolutRes.status, resBody)
-        } else {
-          console.log('Revolut subscription cancelled:', subscription.revolut_subscription_id)
-          revolutCancelled = true
-        }
-      } catch (e) {
-        console.error('Revolut cancel error:', e)
-      }
+    // Cancel the subscription in Revolut FIRST — only proceed locally if Revolut confirms
+    if (!subscription.revolut_subscription_id) {
+      return new Response(JSON.stringify({ error: 'No Revolut subscription ID linked — cannot cancel' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
+
+    if (!revolutApiKey) {
+      return new Response(JSON.stringify({ error: 'Revolut API key not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const revolutRes = await fetch(
+      `${REVOLUT_API_URL}/subscriptions/${subscription.revolut_subscription_id}/cancel`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${revolutApiKey}`,
+          'Content-Type': 'application/json',
+          'Revolut-Api-Version': '2024-09-01',
+        },
+      }
+    )
+    const revolutBody = await revolutRes.text()
+
+    if (!revolutRes.ok) {
+      console.error('Revolut cancel failed:', revolutRes.status, revolutBody)
+      return new Response(JSON.stringify({
+        error: `Failed to cancel in Revolut (${revolutRes.status}): ${revolutBody}`,
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    console.log('Revolut subscription cancelled:', subscription.revolut_subscription_id)
 
     const now = new Date().toISOString()
 
@@ -244,7 +257,7 @@ Deno.serve(async (req) => {
       console.error('Email sending failed:', e)
     }
 
-    return new Response(JSON.stringify({ success: true, revolutCancelled }), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
