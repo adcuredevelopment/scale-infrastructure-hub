@@ -25,7 +25,7 @@ function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: st
 }
 
 export default function AffiliateDashboard() {
-  const { affiliate, referrals, payouts, loading, activeReferrals, unpaidSignupBonuses, pendingAmount, monthlyRecurring } = useAffiliate();
+  const { affiliate, referrals, payouts, loading, activeReferrals, unpaidSignupBonuses, pendingAmount, monthlyRecurring, cancelledEmails } = useAffiliate();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -107,7 +107,7 @@ export default function AffiliateDashboard() {
           {/* Tables — stacked vertically with scroll */}
           <div className="space-y-6">
             <div className="max-h-[500px] overflow-y-auto rounded-xl">
-              <ReferralsTable referrals={referrals} />
+              <ReferralsTable referrals={referrals} cancelledEmails={cancelledEmails} />
             </div>
             <div className="max-h-[400px] overflow-y-auto rounded-xl">
               <PayoutsTable payouts={payouts} />
