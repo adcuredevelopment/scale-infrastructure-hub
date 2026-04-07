@@ -1,0 +1,1 @@
+UPDATE public.subscriptions SET revolut_subscription_id = '69d43daa-72c6-a0f4-8a43-72c43484fc2c' WHERE id = '3c6294bb-32e4-4ea2-9061-31b2c4f20842';
