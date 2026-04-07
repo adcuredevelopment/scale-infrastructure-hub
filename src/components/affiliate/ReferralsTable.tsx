@@ -19,9 +19,8 @@ function maskEmail(email: string | null) {
 }
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  approved: "bg-green-500/10 text-green-400 border-green-500/20",
-  paid: "bg-primary/10 text-primary border-primary/20",
+  active: "bg-green-500/10 text-green-400 border-green-500/20",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 function TypeBadge({ type, isCancelled }: { type: string; isCancelled: boolean }) {
@@ -96,8 +95,8 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                 <div key={r.id} className="rounded-lg border border-border/50 p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium truncate max-w-[60%]">{maskEmail(r.customer_email)}</span>
-                    <Badge variant="outline" className={statusColors[r.status] || ""}>
-                      {r.status}
+                    <Badge variant="outline" className={statusColors[cancelled ? "cancelled" : "active"] || ""}>
+                      {cancelled ? "Cancelled" : "Active"}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -140,8 +139,8 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                       </td>
                       <td className="py-2.5 text-right">€{Number(r.commission_amount).toFixed(2)}</td>
                       <td className="py-2.5 text-center">
-                        <Badge variant="outline" className={statusColors[r.status] || ""}>
-                          {r.status}
+                        <Badge variant="outline" className={statusColors[cancelled ? "cancelled" : "active"] || ""}>
+                          {cancelled ? "Cancelled" : "Active"}
                         </Badge>
                       </td>
                       <td className="py-2.5 text-right text-muted-foreground">
