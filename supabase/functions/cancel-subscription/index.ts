@@ -177,35 +177,68 @@ Deno.serve(async (req) => {
         : cancelledTemplate.subject
 
       const messageId = crypto.randomUUID()
+      const normalizedEmail = subscription.customer_email.toLowerCase()
 
-      await supabaseAdmin.from('email_send_log').insert({
-        message_id: messageId,
-        template_name: 'subscription-cancelled',
-        recipient_email: subscription.customer_email,
-        status: 'pending',
-      })
+      // Get or create unsubscribe token
+      let unsubscribeToken: string
+      const { data: existingToken } = await supabaseAdmin
+        .from('email_unsubscribe_tokens')
+        .select('token, used_at')
+        .eq('email', normalizedEmail)
+        .maybeSingle()
 
-      const { error: enqueueError } = await supabaseAdmin.rpc('enqueue_email', {
-        queue_name: 'transactional_emails',
-        payload: {
-          message_id: messageId,
-          to: subscription.customer_email,
-          from: 'scale-infrastructure-hub <noreply@adcure.agency>',
-          sender_domain: 'notify.adcure.agency',
-          subject: resolvedSubject,
-          html,
-          text: plainText,
-          purpose: 'transactional',
-          label: 'subscription-cancelled',
-          idempotency_key: `sub-cancel-${subscriptionId}`,
-          queued_at: new Date().toISOString(),
-        },
-      })
-
-      if (enqueueError) {
-        console.error('Failed to enqueue cancellation email:', enqueueError)
+      if (existingToken && !existingToken.used_at) {
+        unsubscribeToken = existingToken.token
+      } else if (!existingToken) {
+        const bytes = new Uint8Array(32)
+        crypto.getRandomValues(bytes)
+        unsubscribeToken = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+        await supabaseAdmin
+          .from('email_unsubscribe_tokens')
+          .upsert({ token: unsubscribeToken, email: normalizedEmail }, { onConflict: 'email', ignoreDuplicates: true })
+        const { data: storedToken } = await supabaseAdmin
+          .from('email_unsubscribe_tokens')
+          .select('token')
+          .eq('email', normalizedEmail)
+          .maybeSingle()
+        unsubscribeToken = storedToken?.token || unsubscribeToken
       } else {
-        console.log('Cancellation email enqueued for:', subscription.customer_email)
+        // Token used = suppressed, skip sending
+        console.log('Email suppressed for:', normalizedEmail)
+        unsubscribeToken = ''
+      }
+
+      if (unsubscribeToken) {
+        await supabaseAdmin.from('email_send_log').insert({
+          message_id: messageId,
+          template_name: 'subscription-cancelled',
+          recipient_email: subscription.customer_email,
+          status: 'pending',
+        })
+
+        const { error: enqueueError } = await supabaseAdmin.rpc('enqueue_email', {
+          queue_name: 'transactional_emails',
+          payload: {
+            message_id: messageId,
+            to: subscription.customer_email,
+            from: 'scale-infrastructure-hub <noreply@adcure.agency>',
+            sender_domain: 'notify.adcure.agency',
+            subject: resolvedSubject,
+            html,
+            text: plainText,
+            purpose: 'transactional',
+            label: 'subscription-cancelled',
+            idempotency_key: `sub-cancel-${subscriptionId}`,
+            unsubscribe_token: unsubscribeToken,
+            queued_at: new Date().toISOString(),
+          },
+        })
+
+        if (enqueueError) {
+          console.error('Failed to enqueue cancellation email:', enqueueError)
+        } else {
+          console.log('Cancellation email enqueued for:', subscription.customer_email)
+        }
       }
     } catch (e) {
       console.error('Email sending failed:', e)
