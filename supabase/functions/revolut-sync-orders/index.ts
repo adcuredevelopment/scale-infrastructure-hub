@@ -297,8 +297,9 @@ Deno.serve(async (req) => {
       const existingEmailFromPayload = (existingPayment?.payload as any)?.email || null
       const finalEmail = email || existingEmailFromPayload
 
-      // Preserve affiliateCode from existing payload
+      // Preserve affiliateCode and subscriptionId from existing payload
       const existingAffiliateCode = (existingPayment?.payload as any)?.affiliateCode || null
+      const existingSubscriptionId = (existingPayment?.payload as any)?.subscriptionId || null
 
       if (existingPayment) {
         await supabaseAdmin.from('payments').update({
@@ -310,8 +311,9 @@ Deno.serve(async (req) => {
             email: finalEmail,
             revolut_state: state,
             synced_at: new Date().toISOString(),
-            // Preserve affiliateCode
+            // Preserve affiliateCode and subscriptionId
             ...(existingAffiliateCode ? { affiliateCode: existingAffiliateCode } : {}),
+            ...(existingSubscriptionId ? { subscriptionId: existingSubscriptionId } : {}),
           },
         }).eq('revolut_order_id', orderId)
         updated++
