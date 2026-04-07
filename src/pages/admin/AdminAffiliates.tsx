@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
-import { Search, Users, DollarSign, TrendingUp, CreditCard, Plus } from "lucide-react";
+import { Search, Users, DollarSign, TrendingUp, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { KPICard } from "@/components/admin/KPICard";
 import { toast } from "sonner";
