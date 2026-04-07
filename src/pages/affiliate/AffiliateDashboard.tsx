@@ -98,6 +98,12 @@ export default function AffiliateDashboard() {
             </Carousel>
           </div>
 
+
+          {/* Referral Link */}
+          <div className="mb-6">
+            <ReferralLink affiliateCode={affiliate.affiliate_code} />
+          </div>
+
           {/* Tables — stacked vertically with scroll */}
           <div className="space-y-6">
             <div className="max-h-[500px] overflow-y-auto rounded-xl">
