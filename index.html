@@ -3,14 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
     <title>Lovable App</title>
     <meta name="description" content="Lovable Generated Project">
     <meta name="author" content="Lovable" />
 
-    <!-- TODO: Update og:title to match your application name -->
-    
-    
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/317c5ad5-9aea-4a78-a53d-a2665814eb15/id-preview-b4e96709--128a3e17-52d9-496d-bddd-fd4b8f57f06f.lovable.app-1775001842181.png">
 
@@ -18,13 +14,51 @@
     <meta name="twitter:site" content="@Lovable" />
     <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/317c5ad5-9aea-4a78-a53d-a2665814eb15/id-preview-b4e96709--128a3e17-52d9-496d-bddd-fd4b8f57f06f.lovable.app-1775001842181.png">
     <meta property="og:title" content="Lovable App">
-  <meta name="twitter:title" content="Lovable App">
-  <meta property="og:description" content="Lovable Generated Project">
-  <meta name="twitter:description" content="Lovable Generated Project">
-</head>
+    <meta name="twitter:title" content="Lovable App">
+    <meta property="og:description" content="Lovable Generated Project">
+    <meta name="twitter:description" content="Lovable Generated Project">
+
+    <!-- Preload critical fonts to reduce LCP render delay -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" /></noscript>
+
+    <!-- Inline critical CSS for LCP element -->
+    <style>
+      #lcp-fallback {
+        min-height: 100svh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 8rem;
+        background: hsl(220 20% 4%);
+        text-align: center;
+      }
+      #lcp-fallback h1 {
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        font-size: clamp(2.5rem, 8vw, 6rem);
+        font-weight: 700;
+        line-height: 0.95;
+        letter-spacing: -0.025em;
+        color: hsl(210 20% 92%);
+      }
+      #lcp-fallback h1 span {
+        background: linear-gradient(135deg, hsl(213 94% 52%), hsl(213 94% 72%));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    </style>
+  </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static LCP fallback — replaced instantly when React mounts -->
+      <div id="lcp-fallback" aria-hidden="true">
+        <h1>Scale Without<br /><span>Limits.</span></h1>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
