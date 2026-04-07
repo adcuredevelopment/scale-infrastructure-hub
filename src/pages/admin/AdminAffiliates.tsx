@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
-import { Search, Users, DollarSign, TrendingUp, CreditCard, Plus } from "lucide-react";
+import { Search, Users, DollarSign, TrendingUp, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { KPICard } from "@/components/admin/KPICard";
 import { toast } from "sonner";
@@ -102,9 +102,10 @@ export default function AdminAffiliates() {
     a.affiliate_code?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalCommissions = referrals.reduce((s, r) => s + Number(r.commission_amount), 0);
-  const pendingCommissions = referrals.filter((r) => r.status === "pending").reduce((s, r) => s + Number(r.commission_amount), 0);
-  const totalPaidOut = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  // MRR Commissions = sum of recurring commission amounts for active subscribers (not cancelled)
+  const mrrCommissions = referrals
+    .filter((r) => r.referral_type === "recurring" && r.status !== "paid" && r.customer_email && !cancelledEmails.has(r.customer_email.toLowerCase()))
+    .reduce((s, r) => s + Number(r.commission_amount), 0);
 
   const getAffiliateReferralCount = (id: string) => {
     const emails = new Set(referrals.filter((r) => r.affiliate_id === id && r.customer_email).map((r) => r.customer_email));
@@ -203,11 +204,10 @@ export default function AdminAffiliates() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard title="Affiliates" value={affiliates.length.toString()} icon={Users} />
         <KPICard title="Total Referrals" value={new Set(referrals.filter(r => r.customer_email).map(r => r.customer_email)).size.toString()} icon={TrendingUp} delay={0.05} />
-        <KPICard title="Total Commissions" value={`€${totalCommissions.toFixed(2)}`} icon={DollarSign} delay={0.1} />
-        <KPICard title="Paid Out" value={`€${totalPaidOut.toFixed(2)}`} icon={CreditCard} change={`€${pendingCommissions.toFixed(2)} pending`} changeType="neutral" delay={0.15} />
+        <KPICard title="MRR Commissions" value={`€${mrrCommissions.toFixed(2)}`} icon={DollarSign} delay={0.1} />
       </div>
 
       <div className="relative">
