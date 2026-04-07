@@ -19,9 +19,8 @@ function maskEmail(email: string | null) {
 }
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  approved: "bg-green-500/10 text-green-400 border-green-500/20",
-  paid: "bg-primary/10 text-primary border-primary/20",
+  active: "bg-green-500/10 text-green-400 border-green-500/20",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 function TypeBadge({ type, isCancelled }: { type: string; isCancelled: boolean }) {
