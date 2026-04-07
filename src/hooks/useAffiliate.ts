@@ -128,6 +128,7 @@ export function useAffiliate() {
     affiliate,
     referrals,
     payouts,
+    cancelledEmails,
     loading,
     activeReferrals,
     unpaidSignupBonuses,
