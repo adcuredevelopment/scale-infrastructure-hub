@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
-import { Search, Users, CreditCard, Wallet, X } from "lucide-react";
+import { Search, Users, CreditCard, Wallet, X, Filter } from "lucide-react";
 import { motion } from "framer-motion";
 import { KPICard } from "@/components/admin/KPICard";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
@@ -11,10 +11,14 @@ import { LastRefreshed } from "@/components/admin/LastRefreshed";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [customerSubs, setCustomerSubs] = useState<any[]>([]);
@@ -38,16 +42,19 @@ export default function AdminCustomers() {
       supabase.from("payments").select("*").order("created_at", { ascending: false }),
     ]);
     setCustomerSubs(subsRes.data || []);
-    // Filter payments by email in payload
     const allPayments = paymentsRes.data || [];
     setCustomerPayments(allPayments.filter((p: any) => (p.payload as any)?.email === customer.email));
     setDrawerLoading(false);
   };
 
-  const filtered = customers.filter((c) =>
-    c.email?.toLowerCase().includes(search.toLowerCase()) ||
-    c.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = customers.filter((c) => {
+    const matchesSearch =
+      c.email?.toLowerCase().includes(search.toLowerCase()) ||
+      c.name?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || c.status === statusFilter;
+    const matchesPlan = planFilter === "all" || c.plan === planFilter;
+    return matchesSearch && matchesStatus && matchesPlan;
+  });
 
   const totalSpent = customers.reduce((acc, c) => acc + Number(c.total_spent || 0), 0);
   const activeCount = customers.filter((c) => c.status === "active").length;
@@ -59,6 +66,17 @@ export default function AdminCustomers() {
       case "failed": case "cancelled": return "bg-destructive/15 text-destructive";
       default: return "bg-muted text-muted-foreground";
     }
+  };
+
+  const statuses = ["all", "active", "cancelled"];
+  const plans = ["all", ...Array.from(new Set(customers.map((c) => c.plan).filter(Boolean)))];
+
+  const hasActiveFilters = statusFilter !== "all" || planFilter !== "all" || search.length > 0;
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setPlanFilter("all");
+    setSearch("");
   };
 
   return (
@@ -77,9 +95,47 @@ export default function AdminCustomers() {
         <KPICard title="Total Revenue" value={`€${totalSpent.toLocaleString()}`} icon={Wallet} delay={0.1} />
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      {/* Filters */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {statuses.map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all border ${
+                statusFilter === status
+                  ? "bg-primary/15 text-primary border-primary/30"
+                  : "bg-card/60 text-muted-foreground border-border/30 hover:border-border/60"
+              }`}
+            >
+              {status === "all" ? "All Statuses" : status.charAt(0).toUpperCase() + status.slice(1)}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Search by email or name..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Select value={planFilter} onValueChange={setPlanFilter}>
+            <SelectTrigger className="w-48">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Filter by plan" />
+            </SelectTrigger>
+            <SelectContent>
+              {plans.map((plan) => (
+                <SelectItem key={plan} value={plan}>
+                  {plan === "all" ? "All Plans" : plan}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs text-muted-foreground">
+              <X className="w-3 h-3 mr-1" /> Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-border/30 bg-card/60 overflow-hidden">
@@ -160,7 +216,6 @@ export default function AdminCustomers() {
 
               <Separator />
 
-              {/* Subscriptions */}
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Subscriptions ({customerSubs.length})</h3>
                 {drawerLoading ? (
@@ -190,7 +245,6 @@ export default function AdminCustomers() {
 
               <Separator />
 
-              {/* Payments */}
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Payments ({customerPayments.length})</h3>
                 {drawerLoading ? (
