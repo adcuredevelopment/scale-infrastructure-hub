@@ -60,7 +60,7 @@ async function handleAffiliateCommission(
   amount: number,
   affiliateCode: string | null
 ) {
-  // Case 1: First-time referral via affiliate link
+  // Case 1: First-time referral via affiliate link → signup bonus ONLY (no 20% on first month)
   if (affiliateCode && typeof affiliateCode === 'string') {
     const { data: aff } = await supabase
       .from('affiliates')
@@ -70,24 +70,9 @@ async function handleAffiliateCommission(
       .maybeSingle()
 
     if (aff) {
-      const commissionRate = 0.20
-      const commissionAmount = amount * commissionRate
       const bonusAmount = getSignupBonus(amount)
 
-      // Create recurring commission (auto-approved)
-      await supabase.from('affiliate_referrals').insert({
-        affiliate_id: aff.id,
-        payment_id: paymentId,
-        customer_email: email,
-        plan_name: planName,
-        payment_amount: amount,
-        commission_rate: commissionRate,
-        commission_amount: commissionAmount,
-        status: 'approved',
-        referral_type: 'recurring',
-      })
-
-      // Create signup bonus if applicable (auto-approved)
+      // Only create signup bonus on first payment — no recurring commission
       if (bonusAmount > 0) {
         await supabase.from('affiliate_referrals').insert({
           affiliate_id: aff.id,
@@ -100,7 +85,7 @@ async function handleAffiliateCommission(
           status: 'approved',
           referral_type: 'signup_bonus',
         })
-        console.log(`Signup bonus €${bonusAmount} created for affiliate ${affiliateCode}`)
+        console.log(`Signup bonus €${bonusAmount} created for affiliate ${affiliateCode} (first month, no recurring)`)
       }
 
       // Store affiliate_code on the subscription for future recurring attribution
@@ -110,12 +95,12 @@ async function handleAffiliateCommission(
         .eq('customer_email', email)
         .eq('status', 'active')
 
-      console.log(`Affiliate referral (first) created for code ${affiliateCode}, commission €${commissionAmount}`)
+      console.log(`Affiliate first-month referral for code ${affiliateCode}, bonus only`)
     }
     return
   }
 
-  // Case 2: Recurring payment — check if customer has an active subscription with an affiliate_code
+  // Case 2: Recurring payment (2nd month+) → 20% commission ONLY (no bonus)
   const { data: sub } = await supabase
     .from('subscriptions')
     .select('affiliate_code, started_at')
@@ -124,7 +109,6 @@ async function handleAffiliateCommission(
     .not('affiliate_code', 'is', null)
     .maybeSingle()
 
-  // Date guard: skip if no recent subscription context (webhook payments are always current, so this is a safety check)
   if (sub?.affiliate_code) {
     const { data: aff } = await supabase
       .from('affiliates')
@@ -148,7 +132,7 @@ async function handleAffiliateCommission(
         status: 'approved',
         referral_type: 'recurring',
       })
-      console.log(`Recurring commission €${commissionAmount} for affiliate ${sub.affiliate_code}`)
+      console.log(`Recurring commission €${commissionAmount} for affiliate ${sub.affiliate_code} (month 2+)`)
     }
   }
 }
