@@ -19,22 +19,6 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
-function TypeBadge({ type, isCancelled }: { type: string; isCancelled: boolean }) {
-  return (
-    <Badge
-      variant="outline"
-      className={
-        isCancelled
-          ? "bg-destructive/10 text-destructive border-destructive/20"
-          : type === "signup_bonus"
-          ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
-          : "bg-blue-500/10 text-blue-400 border-blue-500/20"
-      }
-    >
-      {isCancelled ? "Cancelled" : typeLabels[type] || type}
-    </Badge>
-  );
-}
 
 type FilterType = "all" | "active" | "cancelled";
 
