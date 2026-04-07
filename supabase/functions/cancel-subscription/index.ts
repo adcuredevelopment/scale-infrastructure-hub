@@ -13,6 +13,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const revolutApiKey = Deno.env.get('REVOLUT_API_SECRET_KEY')
 
     // Validate admin auth
     const authHeader = req.headers.get('Authorization')
@@ -78,9 +79,36 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Cancel the subscription in Revolut if we have the subscription ID
+    if (subscription.revolut_subscription_id && revolutApiKey) {
+      try {
+        const revolutRes = await fetch(
+          `https://merchant.revolut.com/api/v2/subscriptions/${subscription.revolut_subscription_id}/cancel`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${revolutApiKey}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+        if (!revolutRes.ok) {
+          const errBody = await revolutRes.text()
+          console.error('Revolut cancel failed:', revolutRes.status, errBody)
+          // Continue with local cancellation even if Revolut fails
+        } else {
+          console.log('Revolut subscription cancelled:', subscription.revolut_subscription_id)
+          await revolutRes.text() // consume body
+        }
+      } catch (e) {
+        console.error('Revolut cancel error:', e)
+        // Continue with local cancellation
+      }
+    }
+
     const now = new Date().toISOString()
 
-    // Cancel the subscription
+    // Cancel the subscription in DB
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({ status: 'cancelled', cancelled_at: now, updated_at: now })
@@ -104,7 +132,6 @@ Deno.serve(async (req) => {
         updated_at: now,
       }
 
-      // If no more active subs, check and update status
       if (newSubCount === 0) {
         const { data: activeSubs } = await supabaseAdmin
           .from('subscriptions')
@@ -123,9 +150,9 @@ Deno.serve(async (req) => {
         .eq('id', customer.id)
     }
 
-    // Try to send cancellation email (will work once email infra is set up)
+    // Send cancellation email
     try {
-      await supabaseAdmin.functions.invoke('send-transactional-email', {
+      const { error: emailError } = await supabaseAdmin.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'subscription-cancelled',
           recipientEmail: subscription.customer_email,
@@ -138,9 +165,13 @@ Deno.serve(async (req) => {
           },
         },
       })
-    } catch {
-      // Email infra not set up yet — cancellation still succeeds
-      console.log('Email sending skipped (infra not configured yet)')
+      if (emailError) {
+        console.error('Cancellation email invoke error:', emailError)
+      } else {
+        console.log('Cancellation email sent to:', subscription.customer_email)
+      }
+    } catch (e) {
+      console.error('Email sending failed:', e)
     }
 
     return new Response(JSON.stringify({ success: true }), {
