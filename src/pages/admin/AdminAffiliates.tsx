@@ -18,7 +18,8 @@ import { LastRefreshed } from "@/components/admin/LastRefreshed";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 interface Affiliate {
   id: string;
@@ -75,7 +76,7 @@ export default function AdminAffiliates() {
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutNotes, setPayoutNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
+  const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(null);
   const [cancelledEmails, setCancelledEmails] = useState<Set<string>>(new Set());
 
   const fetchAll = useCallback(async () => {
@@ -105,12 +106,14 @@ export default function AdminAffiliates() {
   const pendingCommissions = referrals.filter((r) => r.status === "pending").reduce((s, r) => s + Number(r.commission_amount), 0);
   const totalPaidOut = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
 
-  const getAffiliateEmail = (id: string) => affiliates.find((a) => a.id === id)?.email || "—";
   const getAffiliateReferralCount = (id: string) => {
     const emails = new Set(referrals.filter((r) => r.affiliate_id === id && r.customer_email).map((r) => r.customer_email));
     return emails.size;
   };
   const getAffiliateEarnings = (id: string) => referrals.filter((r) => r.affiliate_id === id).reduce((s, r) => s + Number(r.commission_amount), 0);
+
+  const getAffiliateReferrals = (id: string) => referrals.filter((r) => r.affiliate_id === id);
+  const getAffiliatePayouts = (id: string) => payouts.filter((p) => p.affiliate_id === id);
 
   const handleCreatePayout = async () => {
     if (!payoutAffiliateId || !payoutAmount || Number(payoutAmount) <= 0) {
@@ -145,7 +148,6 @@ export default function AdminAffiliates() {
       toast.error("Failed to update payout");
     } else {
       toast.success(`Payout marked as ${newStatus}`);
-      // Also mark referrals as paid if payout is paid
       if (newStatus === "paid") {
         const payout = payouts.find((p) => p.id === id);
         if (payout) {
@@ -173,6 +175,9 @@ export default function AdminAffiliates() {
     else { toast.success(`Affiliate ${newStatus}`); fetchAll(); }
   };
 
+  const affReferrals = selectedAffiliate ? getAffiliateReferrals(selectedAffiliate.id) : [];
+  const affPayouts = selectedAffiliate ? getAffiliatePayouts(selectedAffiliate.id) : [];
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl">
       <div className="flex items-center justify-between">
@@ -193,182 +198,194 @@ export default function AdminAffiliates() {
         <KPICard title="Paid Out" value={`€${totalPaidOut.toFixed(2)}`} icon={CreditCard} change={`€${pendingCommissions.toFixed(2)} pending`} changeType="neutral" delay={0.15} />
       </div>
 
-      <Tabs defaultValue="affiliates">
-        <TabsList>
-          <TabsTrigger value="affiliates">Affiliates</TabsTrigger>
-          <TabsTrigger value="referrals">Referrals</TabsTrigger>
-          <TabsTrigger value="payouts">Payouts</TabsTrigger>
-        </TabsList>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input placeholder="Search affiliates..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      </div>
 
-        <div className="relative mt-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-        </div>
-
-        <TabsContent value="affiliates" className="mt-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-border/30 bg-card/60 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/20">
-                  <TableHead className="text-xs">Email</TableHead>
-                  <TableHead className="text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Code</TableHead>
-                  <TableHead className="text-xs">Referrals</TableHead>
-                  <TableHead className="text-xs">Earnings</TableHead>
-                  <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs">Joined</TableHead>
-                  <TableHead className="text-xs">Actions</TableHead>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-border/30 bg-card/60 overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border/20">
+              <TableHead className="text-xs">Email</TableHead>
+              <TableHead className="text-xs">Name</TableHead>
+              <TableHead className="text-xs">Code</TableHead>
+              <TableHead className="text-xs">Referrals</TableHead>
+              <TableHead className="text-xs">Earnings</TableHead>
+              <TableHead className="text-xs">Status</TableHead>
+              <TableHead className="text-xs">Joined</TableHead>
+              <TableHead className="text-xs">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No affiliates found</TableCell></TableRow>
+            ) : (
+              filtered.map((a) => (
+                <TableRow key={a.id} className="border-border/10 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedAffiliate(a)}>
+                  <TableCell className="text-sm">{a.email}</TableCell>
+                  <TableCell className="text-sm">{a.display_name || "—"}</TableCell>
+                  <TableCell className="text-sm font-mono text-primary">{a.affiliate_code}</TableCell>
+                  <TableCell className="text-sm">{getAffiliateReferralCount(a.id)}</TableCell>
+                  <TableCell className="text-sm">€{getAffiliateEarnings(a.id).toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={statusColors[a.status] || ""}>{a.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{format(new Date(a.created_at), "MMM dd, yyyy")}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={(e) => { e.stopPropagation(); handleToggleAffiliateStatus(a.id, a.status); }}>
+                      {a.status === "active" ? "Suspend" : "Activate"}
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No affiliates found</TableCell></TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </motion.div>
+
+      {/* Affiliate Detail Drawer */}
+      <Sheet open={!!selectedAffiliate} onOpenChange={(open) => !open && setSelectedAffiliate(null)}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-display">Affiliate Details</SheetTitle>
+          </SheetHeader>
+          {selectedAffiliate && (
+            <div className="mt-6 space-y-6">
+              {/* Profile */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground">Profile</h3>
+                <div className="rounded-lg border border-border/30 bg-card/60 p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="font-medium text-foreground">{selectedAffiliate.email}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Name</span>
+                    <span className="text-foreground">{selectedAffiliate.display_name || "—"}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Code</span>
+                    <span className="font-mono text-primary">{selectedAffiliate.affiliate_code}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Status</span>
+                    <Badge variant="outline" className={statusColors[selectedAffiliate.status] || ""}>{selectedAffiliate.status}</Badge>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total Earnings</span>
+                    <span className="font-medium text-foreground">€{getAffiliateEarnings(selectedAffiliate.id).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Joined</span>
+                    <span className="text-foreground">{format(new Date(selectedAffiliate.created_at), "MMM dd, yyyy")}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Referrals */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground">Referrals ({getAffiliateReferralCount(selectedAffiliate.id)})</h3>
+                {affReferrals.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No referrals yet</p>
                 ) : (
-                  filtered.map((a) => (
-                    <TableRow key={a.id} className="border-border/10">
-                      <TableCell className="text-sm">{a.email}</TableCell>
-                      <TableCell className="text-sm">{a.display_name || "—"}</TableCell>
-                      <TableCell className="text-sm font-mono text-primary">{a.affiliate_code}</TableCell>
-                      <TableCell className="text-sm">{getAffiliateReferralCount(a.id)}</TableCell>
-                      <TableCell className="text-sm">€{getAffiliateEarnings(a.id).toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusColors[a.status] || ""}>{a.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{format(new Date(a.created_at), "MMM dd, yyyy")}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm" className="text-xs" onClick={() => handleToggleAffiliateStatus(a.id, a.status)}>
-                          {a.status === "active" ? "Suspend" : "Activate"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {affReferrals.map((r) => {
+                      const isCancelled = r.referral_type === "recurring" && r.customer_email && cancelledEmails.has(r.customer_email.toLowerCase());
+                      return (
+                        <div key={r.id} className="rounded-lg border border-border/30 bg-card/60 p-3 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-foreground">{r.customer_email || "—"}</span>
+                            <Badge variant="outline" className={
+                              r.referral_type === "signup_bonus"
+                                ? "bg-purple-500/15 text-purple-400 border-purple-500/20"
+                                : isCancelled
+                                  ? "bg-red-500/15 text-red-400 border-red-500/20"
+                                  : "bg-blue-500/15 text-blue-400 border-blue-500/20"
+                            }>
+                              {r.referral_type === "signup_bonus" ? "Bonus" : isCancelled ? "Cancelled" : "Recurring"}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{r.plan_name || "—"}</span>
+                            <span>€{Number(r.commission_amount).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <Badge variant="outline" className={`text-[10px] ${statusColors[r.status] || ""}`}>{r.status}</Badge>
+                            <span>{format(new Date(r.created_at), "MMM dd, yyyy")}</span>
+                          </div>
+                          {r.status === "pending" && (
+                            <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2 mt-1" onClick={() => handleApproveReferral(r.id)}>
+                              Approve
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
-              </TableBody>
-            </Table>
-          </motion.div>
-        </TabsContent>
+              </div>
 
-        <TabsContent value="referrals" className="mt-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-border/30 bg-card/60 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/20">
-                  <TableHead className="text-xs">Affiliate</TableHead>
-                  <TableHead className="text-xs">Customer</TableHead>
-                   <TableHead className="text-xs">Plan</TableHead>
-                   <TableHead className="text-xs">Type</TableHead>
-                   <TableHead className="text-xs">Amount</TableHead>
-                   <TableHead className="text-xs">Commission</TableHead>
-                  <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs">Date</TableHead>
-                  <TableHead className="text-xs">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
-                 ) : referrals.length === 0 ? (
-                   <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No referrals yet</TableCell></TableRow>
-                ) : (
-                  referrals.map((r) => (
-                    <TableRow key={r.id} className="border-border/10">
-                      <TableCell className="text-sm">{getAffiliateEmail(r.affiliate_id)}</TableCell>
-                      <TableCell className="text-sm">{r.customer_email || "—"}</TableCell>
-                      <TableCell className="text-sm">{r.plan_name || "—"}</TableCell>
-                       <TableCell>
-                         {(() => {
-                           const isCancelled = r.referral_type === "recurring" && r.customer_email && cancelledEmails.has(r.customer_email.toLowerCase());
-                           return (
-                             <Badge variant="outline" className={
-                               r.referral_type === "signup_bonus"
-                                 ? "bg-purple-500/15 text-purple-400 border-purple-500/20"
-                                 : isCancelled
-                                   ? "bg-red-500/15 text-red-400 border-red-500/20"
-                                   : "bg-blue-500/15 text-blue-400 border-blue-500/20"
-                             }>
-                               {r.referral_type === "signup_bonus" ? "Bonus" : isCancelled ? "Cancelled" : "Recurring"}
-                             </Badge>
-                           );
-                         })()}
-                        </TableCell>
-                       <TableCell className="text-sm">€{Number(r.payment_amount).toFixed(2)}</TableCell>
-                      <TableCell className="text-sm font-medium">€{Number(r.commission_amount).toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{format(new Date(r.created_at), "MMM dd, yyyy")}</TableCell>
-                      <TableCell>
-                        {r.status === "pending" && (
-                          <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => handleApproveReferral(r.id)}>
-                            Approve
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </motion.div>
-        </TabsContent>
+              <Separator />
 
-        <TabsContent value="payouts" className="mt-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-border/30 bg-card/60 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/20">
-                  <TableHead className="text-xs">Affiliate</TableHead>
-                  <TableHead className="text-xs">Amount</TableHead>
-                  <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs">Payout Date</TableHead>
-                  <TableHead className="text-xs">Notes</TableHead>
-                  <TableHead className="text-xs">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
-                ) : payouts.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No payouts yet</TableCell></TableRow>
+              {/* Payouts */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground">Payouts ({affPayouts.length})</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => {
+                      setPayoutAffiliateId(selectedAffiliate.id);
+                      setPayoutDialog(true);
+                    }}
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> New Payout
+                  </Button>
+                </div>
+                {affPayouts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No payouts yet</p>
                 ) : (
-                  payouts.map((p) => (
-                    <TableRow key={p.id} className="border-border/10">
-                      <TableCell className="text-sm">{getAffiliateEmail(p.affiliate_id)}</TableCell>
-                      <TableCell className="text-sm font-medium">€{Number(p.amount).toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusColors[p.status] || ""}>{p.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {p.payout_date ? format(new Date(p.payout_date), "MMM dd, yyyy") : "—"}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{p.notes || "—"}</TableCell>
-                      <TableCell>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {affPayouts.map((p) => (
+                      <div key={p.id} className="rounded-lg border border-border/30 bg-card/60 p-3 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-foreground">€{Number(p.amount).toFixed(2)}</span>
+                          <Badge variant="outline" className={statusColors[p.status] || ""}>{p.status}</Badge>
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{p.notes || "—"}</span>
+                          <span>{p.payout_date ? format(new Date(p.payout_date), "MMM dd, yyyy") : "—"}</span>
+                        </div>
                         {p.status === "pending" && (
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" className="text-xs text-blue-400" onClick={() => handleUpdatePayoutStatus(p.id, "processing")}>
+                          <div className="flex gap-1 mt-1">
+                            <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "processing")}>
                               Process
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
+                            <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
                               Mark Paid
                             </Button>
                           </div>
                         )}
                         {p.status === "processing" && (
-                          <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
+                          <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2 mt-1" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
                             Mark Paid
                           </Button>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </TableBody>
-            </Table>
-          </motion.div>
-        </TabsContent>
-      </Tabs>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Create Payout Dialog */}
       <Dialog open={payoutDialog} onOpenChange={setPayoutDialog}>
