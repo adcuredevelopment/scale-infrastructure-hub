@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { AffiliateReferral } from "@/hooks/useAffiliate";
 
 const typeLabels: Record<string, string> = {
   signup_bonus: "Bonus",
   recurring: "Recurring",
+  cancelled: "Cancelled",
 };
 
 interface Props {
@@ -29,6 +31,8 @@ function TypeBadge({ type }: { type: string }) {
       className={
         type === "signup_bonus"
           ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+          : type === "cancelled"
+          ? "bg-destructive/10 text-destructive border-destructive/20"
           : "bg-blue-500/10 text-blue-400 border-blue-500/20"
       }
     >
@@ -37,17 +41,52 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
+type FilterType = "all" | "active" | "cancelled";
+
 export function ReferralsTable({ referrals }: Props) {
+  const [filter, setFilter] = useState<FilterType>("all");
+
+  const filtered = referrals.filter((r) => {
+    if (filter === "active") return r.referral_type !== "cancelled";
+    if (filter === "cancelled") return r.referral_type === "cancelled";
+    return true;
+  });
+
+  const filters: { label: string; value: FilterType }[] = [
+    { label: "All", value: "all" },
+    { label: "Active", value: "active" },
+    { label: "Cancelled", value: "cancelled" },
+  ];
+
   return (
     <div className="glass rounded-xl p-4 sm:p-5 md:p-6">
-      <h3 className="font-display font-semibold text-sm mb-4">Recent Referrals</h3>
-      {referrals.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No referrals yet. Share your link to start earning!</p>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-display font-semibold text-sm">Referrals</h3>
+        <div className="flex gap-1.5">
+          {filters.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                filter === f.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {filter === "all" ? "No referrals yet. Share your link to start earning!" : `No ${filter} referrals.`}
+        </p>
       ) : (
         <>
           {/* Mobile card layout */}
           <div className="space-y-3 md:hidden">
-            {referrals.slice(0, 10).map((r) => (
+            {filtered.map((r) => (
               <div key={r.id} className="rounded-lg border border-border/50 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium truncate max-w-[60%]">{maskEmail(r.customer_email)}</span>
@@ -83,7 +122,7 @@ export function ReferralsTable({ referrals }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {referrals.slice(0, 10).map((r) => (
+                {filtered.map((r) => (
                   <tr key={r.id} className="border-b border-border/50">
                     <td className="py-2.5">{maskEmail(r.customer_email)}</td>
                     <td className="py-2.5">{r.plan_name || "—"}</td>
