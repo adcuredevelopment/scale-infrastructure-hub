@@ -1,52 +1,64 @@
 import { useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { AffiliateReferral } from "@/hooks/useAffiliate";
 
 interface Props {
   referrals: AffiliateReferral[];
 }
 
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+  return new Date(d.getFullYear(), d.getMonth(), diff);
+}
+
+function formatWeek(date: Date): string {
+  const end = new Date(date);
+  end.setDate(end.getDate() + 6);
+  const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+  return `${date.toLocaleDateString("en-US", opts)} – ${end.toLocaleDateString("en-US", opts)}`;
+}
+
 export function EarningsChart({ referrals }: Props) {
   const chartData = useMemo(() => {
-    const monthMap: Record<string, number> = {};
+    const weekMap: Record<string, number> = {};
+
     referrals.forEach((r) => {
       if (r.status !== "approved" && r.status !== "paid") return;
-      const d = new Date(r.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      monthMap[key] = (monthMap[key] || 0) + Number(r.commission_amount);
+      const ws = getWeekStart(new Date(r.created_at));
+      const key = ws.toISOString().slice(0, 10);
+      weekMap[key] = (weekMap[key] || 0) + Number(r.commission_amount);
     });
 
-    const keys = Object.keys(monthMap).sort();
+    // Generate weeks from earliest to latest
+    const keys = Object.keys(weekMap).sort();
     if (keys.length === 0) {
-      const now = new Date();
-      const label = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-      return [{ month: label, earnings: 0 }];
+      const ws = getWeekStart(new Date());
+      return [{ week: formatWeek(ws), earnings: 0 }];
     }
 
-    const first = keys[0].split("-").map(Number);
-    const last = keys[keys.length - 1].split("-").map(Number);
-    const result: { month: string; earnings: number }[] = [];
+    const result: { week: string; earnings: number }[] = [];
+    const start = new Date(keys[0]);
+    const end = new Date(keys[keys.length - 1]);
 
-    let y = first[0], m = first[1];
-    while (y < last[0] || (y === last[0] && m <= last[1])) {
-      const key = `${y}-${String(m).padStart(2, "0")}`;
-      const d = new Date(y, m - 1, 1);
-      const label = d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-      result.push({ month: label, earnings: monthMap[key] || 0 });
-      m++;
-      if (m > 12) { m = 1; y++; }
+    const cur = new Date(start);
+    while (cur <= end) {
+      const key = cur.toISOString().slice(0, 10);
+      result.push({ week: formatWeek(cur), earnings: weekMap[key] || 0 });
+      cur.setDate(cur.getDate() + 7);
     }
     return result;
   }, [referrals]);
 
   return (
     <div className="glass rounded-xl p-5 md:p-6">
-      <h3 className="font-display font-semibold text-sm mb-4">Earnings Per Month</h3>
+      <h3 className="font-display font-semibold text-sm mb-4">Earnings Per Week</h3>
       <div className="h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+            <XAxis dataKey="week" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
             <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} tickFormatter={(v) => `€${v}`} width={45} />
             <Tooltip
               contentStyle={{
@@ -57,8 +69,8 @@ export function EarningsChart({ referrals }: Props) {
               }}
               formatter={(value: number) => [`€${value.toFixed(2)}`, "Earnings"]}
             />
-            <Bar dataKey="earnings" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-          </BarChart>
+            <Line type="monotone" dataKey="earnings" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))" }} />
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </div>
