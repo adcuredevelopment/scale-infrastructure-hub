@@ -154,11 +154,12 @@ Deno.serve(async (req) => {
 
     // Send cancellation email via direct HTTP call (bypasses JWT verification issue with functions.invoke)
     try {
+      const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
       const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${serviceRoleKey}`,
-          'apikey': serviceRoleKey,
+          'apikey': anonKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
