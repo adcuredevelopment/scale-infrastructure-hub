@@ -184,7 +184,10 @@ export default function AdminAffiliates() {
     else { toast.success(`Affiliate ${newStatus}`); fetchAll(); }
   };
 
-  const affReferrals = selectedAffiliate ? getAffiliateReferrals(selectedAffiliate.id) : [];
+  // Only show unpaid referrals (pending or approved, not already paid)
+  const affReferrals = selectedAffiliate
+    ? getAffiliateReferrals(selectedAffiliate.id).filter((r) => r.status !== "paid")
+    : [];
   const affPayouts = selectedAffiliate ? getAffiliatePayouts(selectedAffiliate.id) : [];
 
   return (
