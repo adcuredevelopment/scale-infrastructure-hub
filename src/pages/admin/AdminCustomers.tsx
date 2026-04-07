@@ -81,22 +81,22 @@ export default function AdminCustomers() {
             <TableRow className="border-border/20">
               <TableHead className="text-xs">Email</TableHead>
               <TableHead className="text-xs">Name</TableHead>
-              <TableHead className="text-xs">Plan</TableHead>
+              
               <TableHead className="text-xs">Total Spent</TableHead>
               <TableHead className="text-xs">Joined</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No customers found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No customers found</TableCell></TableRow>
             ) : (
               filtered.map((c) => (
                 <TableRow key={c.id} className="border-border/10 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => openCustomerDrawer(c)}>
                   <TableCell className="text-sm">{c.email}</TableCell>
                   <TableCell className="text-sm">{c.name || "—"}</TableCell>
-                  <TableCell className="text-sm font-medium">{c.plan || "—"}</TableCell>
+                  
                   <TableCell className="text-sm">€{Number(c.total_spent).toFixed(2)}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{format(new Date(c.created_at), "MMM dd, yyyy")}</TableCell>
                 </TableRow>
