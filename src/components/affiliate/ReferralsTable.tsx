@@ -79,10 +79,8 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                       {cancelled ? "Cancelled" : "Active"}
                     </Badge>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{r.plan_name || "—"}</span>
-                    <TypeBadge type={r.referral_type} isCancelled={cancelled} />
-                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold">€{Number(r.commission_amount).toFixed(2)}</span>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">€{Number(r.commission_amount).toFixed(2)}</span>
                     <span className="text-xs text-muted-foreground">
@@ -101,8 +99,8 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                 <tr className="text-muted-foreground text-xs border-b border-border">
                   <th className="text-left py-2 font-medium">Customer</th>
                   <th className="text-left py-2 font-medium">Plan</th>
-                  <th className="text-center py-2 font-medium">Type</th>
                   <th className="text-right py-2 font-medium">Commission</th>
+                  <th className="text-center py-2 font-medium">Status</th>
                   <th className="text-center py-2 font-medium">Status</th>
                   <th className="text-right py-2 font-medium">Date</th>
                 </tr>
