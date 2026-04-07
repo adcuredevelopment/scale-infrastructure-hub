@@ -69,11 +69,6 @@ export default function AdminCustomers() {
         <LastRefreshed timestamp={lastRefreshed} />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title="Total Customers" value={customers.length.toString()} icon={Users} />
-        <KPICard title="Active" value={activeCount.toString()} icon={CreditCard} change={`${((activeCount / Math.max(customers.length, 1)) * 100).toFixed(0)}% active`} changeType="positive" delay={0.05} />
-        <KPICard title="Total Revenue" value={`€${totalSpent.toLocaleString()}`} icon={Wallet} delay={0.1} />
-      </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
