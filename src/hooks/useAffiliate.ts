@@ -108,6 +108,12 @@ export function useAffiliate() {
     .filter((r) => r.referral_type === "signup_bonus" && (r.status === "approved" || r.status === "paid"))
     .reduce((sum, r) => sum + Number(r.commission_amount), 0);
 
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthlyRecurring = referrals
+    .filter((r) => r.referral_type === "recurring" && (r.status === "approved" || r.status === "paid") && new Date(r.created_at) >= monthStart)
+    .reduce((sum, r) => sum + Number(r.commission_amount), 0);
+
   return {
     user,
     affiliate,
@@ -119,6 +125,7 @@ export function useAffiliate() {
     totalPaidOut,
     totalReferrals: referrals.filter((r) => r.referral_type !== "signup_bonus").length,
     bonusEarnings,
+    monthlyRecurring,
     refetch: fetchAffiliateData,
   };
 }
