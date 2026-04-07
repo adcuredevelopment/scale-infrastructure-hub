@@ -25,7 +25,7 @@ function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: st
 }
 
 export default function AffiliateDashboard() {
-  const { affiliate, referrals, payouts, loading, activeReferrals, unpaidSignupBonuses, pendingReferralsCount, monthlyRecurring } = useAffiliate();
+  const { affiliate, referrals, payouts, loading, activeReferrals, unpaidSignupBonuses, pendingAmount, monthlyRecurring } = useAffiliate();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -79,7 +79,7 @@ export default function AffiliateDashboard() {
             <KPI icon={Users} label="Active Referrals" value={String(activeReferrals)} />
             <KPI icon={TrendingUp} label="Monthly Recurring" value={`€${monthlyRecurring.toFixed(2)}`} />
             <KPI icon={Gift} label="Signup Bonuses" value={`€${unpaidSignupBonuses.toFixed(2)}`} />
-            <KPI icon={Clock} label="Pending" value={String(pendingReferralsCount)} />
+            <KPI icon={Clock} label="Pending" value={`€${pendingAmount.toFixed(2)}`} />
           </div>
           <div className="lg:hidden mb-6">
             <Carousel opts={{ align: "start", loop: false }} className="w-full">
@@ -88,7 +88,7 @@ export default function AffiliateDashboard() {
                   { icon: Users, label: "Active Referrals", value: String(activeReferrals) },
                   { icon: TrendingUp, label: "Monthly Recurring", value: `€${monthlyRecurring.toFixed(2)}` },
                   { icon: Gift, label: "Signup Bonuses", value: `€${unpaidSignupBonuses.toFixed(2)}` },
-                  { icon: Clock, label: "Pending", value: String(pendingReferralsCount) },
+                  { icon: Clock, label: "Pending", value: `€${pendingAmount.toFixed(2)}` },
                 ].map((kpi, i) => (
                   <CarouselItem key={i} className="pl-3 basis-[45%] sm:basis-[35%] md:basis-[30%]">
                     <KPI icon={kpi.icon} label={kpi.label} value={kpi.value} />
