@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { AffiliateReferral } from "@/hooks/useAffiliate";
 
-
 interface Props {
   referrals: AffiliateReferral[];
   cancelledEmails: Set<string>;
@@ -18,7 +17,6 @@ const statusColors: Record<string, string> = {
   active: "bg-green-500/10 text-green-400 border-green-500/20",
   cancelled: "bg-destructive/10 text-destructive border-destructive/20",
 };
-
 
 type FilterType = "all" | "active" | "cancelled";
 
@@ -81,8 +79,6 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">€{Number(r.commission_amount).toFixed(2)}</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">€{Number(r.commission_amount).toFixed(2)}</span>
                     <span className="text-xs text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString()}
                     </span>
@@ -101,7 +97,6 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                   <th className="text-left py-2 font-medium">Plan</th>
                   <th className="text-right py-2 font-medium">Commission</th>
                   <th className="text-center py-2 font-medium">Status</th>
-                  <th className="text-center py-2 font-medium">Status</th>
                   <th className="text-right py-2 font-medium">Date</th>
                 </tr>
               </thead>
@@ -112,9 +107,6 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                     <tr key={r.id} className="border-b border-border/50">
                       <td className="py-2.5">{maskEmail(r.customer_email)}</td>
                       <td className="py-2.5">{r.plan_name || "—"}</td>
-                      <td className="py-2.5 text-center">
-                        <TypeBadge type={r.referral_type} isCancelled={cancelled} />
-                      </td>
                       <td className="py-2.5 text-right">€{Number(r.commission_amount).toFixed(2)}</td>
                       <td className="py-2.5 text-center">
                         <Badge variant="outline" className={statusColors[cancelled ? "cancelled" : "active"] || ""}>
