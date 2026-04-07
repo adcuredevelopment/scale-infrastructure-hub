@@ -1,54 +1,41 @@
 
 
-## Analytics Page Redesign
+## Problem
 
-### Overview
-Replace the current basic analytics page with a comprehensive dashboard featuring 6 KPI cards, multiple charts, and detailed breakdowns.
+The affiliate dashboard shows all referrals as "Active" because the `cancelledEmails` set is always empty. The `useAffiliate` hook queries the `subscriptions` table for cancelled emails, but the **subscriptions table has no RLS policy for affiliate users** — only admins and service_role can read it. So the query returns `[]` even though cancelled subscriptions exist in the database.
 
-### KPI Cards (top row, 3x2 grid)
+## Solution
 
-1. **MRR** — Sum of `amount` from active subscriptions (same logic as Overview page)
-2. **Shop Revenue** — Total from one-time/completed payments that are NOT subscription-related (product purchases)
-3. **New Clients** — Count of new customers this month vs last month with % change
-4. **MRR Affiliate Payouts** — Monthly recurring affiliate commission costs (from `affiliate_referrals` where `referral_type = 'recurring'`, status not paid, customer not cancelled)
-5. **VAT (21% BTW)** — 21% of all completed revenue (subscriptions + shop), shown as the tax obligation
-6. **Conversion Rate** — Ratio of completed payments vs total payment attempts (completed / total * 100%)
+Add an RLS policy on the `subscriptions` table that allows authenticated affiliate users to read the `customer_email` and `status` of subscriptions that belong to customers they referred.
 
-### Charts Section (tabs: Overview, Revenue, Clients)
+### Step 1: Add RLS policy on subscriptions table
 
-**Overview tab:**
-- Combined area chart showing Revenue vs Affiliate Payouts vs Net Revenue (after tax + affiliate costs) over last 6 months
+Create a migration that adds a SELECT policy for authenticated users who are affiliates. The policy allows reading subscriptions where the `customer_email` matches a referral tied to their affiliate record:
 
-**Revenue tab:**
-- Monthly revenue bar chart (subscriptions vs shop products stacked)
-- Plan distribution pie chart (existing, moved here)
+```sql
+CREATE POLICY "Affiliates can view referred customer subscriptions"
+ON public.subscriptions
+FOR SELECT
+TO authenticated
+USING (
+  customer_email IN (
+    SELECT ar.customer_email 
+    FROM affiliate_referrals ar
+    JOIN affiliates a ON ar.affiliate_id = a.id
+    WHERE a.user_id = auth.uid()
+  )
+);
+```
 
-**Clients tab:**
-- New clients per month line chart (last 6 months)
-- Conversion funnel: total visits → payment initiated → completed (using payment statuses)
+This is scoped: affiliates can only see subscriptions for customers they actually referred.
 
-### Data Sources
-- `subscriptions` table — MRR, plan distribution
-- `payments` table — revenue, conversion rate (completed vs pending/failed)
-- `customers` table — new client count
-- `affiliate_referrals` table — affiliate MRR costs
-- `cancelledEmails` derived from cancelled subscriptions — to filter affiliate data
+### Step 2: No code changes needed
 
-### Technical Details
+The existing `useAffiliate` hook already queries `subscriptions` for cancelled emails and passes them to the `ReferralsTable`. Once the RLS policy allows the query to return data, the Active/Cancelled status will display correctly and stay in sync automatically.
 
-**Single file change:** `src/pages/admin/AdminAnalytics.tsx`
-
-- Fetch all data in one `fetchAnalytics` callback: subscriptions, payments, customers, affiliate_referrals
-- Reuse existing `KPICard` component for the 6 metrics
-- Reuse existing recharts setup (AreaChart, BarChart, PieChart)
-- Keep `useAutoRefresh` and `LastRefreshed` pattern
-- Conversion rate = `(payments with status completed or authorised) / (all payments) * 100`
-- VAT calculation: `totalCompletedRevenue * 0.21`
-- Month-over-month % changes on all KPI cards where applicable
-
-### Additional Suggestions (included)
-- **Net Revenue** card could be added showing: Revenue - VAT - Affiliate Payouts = Net
-- **Churn Rate**: cancelled subscriptions this month / total active at start of month — useful metric to track
-
-I'll add a **Net Revenue** as a 7th insight in the overview chart (not a separate KPI to keep it clean), and include **Churn Rate** as a small stat in the Clients tab.
+### Technical details
+- The subscriptions table currently only has policies for `admin` and `service_role`
+- The affiliate user (`david@adcure.agency`) is authenticated but not admin, so all subscription queries return empty
+- Database confirms `loonycompadre@gmail.com` and `dobzakelijk@gmail.com` both have cancelled subscriptions
+- No frontend code changes required — only a database migration
 
