@@ -183,7 +183,7 @@ export default function AdminAnalytics() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <KPICard title="MRR" value={fmt(mrr)} icon={TrendingUp} delay={0} />
         <KPICard title="Shop Revenue" value={fmt(shopRevenue)} icon={ShoppingBag} delay={0.05} />
         <KPICard
