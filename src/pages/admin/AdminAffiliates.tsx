@@ -76,15 +76,19 @@ export default function AdminAffiliates() {
   const [payoutNotes, setPayoutNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [cancelledEmails, setCancelledEmails] = useState<Set<string>>(new Set());
+
   const fetchAll = useCallback(async () => {
-    const [affRes, refRes, payRes] = await Promise.all([
+    const [affRes, refRes, payRes, subRes] = await Promise.all([
       supabase.from("affiliates").select("*").order("created_at", { ascending: false }),
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
       supabase.from("affiliate_payouts").select("*").order("created_at", { ascending: false }),
+      supabase.from("subscriptions").select("customer_email, status").eq("status", "cancelled"),
     ]);
     setAffiliates((affRes.data as Affiliate[]) || []);
     setReferrals((refRes.data as Referral[]) || []);
     setPayouts((payRes.data as Payout[]) || []);
+    setCancelledEmails(new Set((subRes.data || []).map((s: any) => s.customer_email?.toLowerCase())));
     setLoading(false);
   }, []);
 
