@@ -99,9 +99,14 @@ export function useAffiliate() {
     }
   }
 
-  // Active referrals: only referrals (not signup_bonus) that are not paid
-  const activeReferrals = referrals.filter(
-    (r) => r.referral_type !== "signup_bonus" && r.status !== "paid"
+  // Active referrals: count unique referred customers with active subscriptions
+  const uniqueReferralEmails = new Set(
+    referrals
+      .filter((r) => r.customer_email)
+      .map((r) => r.customer_email!.toLowerCase())
+  );
+  const activeReferrals = [...uniqueReferralEmails].filter(
+    (email) => !cancelledEmails.has(email)
   ).length;
 
   // Signup bonuses that haven't been paid out yet
