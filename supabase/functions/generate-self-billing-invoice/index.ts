@@ -99,6 +99,11 @@ Deno.serve(async (req) => {
       issuedAt,
       affiliateName: affiliate.display_name || affiliate.email,
       affiliateEmail: affiliate.email,
+      companyName: affiliate.company_name,
+      kvkNumber: affiliate.kvk_number,
+      vatNumber: affiliate.vat_number,
+      iban: affiliate.iban,
+      billingAddress: affiliate.billing_address,
       amount: payout.amount,
       currency: payout.currency || 'EUR',
     })
