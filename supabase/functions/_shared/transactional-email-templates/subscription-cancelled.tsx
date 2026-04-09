@@ -153,6 +153,14 @@ const detailValue = {
   fontWeight: '500' as const,
 }
 
+const lateNoticeBox = {
+  backgroundColor: '#fffbeb',
+  borderRadius: '12px',
+  padding: '16px 20px',
+  margin: '16px 0 24px',
+  border: '1px solid #fde68a',
+}
+
 const hr = {
   borderColor: '#e5e7eb',
   margin: '24px 0',
