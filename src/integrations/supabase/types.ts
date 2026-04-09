@@ -583,6 +583,7 @@ export type Database = {
         }
         Returns: number
       }
+      nextval_affiliate_invoice: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

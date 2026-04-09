@@ -11,8 +11,10 @@ export interface TemplateEntry {
 
 import { template as subscriptionCancelled } from './subscription-cancelled.tsx'
 import { template as subscriptionConfirmed } from './subscription-confirmed.tsx'
+import { template as payoutInvoice } from './payout-invoice.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'subscription-cancelled': subscriptionCancelled,
   'subscription-confirmed': subscriptionConfirmed,
+  'payout-invoice': payoutInvoice,
 }
