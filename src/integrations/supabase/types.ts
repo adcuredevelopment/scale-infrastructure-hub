@@ -166,42 +166,57 @@ export type Database = {
       affiliates: {
         Row: {
           affiliate_code: string
+          billing_address: string | null
+          company_name: string | null
           created_at: string
           display_name: string | null
           email: string
+          iban: string | null
           id: string
+          kvk_number: string | null
           payout_details: string | null
           payout_method: string | null
           status: string
           tos_accepted_at: string | null
           updated_at: string
           user_id: string
+          vat_number: string | null
         }
         Insert: {
           affiliate_code: string
+          billing_address?: string | null
+          company_name?: string | null
           created_at?: string
           display_name?: string | null
           email: string
+          iban?: string | null
           id?: string
+          kvk_number?: string | null
           payout_details?: string | null
           payout_method?: string | null
           status?: string
           tos_accepted_at?: string | null
           updated_at?: string
           user_id: string
+          vat_number?: string | null
         }
         Update: {
           affiliate_code?: string
+          billing_address?: string | null
+          company_name?: string | null
           created_at?: string
           display_name?: string | null
           email?: string
+          iban?: string | null
           id?: string
+          kvk_number?: string | null
           payout_details?: string | null
           payout_method?: string | null
           status?: string
           tos_accepted_at?: string | null
           updated_at?: string
           user_id?: string
+          vat_number?: string | null
         }
         Relationships: []
       }
