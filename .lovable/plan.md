@@ -1,35 +1,39 @@
 
 
-## Plan: Admin Payouts & Invoices Management
+## Plan: Fix Active Referrals KPI Logic
 
-### What we're building
+### Problem
+The "Active Referrals" KPI filters out `signup_bonus` referral types, so a new affiliate who just got their first referral (which is always a signup bonus) sees "0 Active Referrals" even though they have an active referred customer. This is confusing.
 
-A dedicated section in the admin affiliate detail drawer (and optionally a global overview) to view all self-billing invoices linked to payouts, see payout statuses clearly, and download/view generated invoices.
+The MRR showing €0.00 is **correct** — recurring commissions only start from month 2. No change needed there.
 
 ### Changes
 
-**1. Fetch invoices alongside existing data (`AdminAffiliates.tsx`)**
-- Add `affiliate_invoices` to the `fetchAll` query
-- Store invoices in state, keyed by `payout_id` for easy lookup
+**1. Fix `activeReferrals` calculation (`src/hooks/useAffiliate.ts`)**
+- Change from counting non-signup-bonus commission records to counting **unique referred customers with active subscriptions**
+- Count distinct `customer_email` values from all referrals, excluding those in the `cancelledEmails` set
+- This gives a true count of active referred customers
 
-**2. Enhance payout cards in the affiliate detail drawer**
-- Show invoice info (invoice number, issued date) on each payout card when an invoice exists
-- Add a "View Invoice" button that opens the stored HTML invoice in a new tab (via Supabase Storage signed URL)
-- Add a "Regenerate Invoice" button for paid payouts that failed invoice generation
-- Show a visual indicator (checkmark or warning icon) for whether the invoice was successfully generated
+```typescript
+// Before (broken):
+const activeReferrals = referrals.filter(
+  (r) => r.referral_type !== "signup_bonus" && r.status !== "paid"
+).length;
 
-**3. Add an "Invoices" section in the affiliate detail drawer**
-- Below the Payouts section, add a dedicated Invoices list showing all invoices for that affiliate
-- Each row: invoice number, amount, issued date, and a download/view button
-- Uses the existing `affiliate_invoices` table data
-
-**4. Add a "Failed" button on payouts**
-- Allow marking payouts as "failed" from pending/processing states for tracking purposes
+// After (correct):
+const uniqueEmails = new Set(
+  referrals
+    .filter((r) => r.customer_email)
+    .map((r) => r.customer_email!.toLowerCase())
+);
+const activeReferrals = [...uniqueEmails].filter(
+  (email) => !cancelledEmails.has(email)
+).length;
+```
 
 ### Technical details
-
-- Invoice viewing uses `supabase.storage.from('affiliate-invoices').createSignedUrl(path, 3600)` to generate a temporary URL
-- No new database tables or migrations needed — `affiliate_invoices` table already exists with proper RLS
-- No new routes — everything stays within the existing affiliate detail drawer
-- Interface type extended to include invoice fields
+- Only `src/hooks/useAffiliate.ts` needs to change (lines 102-105)
+- No database or edge function changes needed
+- The `cancelledEmails` set already handles cancelled subscription detection correctly
+- This will show "1" for David's dashboard since `joeydekker01@gmail.com` is not cancelled
 
