@@ -7,17 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 
 export default function AffiliateRegister() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [tosAccepted, setTosAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tosAccepted) {
+      toast.error("You must accept the Affiliate Terms of Service");
+      return;
+    }
     if (password.length < 8) {
       toast.error("Password must be at least 8 characters");
       return;
@@ -56,6 +62,7 @@ export default function AffiliateRegister() {
             userId: data.user.id,
             email,
             displayName,
+            tosAcceptedAt: new Date().toISOString(),
           }),
         });
       } catch (err) {
@@ -89,7 +96,22 @@ export default function AffiliateRegister() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 8 characters" required />
             </div>
-            <Button type="submit" className="w-full min-h-[48px]" disabled={loading}>
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="tos"
+                checked={tosAccepted}
+                onCheckedChange={(checked) => setTosAccepted(checked === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="tos" className="text-sm leading-snug cursor-pointer">
+                I agree to the{" "}
+                <a href="/affiliate/terms" target="_blank" className="text-primary hover:underline">
+                  Affiliate Terms of Service
+                </a>
+                , including the self-billing arrangement
+              </Label>
+            </div>
+            <Button type="submit" className="w-full min-h-[48px]" disabled={loading || !tosAccepted}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Create Account
             </Button>

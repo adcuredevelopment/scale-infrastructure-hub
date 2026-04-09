@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_invoices: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          invoice_number: string
+          issued_at: string
+          payout_id: string
+          pdf_path: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_number: string
+          issued_at?: string
+          payout_id: string
+          pdf_path?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          payout_id?: string
+          pdf_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_invoices_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_invoices_payout_id_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_payouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_payouts: {
         Row: {
           affiliate_id: string
@@ -122,6 +173,7 @@ export type Database = {
           payout_details: string | null
           payout_method: string | null
           status: string
+          tos_accepted_at: string | null
           updated_at: string
           user_id: string
         }
@@ -134,6 +186,7 @@ export type Database = {
           payout_details?: string | null
           payout_method?: string | null
           status?: string
+          tos_accepted_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -146,6 +199,7 @@ export type Database = {
           payout_details?: string | null
           payout_method?: string | null
           status?: string
+          tos_accepted_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -529,6 +583,7 @@ export type Database = {
         }
         Returns: number
       }
+      nextval_affiliate_invoice: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

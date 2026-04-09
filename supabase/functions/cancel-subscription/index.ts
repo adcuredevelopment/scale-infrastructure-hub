@@ -84,6 +84,14 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Check for late cancellation (within 14 days of next billing)
+    let isLateCancellation = false
+    if (subscription.expires_at) {
+      const expiresAt = new Date(subscription.expires_at)
+      const noticePeriodMs = 14 * 24 * 60 * 60 * 1000
+      isLateCancellation = (expiresAt.getTime() - Date.now()) < noticePeriodMs
+    }
+
     // Cancel the subscription in Revolut FIRST — only proceed locally if Revolut confirms
     if (!subscription.revolut_subscription_id) {
       return new Response(JSON.stringify({ error: 'No Revolut subscription ID linked — cannot cancel' }), {
@@ -168,6 +176,17 @@ Deno.serve(async (req) => {
         .eq('id', customer.id)
     }
 
+    // Create late cancellation notification for admin
+    if (isLateCancellation) {
+      await supabaseAdmin.from('notifications').insert({
+        type: 'warning',
+        title: 'Late cancellation',
+        message: `${subscription.customer_email} (${subscription.plan_name}) cancelled within 14 days of next billing. Final billing cycle applies.`,
+        related_entity_id: subscriptionId,
+      })
+      console.log('Late cancellation notification created for:', subscription.customer_email)
+    }
+
     // Send cancellation email by enqueuing directly (avoids JWT issues with cross-function calls)
     try {
       const templateData = {
@@ -175,6 +194,7 @@ Deno.serve(async (req) => {
         amount: subscription.amount,
         currency: subscription.currency,
         customerName: subscription.customer_name,
+        isLateCancellation,
       }
 
       const html = await renderAsync(
@@ -216,7 +236,6 @@ Deno.serve(async (req) => {
           .maybeSingle()
         unsubscribeToken = storedToken?.token || unsubscribeToken
       } else {
-        // Token used = suppressed, skip sending
         console.log('Email suppressed for:', normalizedEmail)
         unsubscribeToken = ''
       }
@@ -257,7 +276,7 @@ Deno.serve(async (req) => {
       console.error('Email sending failed:', e)
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, late_cancellation: isLateCancellation }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
