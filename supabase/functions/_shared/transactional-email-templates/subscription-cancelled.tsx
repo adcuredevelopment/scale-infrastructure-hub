@@ -12,6 +12,7 @@ interface SubscriptionCancelledProps {
   planName?: string
   amount?: number
   currency?: string
+  isLateCancellation?: boolean
 }
 
 const SubscriptionCancelledEmail = ({
@@ -19,6 +20,7 @@ const SubscriptionCancelledEmail = ({
   planName,
   amount,
   currency = 'EUR',
+  isLateCancellation = false,
 }: SubscriptionCancelledProps) => (
   <Html lang="en" dir="ltr">
     <Head />
@@ -53,6 +55,16 @@ const SubscriptionCancelledEmail = ({
           </Section>
         ) : null}
 
+        {isLateCancellation ? (
+          <Section style={lateNoticeBox}>
+            <Text style={{ ...text, color: '#92400e', margin: '0' }}>
+              <strong>Please note:</strong> This cancellation was made within the 14-day notice period 
+              before your next billing date. As per our subscription policy, the final billing cycle 
+              will still apply. No further charges will occur after that.
+            </Text>
+          </Section>
+        ) : null}
+
         <Text style={text}>
           If this was a mistake or you'd like to resubscribe, feel free to visit our website
           or reach out to our support team.
@@ -82,6 +94,7 @@ export const template = {
     planName: 'Growth Advertiser',
     amount: 119,
     currency: 'EUR',
+    isLateCancellation: false,
   },
 } satisfies TemplateEntry
 
