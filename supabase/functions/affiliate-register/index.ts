@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { userId, email, displayName, tosAcceptedAt } = await req.json()
+    const { userId, email, displayName, companyName, kvkNumber, vatNumber, iban, billingAddress, tosAcceptedAt } = await req.json()
 
     if (!userId || !email) {
       return new Response(
@@ -35,6 +35,11 @@ Deno.serve(async (req) => {
       affiliate_code: code,
       status: 'active',
       tos_accepted_at: tosAcceptedAt || null,
+      company_name: companyName || null,
+      kvk_number: kvkNumber || null,
+      vat_number: vatNumber || null,
+      iban: iban || null,
+      billing_address: billingAddress || null,
     })
 
     if (error) {
