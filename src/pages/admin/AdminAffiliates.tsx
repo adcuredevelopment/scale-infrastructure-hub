@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
-import { Search, Users, DollarSign, TrendingUp, Plus } from "lucide-react";
+import { Search, Users, DollarSign, TrendingUp, Plus, FileText, CheckCircle2, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { KPICard } from "@/components/admin/KPICard";
 import { toast } from "sonner";
@@ -55,6 +55,18 @@ interface Payout {
   created_at: string;
 }
 
+interface Invoice {
+  id: string;
+  affiliate_id: string;
+  payout_id: string;
+  invoice_number: string;
+  amount: number;
+  currency: string;
+  issued_at: string;
+  pdf_path: string | null;
+  created_at: string;
+}
+
 const statusColors: Record<string, string> = {
   active: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20",
   suspended: "bg-destructive/15 text-destructive border-destructive/20",
@@ -69,6 +81,7 @@ export default function AdminAffiliates() {
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [payoutDialog, setPayoutDialog] = useState(false);
@@ -80,15 +93,17 @@ export default function AdminAffiliates() {
   const [cancelledEmails, setCancelledEmails] = useState<Set<string>>(new Set());
 
   const fetchAll = useCallback(async () => {
-    const [affRes, refRes, payRes, subRes] = await Promise.all([
+    const [affRes, refRes, payRes, subRes, invRes] = await Promise.all([
       supabase.from("affiliates").select("*").order("created_at", { ascending: false }),
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
       supabase.from("affiliate_payouts").select("*").order("created_at", { ascending: false }),
       supabase.from("subscriptions").select("customer_email, status").eq("status", "cancelled"),
+      supabase.from("affiliate_invoices").select("*").order("created_at", { ascending: false }),
     ]);
     setAffiliates((affRes.data as Affiliate[]) || []);
     setReferrals((refRes.data as Referral[]) || []);
     setPayouts((payRes.data as Payout[]) || []);
+    setInvoices((invRes.data as Invoice[]) || []);
     setCancelledEmails(new Set((subRes.data || []).map((s: any) => s.customer_email?.toLowerCase())));
     setLoading(false);
   }, []);
@@ -102,12 +117,10 @@ export default function AdminAffiliates() {
     a.affiliate_code?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // MRR Commissions = sum of recurring commission amounts for active subscribers (not cancelled)
   const mrrCommissions = referrals
     .filter((r) => r.referral_type === "recurring" && r.status !== "paid" && r.customer_email && !cancelledEmails.has(r.customer_email.toLowerCase()))
     .reduce((s, r) => s + Number(r.commission_amount), 0);
 
-  // Only count referrals with active subscriptions
   const getAffiliateReferralCount = (id: string) => {
     const emails = new Set(referrals.filter((r) => r.affiliate_id === id && r.customer_email && !cancelledEmails.has(r.customer_email.toLowerCase())).map((r) => r.customer_email));
     return emails.size;
@@ -116,6 +129,38 @@ export default function AdminAffiliates() {
 
   const getAffiliateReferrals = (id: string) => referrals.filter((r) => r.affiliate_id === id);
   const getAffiliatePayouts = (id: string) => payouts.filter((p) => p.affiliate_id === id);
+  const getAffiliateInvoices = (id: string) => invoices.filter((i) => i.affiliate_id === id);
+  const getInvoiceForPayout = (payoutId: string) => invoices.find((i) => i.payout_id === payoutId);
+
+  const handleViewInvoice = async (pdfPath: string | null) => {
+    if (!pdfPath) {
+      toast.error("No invoice file available");
+      return;
+    }
+    const { data, error } = await supabase.storage.from("affiliate-invoices").createSignedUrl(pdfPath, 3600);
+    if (error || !data?.signedUrl) {
+      toast.error("Failed to generate invoice URL");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const handleRegenerateInvoice = async (payoutId: string) => {
+    toast.loading("Regenerating invoice...", { id: "regen" });
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-self-billing-invoice", {
+        body: { payoutId },
+      });
+      if (error) {
+        toast.error("Failed to regenerate invoice", { id: "regen" });
+      } else {
+        toast.success(`Invoice ${data?.invoiceNumber || ""} regenerated`, { id: "regen" });
+        fetchAll();
+      }
+    } catch {
+      toast.error("Failed to regenerate invoice", { id: "regen" });
+    }
+  };
 
   const handleCreatePayout = async () => {
     if (!payoutAffiliateId || !payoutAmount || Number(payoutAmount) <= 0) {
@@ -153,7 +198,6 @@ export default function AdminAffiliates() {
       if (newStatus === "paid") {
         const payout = payouts.find((p) => p.id === id);
         if (payout) {
-          // Generate self-billing invoice
           try {
             const { data: invoiceData, error: invoiceError } = await supabase.functions.invoke(
               "generate-self-billing-invoice",
@@ -169,14 +213,12 @@ export default function AdminAffiliates() {
             console.error("Invoice generation error:", err);
           }
 
-          // Mark referrals as paid
           await supabase
             .from("affiliate_referrals")
             .update({ status: "paid" })
             .eq("affiliate_id", payout.affiliate_id)
             .eq("status", "approved");
 
-          // Auto-remove paid referrals for cancelled subscriptions
           const affRefs = referrals.filter((r) => r.affiliate_id === payout.affiliate_id && r.customer_email);
           for (const ref of affRefs) {
             if (ref.customer_email && cancelledEmails.has(ref.customer_email.toLowerCase())) {
@@ -202,7 +244,6 @@ export default function AdminAffiliates() {
     else { toast.success(`Affiliate ${newStatus}`); fetchAll(); }
   };
 
-  // Only show unpaid referrals (pending or approved, not already paid)
   const affReferrals = selectedAffiliate
     ? getAffiliateReferrals(selectedAffiliate.id).filter(
         (r) => r.status !== "paid" && 
@@ -210,6 +251,7 @@ export default function AdminAffiliates() {
       )
     : [];
   const affPayouts = selectedAffiliate ? getAffiliatePayouts(selectedAffiliate.id) : [];
+  const affInvoices = selectedAffiliate ? getAffiliateInvoices(selectedAffiliate.id) : [];
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl">
@@ -384,29 +426,102 @@ export default function AdminAffiliates() {
                   <p className="text-sm text-muted-foreground">No payouts yet</p>
                 ) : (
                   <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                    {affPayouts.map((p) => (
-                      <div key={p.id} className="rounded-lg border border-border/30 bg-card/60 p-3 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">€{Number(p.amount).toFixed(2)}</span>
-                          <Badge variant="outline" className={statusColors[p.status] || ""}>{p.status}</Badge>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{p.notes || "—"}</span>
-                          <span>{p.payout_date ? format(new Date(p.payout_date), "MMM dd, yyyy") : "—"}</span>
-                        </div>
-                        {p.status === "pending" && (
-                          <div className="flex gap-1 mt-1">
-                            <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "processing")}>
-                              Process
-                            </Button>
-                            <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
-                              Mark Paid
-                            </Button>
+                    {affPayouts.map((p) => {
+                      const invoice = getInvoiceForPayout(p.id);
+                      return (
+                        <div key={p.id} className="rounded-lg border border-border/30 bg-card/60 p-3 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-foreground">€{Number(p.amount).toFixed(2)}</span>
+                            <Badge variant="outline" className={statusColors[p.status] || ""}>{p.status}</Badge>
                           </div>
-                        )}
-                        {p.status === "processing" && (
-                          <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2 mt-1" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
-                            Mark Paid
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{p.notes || "—"}</span>
+                            <span>{p.payout_date ? format(new Date(p.payout_date), "MMM dd, yyyy") : "—"}</span>
+                          </div>
+                          {/* Invoice info */}
+                          {p.status === "paid" && (
+                            <div className="flex items-center justify-between text-xs mt-1">
+                              {invoice ? (
+                                <div className="flex items-center gap-1.5 text-emerald-500">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>{invoice.invoice_number}</span>
+                                  <span className="text-muted-foreground">• {format(new Date(invoice.issued_at), "MMM dd, yyyy")}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 text-yellow-400">
+                                  <AlertCircle className="w-3 h-3" />
+                                  <span>No invoice</span>
+                                </div>
+                              )}
+                              <div className="flex gap-1">
+                                {invoice?.pdf_path && (
+                                  <Button variant="ghost" size="sm" className="text-xs h-6 px-2 text-primary" onClick={() => handleViewInvoice(invoice.pdf_path)}>
+                                    <ExternalLink className="w-3 h-3 mr-1" /> View
+                                  </Button>
+                                )}
+                                {!invoice && (
+                                  <Button variant="ghost" size="sm" className="text-xs h-6 px-2 text-yellow-400" onClick={() => handleRegenerateInvoice(p.id)}>
+                                    <RefreshCw className="w-3 h-3 mr-1" /> Generate
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {/* Action buttons */}
+                          {p.status === "pending" && (
+                            <div className="flex gap-1 mt-1">
+                              <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "processing")}>
+                                Process
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
+                                Mark Paid
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-xs text-destructive h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "failed")}>
+                                Failed
+                              </Button>
+                            </div>
+                          )}
+                          {p.status === "processing" && (
+                            <div className="flex gap-1 mt-1">
+                              <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
+                                Mark Paid
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-xs text-destructive h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "failed")}>
+                                Failed
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Invoices */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <FileText className="w-4 h-4" /> Invoices ({affInvoices.length})
+                </h3>
+                {affInvoices.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No invoices yet</p>
+                ) : (
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {affInvoices.map((inv) => (
+                      <div key={inv.id} className="rounded-lg border border-border/30 bg-card/60 p-3 flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <span className="text-sm font-medium text-foreground">{inv.invoice_number}</span>
+                          <div className="flex gap-2 text-xs text-muted-foreground">
+                            <span>€{Number(inv.amount).toFixed(2)}</span>
+                            <span>•</span>
+                            <span>{format(new Date(inv.issued_at), "MMM dd, yyyy")}</span>
+                          </div>
+                        </div>
+                        {inv.pdf_path && (
+                          <Button variant="ghost" size="sm" className="text-xs h-7 text-primary" onClick={() => handleViewInvoice(inv.pdf_path)}>
+                            <ExternalLink className="w-3 h-3 mr-1" /> View
                           </Button>
                         )}
                       </div>
