@@ -99,6 +99,11 @@ Deno.serve(async (req) => {
       issuedAt,
       affiliateName: affiliate.display_name || affiliate.email,
       affiliateEmail: affiliate.email,
+      companyName: affiliate.company_name,
+      kvkNumber: affiliate.kvk_number,
+      vatNumber: affiliate.vat_number,
+      iban: affiliate.iban,
+      billingAddress: affiliate.billing_address,
       amount: payout.amount,
       currency: payout.currency || 'EUR',
     })
@@ -240,6 +245,11 @@ function generateInvoicePDF(data: {
   issuedAt: string
   affiliateName: string
   affiliateEmail: string
+  companyName?: string | null
+  kvkNumber?: string | null
+  vatNumber?: string | null
+  iban?: string | null
+  billingAddress?: string | null
   amount: number
   currency: string
 }) {
@@ -247,6 +257,15 @@ function generateInvoicePDF(data: {
     year: 'numeric', month: 'long', day: 'numeric',
   })
   const currencySymbol = data.currency === 'EUR' ? '€' : data.currency
+
+  const supplierLines: string[] = []
+  if (data.companyName) supplierLines.push(`<strong>${data.companyName}</strong>`)
+  supplierLines.push(data.affiliateName)
+  supplierLines.push(data.affiliateEmail)
+  if (data.billingAddress) supplierLines.push(data.billingAddress)
+  if (data.kvkNumber) supplierLines.push(`KVK: ${data.kvkNumber}`)
+  if (data.vatNumber) supplierLines.push(`VAT: ${data.vatNumber}`)
+  if (data.iban) supplierLines.push(`IBAN: ${data.iban}`)
 
   return `<!DOCTYPE html>
 <html>
@@ -263,7 +282,7 @@ function generateInvoicePDF(data: {
     .total { font-size: 18px; font-weight: bold; }
     .footer { margin-top: 40px; font-size: 12px; color: #999; }
     .label { font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 2px; }
-    .value { font-size: 14px; margin-bottom: 14px; }
+    .value { font-size: 14px; margin-bottom: 14px; line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -277,7 +296,7 @@ function generateInvoicePDF(data: {
     </div>
     <div>
       <p class="label">To (Supplier/Affiliate)</p>
-      <p class="value"><strong>${data.affiliateName}</strong><br>${data.affiliateEmail}</p>
+      <p class="value">${supplierLines.join('<br>')}</p>
     </div>
   </div>
 

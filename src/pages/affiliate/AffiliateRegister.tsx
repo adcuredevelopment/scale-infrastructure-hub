@@ -14,6 +14,11 @@ export default function AffiliateRegister() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [kvkNumber, setKvkNumber] = useState("");
+  const [vatNumber, setVatNumber] = useState("");
+  const [iban, setIban] = useState("");
+  const [billingAddress, setBillingAddress] = useState("");
   const [tosAccepted, setTosAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,6 +31,10 @@ export default function AffiliateRegister() {
     }
     if (password.length < 8) {
       toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (!iban.trim()) {
+      toast.error("IBAN is required for payouts");
       return;
     }
     setLoading(true);
@@ -46,7 +55,6 @@ export default function AffiliateRegister() {
     }
 
     if (data.user) {
-      // Generate affiliate code and create affiliate record via edge function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -62,6 +70,11 @@ export default function AffiliateRegister() {
             userId: data.user.id,
             email,
             displayName,
+            companyName: companyName.trim() || null,
+            kvkNumber: kvkNumber.trim() || null,
+            vatNumber: vatNumber.trim() || null,
+            iban: iban.trim(),
+            billingAddress: billingAddress.trim() || null,
             tosAcceptedAt: new Date().toISOString(),
           }),
         });
@@ -79,11 +92,12 @@ export default function AffiliateRegister() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="pt-28 md:pt-40 pb-16 px-5 flex items-center justify-center">
-        <div className="glass rounded-xl p-6 md:p-8 w-full max-w-md">
+        <div className="glass rounded-xl p-6 md:p-8 w-full max-w-lg">
           <h1 className="text-2xl font-display font-bold mb-2 text-center">Become an Affiliate</h1>
           <p className="text-sm text-muted-foreground text-center mb-6">Create your affiliate account and start earning</p>
 
           <form onSubmit={handleRegister} className="space-y-4">
+            {/* Account details */}
             <div className="space-y-2">
               <Label htmlFor="name">Display Name</Label>
               <Input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" required />
@@ -96,7 +110,41 @@ export default function AffiliateRegister() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 8 characters" required />
             </div>
-            <div className="flex items-start space-x-3">
+
+            {/* Billing / payout details */}
+            <div className="pt-2 border-t border-border">
+              <p className="text-sm font-medium mb-3 text-foreground">Billing & Payout Details</p>
+              <p className="text-xs text-muted-foreground mb-4">Required for self-billing invoices (EU Art. 224)</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Company Name <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Your company" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="kvk">KVK Number <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input id="kvk" value={kvkNumber} onChange={(e) => setKvkNumber(e.target.value)} placeholder="12345678" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vat">VAT Number <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input id="vat" value={vatNumber} onChange={(e) => setVatNumber(e.target.value)} placeholder="NL123456789B01" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="iban">IBAN <span className="text-destructive">*</span></Label>
+                <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL91ABNA0417164300" required />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Billing Address <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Input id="address" value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} placeholder="Street, City, Country" />
+            </div>
+
+            <div className="flex items-start space-x-3 pt-2">
               <Checkbox
                 id="tos"
                 checked={tosAccepted}
