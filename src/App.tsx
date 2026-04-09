@@ -34,6 +34,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateLogin from "./pages/affiliate/AffiliateLogin";
 import AffiliateRegister from "./pages/affiliate/AffiliateRegister";
+import AffiliateTerms from "./pages/affiliate/AffiliateTerms";
 import { AffiliateLayout } from "@/components/affiliate/AffiliateLayout";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/affiliate" element={<Affiliate />} />
             <Route path="/affiliate/login" element={<AffiliateLogin />} />
             <Route path="/affiliate/register" element={<AffiliateRegister />} />
+            <Route path="/affiliate/terms" element={<AffiliateTerms />} />
             <Route path="/affiliate/dashboard" element={<AffiliateLayout />}>
               <Route index element={<AffiliateDashboard />} />
             </Route>
