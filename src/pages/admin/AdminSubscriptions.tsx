@@ -71,6 +71,19 @@ export default function AdminSubscriptions() {
     return colors[status] || "bg-muted text-muted-foreground";
   };
 
+  const isLateCancellation = (sub: any) => {
+    if (sub.status !== 'cancelled' || !sub.cancelled_at || !sub.expires_at) return false;
+    const cancelled = new Date(sub.cancelled_at).getTime();
+    const expires = new Date(sub.expires_at).getTime();
+    return (expires - cancelled) < 14 * 24 * 60 * 60 * 1000;
+  };
+
+  const isUpcomingLateCancellation = (sub: any) => {
+    if (sub.status !== 'active' || !sub.expires_at) return false;
+    const expires = new Date(sub.expires_at).getTime();
+    return (expires - Date.now()) < 14 * 24 * 60 * 60 * 1000;
+  };
+
   const handleCancel = async () => {
     if (!selected) return;
     setCancelling(true);
@@ -80,7 +93,10 @@ export default function AdminSubscriptions() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success("Subscription cancelled successfully");
+      const msg = data?.late_cancellation
+        ? "Subscription cancelled (late cancellation — final billing cycle applies)"
+        : "Subscription cancelled successfully";
+      toast.success(msg);
       setSelected(null);
       setShowConfirm(false);
       await fetchSubscriptions();
@@ -228,9 +244,16 @@ export default function AdminSubscriptions() {
           {selected && (
             <div className="mt-6 space-y-1">
               <div className="flex items-center justify-between mb-4">
-                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusBadge(selected.status)}`}>
-                  {selected.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusBadge(selected.status)}`}>
+                    {selected.status}
+                  </span>
+                  {isLateCancellation(selected) && (
+                    <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/15 text-amber-500">
+                      Late cancellation
+                    </span>
+                  )}
+                </div>
                 <span className="text-lg font-bold text-foreground">
                   €{Number(selected.amount).toFixed(2)}
                   <span className="text-xs font-normal text-muted-foreground ml-1">{selected.currency}</span>
@@ -279,6 +302,13 @@ export default function AdminSubscriptions() {
             <AlertDialogDescription>
               This will cancel the subscription for <strong>{selected?.customer_email}</strong> ({selected?.plan_name}). 
               A cancellation email will be sent to the customer. This action cannot be undone.
+              {selected && isUpcomingLateCancellation(selected) && (
+                <span className="block mt-3 p-3 rounded-lg bg-amber-500/10 text-amber-400 text-sm">
+                  ⚠️ This is a late cancellation (within 14 days of next billing on{" "}
+                  {format(new Date(selected.expires_at), "MMM dd, yyyy")}). 
+                  The customer's final month has already been or will be billed.
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
