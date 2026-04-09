@@ -153,6 +153,22 @@ export default function AdminAffiliates() {
       if (newStatus === "paid") {
         const payout = payouts.find((p) => p.id === id);
         if (payout) {
+          // Generate self-billing invoice
+          try {
+            const { data: invoiceData, error: invoiceError } = await supabase.functions.invoke(
+              "generate-self-billing-invoice",
+              { body: { payoutId: id } }
+            );
+            if (invoiceError) {
+              console.error("Invoice generation error:", invoiceError);
+              toast.error("Payout completed but invoice generation failed");
+            } else {
+              toast.success(`Invoice ${invoiceData?.invoiceNumber || ''} generated and sent`);
+            }
+          } catch (err) {
+            console.error("Invoice generation error:", err);
+          }
+
           // Mark referrals as paid
           await supabase
             .from("affiliate_referrals")
