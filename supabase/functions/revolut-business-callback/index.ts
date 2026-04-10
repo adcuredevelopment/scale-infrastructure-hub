@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const REVOLUT_CLIENT_ID = 'nz2ptY7O_uDRyEaetwtDZpqKUItHUkqsG3277ih2RLw'
+const REVOLUT_CLIENT_ID = 'mFSdR4-p8_f-lpKeT9ZF55RiSEXFwG2JUTD7WyLVTME'
 const REVOLUT_TOKEN_URL = 'https://b2b.revolut.com/api/1.0/auth/token'
 
 Deno.serve(async (req) => {
