@@ -13,3 +13,5 @@ project_id = "uwncaohygevjvtgkazvv"
     verify_jwt = true
   [functions.send-transactional-email]
     verify_jwt = true
+  [functions.revolut-business-callback]
+    verify_jwt = false
