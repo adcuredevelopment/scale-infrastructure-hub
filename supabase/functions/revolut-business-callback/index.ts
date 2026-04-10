@@ -108,10 +108,11 @@ async function generateClientAssertionJWT(privateKeyPem: string, clientId: strin
   // JWT Header
   const header = { alg: 'RS256', typ: 'JWT' }
 
-  // JWT Payload
+  // JWT Payload - iss must be your redirect URI domain (without https://)
   const now = Math.floor(Date.now() / 1000)
+  const issuerDomain = 'uwncaohygevjvtgkazvv.supabase.co'
   const payload = {
-    iss: clientId,
+    iss: issuerDomain,
     sub: clientId,
     aud: 'https://revolut.com',
     iat: now,
