@@ -92,6 +92,7 @@ export default function AdminAffiliates() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(null);
   const [cancelledEmails, setCancelledEmails] = useState<Set<string>>(new Set());
+  const [executingPayoutId, setExecutingPayoutId] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     const [affRes, refRes, payRes, subRes, invRes] = await Promise.all([
