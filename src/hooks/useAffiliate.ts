@@ -72,7 +72,7 @@ export function useAffiliate() {
     try {
       const { data: aff } = await supabase
         .from("affiliates")
-        .select("id, affiliate_code, display_name, email, status")
+        .select("id, affiliate_code, display_name, email, status, iban, company_name, kvk_number, vat_number, billing_address")
         .eq("user_id", user!.id)
         .maybeSingle();
 
