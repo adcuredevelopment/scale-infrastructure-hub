@@ -209,7 +209,7 @@ async function getRevolutAccessToken(): Promise<string> {
 
   const jwt = await generateClientAssertionJWT(privateKeyPem, REVOLUT_CLIENT_ID)
 
-  const response = await fetch(`${REVOLUT_BASE_URL}/../auth/token`, {
+  const response = await fetch(`${REVOLUT_BASE_URL}/auth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -320,7 +320,7 @@ async function generateClientAssertionJWT(privateKeyPem: string, clientId: strin
   const header = { alg: 'RS256', typ: 'JWT' }
   const now = Math.floor(Date.now() / 1000)
   const payload = {
-    iss: `uwncaohygevjvtgkazvv.supabase.co/functions/v1/revolut-execute-payout`,
+    iss: 'uwncaohygevjvtgkazvv.supabase.co',
     sub: clientId,
     aud: 'https://revolut.com',
     iat: now,

@@ -8,6 +8,11 @@ export interface AffiliateData {
   display_name: string | null;
   email: string;
   status: string;
+  iban: string | null;
+  company_name: string | null;
+  kvk_number: string | null;
+  vat_number: string | null;
+  billing_address: string | null;
 }
 
 export interface AffiliateReferral {
@@ -67,7 +72,7 @@ export function useAffiliate() {
     try {
       const { data: aff } = await supabase
         .from("affiliates")
-        .select("id, affiliate_code, display_name, email, status")
+        .select("id, affiliate_code, display_name, email, status, iban, company_name, kvk_number, vat_number, billing_address")
         .eq("user_id", user!.id)
         .maybeSingle();
 
@@ -125,6 +130,16 @@ export function useAffiliate() {
     .filter((r) => r.referral_type === "recurring" && (r.status === "approved" || r.status === "paid") && new Date(r.created_at) >= monthStart)
     .reduce((sum, r) => sum + Number(r.commission_amount), 0);
 
+  async function updateAffiliate(fields: Partial<AffiliateData>) {
+    if (!affiliate) throw new Error("No affiliate");
+    const { error } = await supabase
+      .from("affiliates")
+      .update(fields)
+      .eq("id", affiliate.id);
+    if (error) throw error;
+    setAffiliate({ ...affiliate, ...fields } as AffiliateData);
+  }
+
   return {
     user,
     affiliate,
@@ -137,5 +152,6 @@ export function useAffiliate() {
     pendingAmount,
     monthlyRecurring,
     refetch: fetchAffiliateData,
+    updateAffiliate,
   };
 }
