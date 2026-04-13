@@ -139,7 +139,6 @@ export const PricingSection = () => {
     }
 
     const plan = selectedPlan!;
-    setSelectedPlan(null);
     setLoadingPlan(plan.name);
 
     try {
@@ -178,6 +177,7 @@ export const PricingSection = () => {
       if (!res.ok) throw new Error(data?.error || 'Failed to create subscription');
 
       if (data?.checkout_url) {
+        setSelectedPlan(null);
         window.location.href = data.checkout_url;
       } else {
         throw new Error('No checkout URL received');

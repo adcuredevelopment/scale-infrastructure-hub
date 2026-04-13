@@ -63,7 +63,11 @@ export default function AdminOverview() {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     const activeSubs = subs.filter((s) => s.status === "active");
-    const totalRevenue = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    // Total Revenue = sum of all completed payments (historical)
+    const totalRevenue = allPayments
+      .filter((p) => p.status === "completed")
+      .reduce((acc, p) => acc + Number((p.payload as any)?.amount || 0), 0);
+    // MRR = sum of currently active subscription amounts
     const mrr = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
 
     // Last month's MRR: subs that were active at end of last month
