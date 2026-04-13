@@ -510,21 +510,18 @@ export default function AdminAffiliates() {
                                   "⚡ Pay via Revolut"
                                 )}
                               </Button>
-                              <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
-                                Mark Paid
+                              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
+                                Mark Paid (manual)
                               </Button>
                               <Button variant="ghost" size="sm" className="text-xs text-destructive h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "failed")}>
                                 Failed
                               </Button>
                             </div>
                           )}
-                          {p.status === "processing" && (
+                          {p.status === "processing" && !p.revolut_transaction_id && (
                             <div className="flex gap-1 mt-1 items-center">
                               <RefreshCw className="w-3 h-3 animate-spin text-blue-400" />
                               <span className="text-xs text-blue-400">Processing via Revolut...</span>
-                              <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
-                                Mark Paid
-                              </Button>
                               <Button variant="ghost" size="sm" className="text-xs text-destructive h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "failed")}>
                                 Failed
                               </Button>
