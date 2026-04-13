@@ -195,6 +195,12 @@ Deno.serve(async (req) => {
       )
     }
 
+    // FIX: Create supabase client BEFORE any database operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
+
     // Handle subscription-specific events
     if (event === 'SUBSCRIPTION_ACTIVATED' || event === 'SUBSCRIPTION_CANCELLED' || event === 'SUBSCRIPTION_RENEWED') {
       const subscriptionId = rawPayload.subscription_id || rawPayload.id
@@ -223,11 +229,6 @@ Deno.serve(async (req) => {
       state: rawPayload.state || null,
       completed_at: rawPayload.completed_at || null,
     }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
 
     let status = 'unknown'
     if (event === 'ORDER_COMPLETED') status = 'completed'
@@ -291,17 +292,38 @@ Deno.serve(async (req) => {
 
           const revolutSubId = prevPayload?.subscriptionId || order_id
 
-          await supabase.from('subscriptions').insert({
-            customer_email: email,
-            customer_name: customerName,
-            plan_name: planName,
-            status: 'active',
-            amount,
-            currency: 'EUR',
-            revolut_subscription_id: revolutSubId,
-            expires_at: expiresAt.toISOString(),
-            affiliate_code: prevPayload?.affiliateCode || null,
-          })
+          // FIX: Use upsert to prevent duplicate subscriptions from repeated webhooks
+          const { data: existingSub } = await supabase
+            .from('subscriptions')
+            .select('id')
+            .eq('revolut_subscription_id', revolutSubId)
+            .maybeSingle()
+
+          if (existingSub) {
+            // Update existing subscription instead of creating duplicate
+            await supabase.from('subscriptions').update({
+              customer_email: email,
+              customer_name: customerName,
+              plan_name: planName,
+              status: 'active',
+              amount,
+              expires_at: expiresAt.toISOString(),
+              affiliate_code: prevPayload?.affiliateCode || null,
+            }).eq('id', existingSub.id)
+            console.log(`Subscription ${revolutSubId} updated (duplicate webhook)`)
+          } else {
+            await supabase.from('subscriptions').insert({
+              customer_email: email,
+              customer_name: customerName,
+              plan_name: planName,
+              status: 'active',
+              amount,
+              currency: 'EUR',
+              revolut_subscription_id: revolutSubId,
+              expires_at: expiresAt.toISOString(),
+              affiliate_code: prevPayload?.affiliateCode || null,
+            })
+          }
 
           await supabase.from('notifications').insert({
             type: 'payment',

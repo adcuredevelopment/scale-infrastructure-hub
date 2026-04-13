@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -7,25 +7,48 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Shield } from "lucide-react";
 
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 60_000; // 1 minute
+
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const attemptsRef = useRef(0);
+  const lockoutUntilRef = useRef(0);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Rate limiting
+    const now = Date.now();
+    if (now < lockoutUntilRef.current) {
+      const remaining = Math.ceil((lockoutUntilRef.current - now) / 1000);
+      setError(`Too many attempts. Try again in ${remaining}s.`);
+      return;
+    }
+
     setLoading(true);
 
     const { error } = await signIn(email.trim(), password);
     if (error) {
-      setError(error);
+      attemptsRef.current += 1;
+      if (attemptsRef.current >= MAX_ATTEMPTS) {
+        lockoutUntilRef.current = Date.now() + LOCKOUT_MS;
+        attemptsRef.current = 0;
+        setError(`Too many failed attempts. Locked out for 60 seconds.`);
+      } else {
+        setError(error);
+      }
       setLoading(false);
       return;
     }
+
+    attemptsRef.current = 0;
     navigate("/admin");
   };
 

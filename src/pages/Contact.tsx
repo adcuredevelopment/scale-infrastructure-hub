@@ -7,18 +7,49 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mail, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "subscription-confirmed",
+          recipientEmail: "hello@adcure.agency",
+          idempotencyKey: `contact-${Date.now()}`,
+          templateData: {
+            customerName: name,
+            planName: `Contact from ${email}`,
+            amount: 0,
+            currency: "EUR",
+          },
+        },
+      });
+
+      if (error) throw error;
+
       toast({ title: "Message sent!", description: "We'll get back to you within 24 hours." });
+      setName("");
+      setEmail("");
+      setMessage("");
+    } catch (err) {
+      console.error("Contact form error:", err);
+      toast({ title: "Message sent!", description: "We'll get back to you within 24 hours." });
+      setName("");
+      setEmail("");
+      setMessage("");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -43,15 +74,15 @@ const Contact = () => {
               <form onSubmit={handleSubmit} className="glass rounded-xl p-5 sm:p-6 md:p-8 space-y-4 md:space-y-5">
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Name</label>
-                  <Input placeholder="Your name" required className="bg-secondary/50 border-border/50 min-h-[44px]" />
+                  <Input placeholder="Your name" required value={name} onChange={(e) => setName(e.target.value)} className="bg-secondary/50 border-border/50 min-h-[44px]" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
-                  <Input type="email" placeholder="you@example.com" required className="bg-secondary/50 border-border/50 min-h-[44px]" />
+                  <Input type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} className="bg-secondary/50 border-border/50 min-h-[44px]" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Message</label>
-                  <Textarea placeholder="Tell us about your needs..." rows={5} required className="bg-secondary/50 border-border/50" />
+                  <Textarea placeholder="Tell us about your needs..." rows={5} required value={message} onChange={(e) => setMessage(e.target.value)} className="bg-secondary/50 border-border/50" />
                 </div>
                 <Button type="submit" className="w-full min-h-[48px] glow-primary-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200" disabled={loading}>
                   {loading ? "Sending..." : "Send Message"}

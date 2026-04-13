@@ -80,6 +80,10 @@ export default function AffiliateRegister() {
         });
       } catch (err) {
         console.error("Affiliate registration error:", err);
+        toast.error("Account created but affiliate setup failed. Please contact support.");
+        setLoading(false);
+        navigate("/affiliate/login");
+        return;
       }
     }
 

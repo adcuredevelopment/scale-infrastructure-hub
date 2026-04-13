@@ -245,10 +245,11 @@ export default function AdminAffiliates() {
             .eq("affiliate_id", payout.affiliate_id)
             .eq("status", "approved");
 
+          // Soft-delete: mark cancelled referrals as 'cancelled' instead of hard delete
           const affRefs = referrals.filter((r) => r.affiliate_id === payout.affiliate_id && r.customer_email);
           for (const ref of affRefs) {
             if (ref.customer_email && cancelledEmails.has(ref.customer_email.toLowerCase())) {
-              await supabase.from("affiliate_referrals").delete().eq("id", ref.id);
+              await supabase.from("affiliate_referrals").update({ status: "cancelled" }).eq("id", ref.id);
             }
           }
         }
