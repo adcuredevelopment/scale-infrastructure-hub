@@ -53,6 +53,7 @@ interface Payout {
   payout_date: string | null;
   notes: string | null;
   created_at: string;
+  revolut_transaction_id?: string | null;
 }
 
 interface Invoice {
