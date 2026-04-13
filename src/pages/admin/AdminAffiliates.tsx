@@ -53,6 +53,7 @@ interface Payout {
   payout_date: string | null;
   notes: string | null;
   created_at: string;
+  revolut_transaction_id?: string | null;
 }
 
 interface Invoice {
@@ -91,6 +92,7 @@ export default function AdminAffiliates() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(null);
   const [cancelledEmails, setCancelledEmails] = useState<Set<string>>(new Set());
+  const [executingPayoutId, setExecutingPayoutId] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     const [affRes, refRes, payRes, subRes, invRes] = await Promise.all([
@@ -184,6 +186,30 @@ export default function AdminAffiliates() {
       setPayoutAmount("");
       setPayoutNotes("");
       fetchAll();
+    }
+  };
+
+  const handleExecuteRevolutPayout = async (payoutId: string) => {
+    setExecutingPayoutId(payoutId);
+    toast.loading("Executing Revolut payout...", { id: "revolut-payout" });
+    try {
+      const { data, error } = await supabase.functions.invoke("revolut-execute-payout", {
+        body: { payoutId },
+      });
+      if (error) {
+        toast.error(`Payout failed: ${error.message}`, { id: "revolut-payout" });
+        return;
+      }
+      if (data?.error) {
+        toast.error(`Payout failed: ${data.error}`, { id: "revolut-payout" });
+        return;
+      }
+      toast.success(`Payout executed! Transaction: ${data?.transactionId?.slice(0, 12)}...`, { id: "revolut-payout" });
+      fetchAll();
+    } catch (err) {
+      toast.error("Failed to execute payout", { id: "revolut-payout" });
+    } finally {
+      setExecutingPayoutId(null);
     }
   };
 
@@ -470,8 +496,18 @@ export default function AdminAffiliates() {
                           {/* Action buttons */}
                           {p.status === "pending" && (
                             <div className="flex gap-1 mt-1">
-                              <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "processing")}>
-                                Process
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-blue-400 h-6 px-2"
+                                disabled={executingPayoutId === p.id}
+                                onClick={() => handleExecuteRevolutPayout(p.id)}
+                              >
+                                {executingPayoutId === p.id ? (
+                                  <><RefreshCw className="w-3 h-3 mr-1 animate-spin" /> Sending...</>
+                                ) : (
+                                  "⚡ Pay via Revolut"
+                                )}
                               </Button>
                               <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
                                 Mark Paid
@@ -482,13 +518,20 @@ export default function AdminAffiliates() {
                             </div>
                           )}
                           {p.status === "processing" && (
-                            <div className="flex gap-1 mt-1">
+                            <div className="flex gap-1 mt-1 items-center">
+                              <RefreshCw className="w-3 h-3 animate-spin text-blue-400" />
+                              <span className="text-xs text-blue-400">Processing via Revolut...</span>
                               <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
                                 Mark Paid
                               </Button>
                               <Button variant="ghost" size="sm" className="text-xs text-destructive h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "failed")}>
                                 Failed
                               </Button>
+                            </div>
+                          )}
+                          {p.revolut_transaction_id && p.status === "paid" && (
+                            <div className="text-[10px] text-muted-foreground mt-1 font-mono truncate">
+                              Revolut TX: {p.revolut_transaction_id.slice(0, 16)}...
                             </div>
                           )}
                         </div>

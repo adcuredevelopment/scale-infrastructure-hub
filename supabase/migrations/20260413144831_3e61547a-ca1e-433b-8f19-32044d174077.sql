@@ -1,0 +1,1 @@
+ALTER TABLE public.affiliate_payouts ADD COLUMN revolut_transaction_id text;
