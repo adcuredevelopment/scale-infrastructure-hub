@@ -130,6 +130,16 @@ export function useAffiliate() {
     .filter((r) => r.referral_type === "recurring" && (r.status === "approved" || r.status === "paid") && new Date(r.created_at) >= monthStart)
     .reduce((sum, r) => sum + Number(r.commission_amount), 0);
 
+  async function updateAffiliate(fields: Partial<AffiliateData>) {
+    if (!affiliate) throw new Error("No affiliate");
+    const { error } = await supabase
+      .from("affiliates")
+      .update(fields)
+      .eq("id", affiliate.id);
+    if (error) throw error;
+    setAffiliate({ ...affiliate, ...fields } as AffiliateData);
+  }
+
   return {
     user,
     affiliate,
@@ -142,5 +152,5 @@ export function useAffiliate() {
     pendingAmount,
     monthlyRecurring,
     refetch: fetchAffiliateData,
+    updateAffiliate,
   };
-}

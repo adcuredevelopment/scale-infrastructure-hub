@@ -2,10 +2,12 @@ import { useAffiliate } from "@/hooks/useAffiliate";
 import { ReferralLink } from "@/components/affiliate/ReferralLink";
 import { ReferralsTable } from "@/components/affiliate/ReferralsTable";
 import { PayoutsTable } from "@/components/affiliate/PayoutsTable";
+import { AffiliateSettings } from "@/components/affiliate/AffiliateSettings";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Clock, Users, LogOut, Loader2, Gift, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +27,7 @@ function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: st
 }
 
 export default function AffiliateDashboard() {
-  const { affiliate, referrals, payouts, loading, activeReferrals, unpaidSignupBonuses, pendingAmount, monthlyRecurring, cancelledEmails } = useAffiliate();
+  const { affiliate, referrals, payouts, loading, activeReferrals, unpaidSignupBonuses, pendingAmount, monthlyRecurring, cancelledEmails, updateAffiliate } = useAffiliate();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -74,45 +76,55 @@ export default function AffiliateDashboard() {
             </Button>
           </div>
 
-{/* KPIs - Carousel on mobile/tablet, grid on desktop */}
-          <div className="hidden lg:grid grid-cols-4 gap-4 mb-6">
-            <KPI icon={Users} label="Active Referrals" value={String(activeReferrals)} />
-            <KPI icon={TrendingUp} label="Monthly Recurring" value={`€${monthlyRecurring.toFixed(2)}`} />
-            <KPI icon={Gift} label="Signup Bonuses" value={`€${unpaidSignupBonuses.toFixed(2)}`} />
-            <KPI icon={Clock} label="Pending" value={`€${pendingAmount.toFixed(2)}`} />
-          </div>
-          <div className="lg:hidden mb-6">
-            <Carousel opts={{ align: "start", loop: false }} className="w-full">
-              <CarouselContent className="-ml-3">
-                {[
-                  { icon: Users, label: "Active Referrals", value: String(activeReferrals) },
-                  { icon: TrendingUp, label: "Monthly Recurring", value: `€${monthlyRecurring.toFixed(2)}` },
-                  { icon: Gift, label: "Signup Bonuses", value: `€${unpaidSignupBonuses.toFixed(2)}` },
-                  { icon: Clock, label: "Pending", value: `€${pendingAmount.toFixed(2)}` },
-                ].map((kpi, i) => (
-                  <CarouselItem key={i} className="pl-3 basis-[45%] sm:basis-[35%] md:basis-[30%]">
-                    <KPI icon={kpi.icon} label={kpi.label} value={kpi.value} />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </div>
+          <Tabs defaultValue="dashboard" className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
 
+            <TabsContent value="dashboard">
+              {/* KPIs */}
+              <div className="hidden lg:grid grid-cols-4 gap-4 mb-6">
+                <KPI icon={Users} label="Active Referrals" value={String(activeReferrals)} />
+                <KPI icon={TrendingUp} label="Monthly Recurring" value={`€${monthlyRecurring.toFixed(2)}`} />
+                <KPI icon={Gift} label="Signup Bonuses" value={`€${unpaidSignupBonuses.toFixed(2)}`} />
+                <KPI icon={Clock} label="Pending" value={`€${pendingAmount.toFixed(2)}`} />
+              </div>
+              <div className="lg:hidden mb-6">
+                <Carousel opts={{ align: "start", loop: false }} className="w-full">
+                  <CarouselContent className="-ml-3">
+                    {[
+                      { icon: Users, label: "Active Referrals", value: String(activeReferrals) },
+                      { icon: TrendingUp, label: "Monthly Recurring", value: `€${monthlyRecurring.toFixed(2)}` },
+                      { icon: Gift, label: "Signup Bonuses", value: `€${unpaidSignupBonuses.toFixed(2)}` },
+                      { icon: Clock, label: "Pending", value: `€${pendingAmount.toFixed(2)}` },
+                    ].map((kpi, i) => (
+                      <CarouselItem key={i} className="pl-3 basis-[45%] sm:basis-[35%] md:basis-[30%]">
+                        <KPI icon={kpi.icon} label={kpi.label} value={kpi.value} />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
+              </div>
 
-          {/* Referral Link */}
-          <div className="mb-6">
-            <ReferralLink affiliateCode={affiliate.affiliate_code} />
-          </div>
+              <div className="mb-6">
+                <ReferralLink affiliateCode={affiliate.affiliate_code} />
+              </div>
 
-          {/* Tables — stacked vertically with scroll */}
-          <div className="space-y-6">
-            <div className="max-h-[500px] overflow-y-auto rounded-xl">
-              <ReferralsTable referrals={referrals} cancelledEmails={cancelledEmails} />
-            </div>
-            <div className="max-h-[400px] overflow-y-auto rounded-xl">
-              <PayoutsTable payouts={payouts} />
-            </div>
-          </div>
+              <div className="space-y-6">
+                <div className="max-h-[500px] overflow-y-auto rounded-xl">
+                  <ReferralsTable referrals={referrals} cancelledEmails={cancelledEmails} />
+                </div>
+                <div className="max-h-[400px] overflow-y-auto rounded-xl">
+                  <PayoutsTable payouts={payouts} />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <AffiliateSettings affiliate={affiliate} onUpdate={updateAffiliate} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
       <Footer />
