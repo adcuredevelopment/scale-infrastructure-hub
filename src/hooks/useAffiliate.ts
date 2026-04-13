@@ -8,6 +8,11 @@ export interface AffiliateData {
   display_name: string | null;
   email: string;
   status: string;
+  iban: string | null;
+  company_name: string | null;
+  kvk_number: string | null;
+  vat_number: string | null;
+  billing_address: string | null;
 }
 
 export interface AffiliateReferral {
