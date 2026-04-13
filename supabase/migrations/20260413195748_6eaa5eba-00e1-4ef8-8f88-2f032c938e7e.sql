@@ -1,0 +1,1 @@
+UPDATE public.affiliate_payouts SET status = 'pending', notes = 'Monthly Payout April 2026' WHERE id = 'fd13b415-e231-44be-9527-ecbe5ce43f55';
