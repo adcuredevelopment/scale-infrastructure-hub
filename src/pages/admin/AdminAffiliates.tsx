@@ -189,6 +189,30 @@ export default function AdminAffiliates() {
     }
   };
 
+  const handleExecuteRevolutPayout = async (payoutId: string) => {
+    setExecutingPayoutId(payoutId);
+    toast.loading("Executing Revolut payout...", { id: "revolut-payout" });
+    try {
+      const { data, error } = await supabase.functions.invoke("revolut-execute-payout", {
+        body: { payoutId },
+      });
+      if (error) {
+        toast.error(`Payout failed: ${error.message}`, { id: "revolut-payout" });
+        return;
+      }
+      if (data?.error) {
+        toast.error(`Payout failed: ${data.error}`, { id: "revolut-payout" });
+        return;
+      }
+      toast.success(`Payout executed! Transaction: ${data?.transactionId?.slice(0, 12)}...`, { id: "revolut-payout" });
+      fetchAll();
+    } catch (err) {
+      toast.error("Failed to execute payout", { id: "revolut-payout" });
+    } finally {
+      setExecutingPayoutId(null);
+    }
+  };
+
   const handleUpdatePayoutStatus = async (id: string, newStatus: string) => {
     const update: any = { status: newStatus };
     if (newStatus === "paid") update.payout_date = new Date().toISOString();
