@@ -496,8 +496,18 @@ export default function AdminAffiliates() {
                           {/* Action buttons */}
                           {p.status === "pending" && (
                             <div className="flex gap-1 mt-1">
-                              <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "processing")}>
-                                Process
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-blue-400 h-6 px-2"
+                                disabled={executingPayoutId === p.id}
+                                onClick={() => handleExecuteRevolutPayout(p.id)}
+                              >
+                                {executingPayoutId === p.id ? (
+                                  <><RefreshCw className="w-3 h-3 mr-1 animate-spin" /> Sending...</>
+                                ) : (
+                                  "⚡ Pay via Revolut"
+                                )}
                               </Button>
                               <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
                                 Mark Paid
@@ -508,13 +518,20 @@ export default function AdminAffiliates() {
                             </div>
                           )}
                           {p.status === "processing" && (
-                            <div className="flex gap-1 mt-1">
+                            <div className="flex gap-1 mt-1 items-center">
+                              <RefreshCw className="w-3 h-3 animate-spin text-blue-400" />
+                              <span className="text-xs text-blue-400">Processing via Revolut...</span>
                               <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "paid")}>
                                 Mark Paid
                               </Button>
                               <Button variant="ghost" size="sm" className="text-xs text-destructive h-6 px-2" onClick={() => handleUpdatePayoutStatus(p.id, "failed")}>
                                 Failed
                               </Button>
+                            </div>
+                          )}
+                          {p.revolut_transaction_id && p.status === "paid" && (
+                            <div className="text-[10px] text-muted-foreground mt-1 font-mono truncate">
+                              Revolut TX: {p.revolut_transaction_id.slice(0, 16)}...
                             </div>
                           )}
                         </div>
