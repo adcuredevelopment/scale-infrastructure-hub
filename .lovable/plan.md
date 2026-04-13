@@ -1,39 +1,47 @@
 
 
-## Plan: Fix Active Referrals KPI Logic
+## Plan: Automatische Affiliate Payouts via Revolut Business API
 
-### Problem
-The "Active Referrals" KPI filters out `signup_bonus` referral types, so a new affiliate who just got their first referral (which is always a signup bonus) sees "0 Active Referrals" even though they have an active referred customer. This is confusing.
+### Huidige situatie
+- Payouts worden handmatig aangemaakt (pending → processing → paid)
+- Bij "paid" wordt een self-billing invoice gegenereerd en gemaild
+- Revolut Business API OAuth is volledig geconfigureerd (private key, client ID, refresh token)
+- Er is geen daadwerkelijke bankoverschrijving geïntegreerd
 
-The MRR showing €0.00 is **correct** — recurring commissions only start from month 2. No change needed there.
+### Wat wordt gebouwd
 
-### Changes
+**1. Nieuwe Edge Function: `revolut-execute-payout`**
+- Ontvangt een `payoutId` van de admin
+- Haalt affiliate IBAN en bedrag op uit de database
+- Verkrijgt een access token via de refresh token + client assertion JWT (hergebruikt logica uit callback)
+- Maakt een counterparty aan via Revolut Business API (of hergebruikt bestaande)
+- Voert de betaling uit via `POST /api/1.0/pay`
+- Slaat het Revolut transaction ID op in de database
+- Geeft status terug aan de frontend
 
-**1. Fix `activeReferrals` calculation (`src/hooks/useAffiliate.ts`)**
-- Change from counting non-signup-bonus commission records to counting **unique referred customers with active subscriptions**
-- Count distinct `customer_email` values from all referrals, excluding those in the `cancelledEmails` set
-- This gives a true count of active referred customers
+**2. Database wijziging: `affiliate_payouts` tabel uitbreiden**
+- Nieuw veld `revolut_transaction_id` (text, nullable) om de Revolut betaling te traceren
 
-```typescript
-// Before (broken):
-const activeReferrals = referrals.filter(
-  (r) => r.referral_type !== "signup_bonus" && r.status !== "paid"
-).length;
+**3. Frontend: AdminAffiliates payout flow aanpassen**
+- Wanneer admin een payout op "processing" zet, wordt de `revolut-execute-payout` functie aangeroepen
+- De flow wordt: **pending → processing (Revolut API call) → paid (na bevestiging)**
+- Duidelijke feedback: loading state, foutmeldingen, en succes-melding met transaction ID
+- Bij succesvolle Revolut betaling wordt de payout automatisch op "paid" gezet en invoice gegenereerd
 
-// After (correct):
-const uniqueEmails = new Set(
-  referrals
-    .filter((r) => r.customer_email)
-    .map((r) => r.customer_email!.toLowerCase())
-);
-const activeReferrals = [...uniqueEmails].filter(
-  (email) => !cancelledEmails.has(email)
-).length;
-```
+### Technische details
 
-### Technical details
-- Only `src/hooks/useAffiliate.ts` needs to change (lines 102-105)
-- No database or edge function changes needed
-- The `cancelledEmails` set already handles cancelled subscription detection correctly
-- This will show "1" for David's dashboard since `joeydekker01@gmail.com` is not cancelled
+**Revolut Business API endpoints gebruikt:**
+- `POST /api/1.0/auth/token` — access token ophalen met refresh token
+- `POST /api/1.0/counterparty` — bankrekening van affiliate registreren
+- `POST /api/1.0/pay` — daadwerkelijke betaling uitvoeren
+
+**JWT client assertion:** Hergebruik van de `generateClientAssertionJWT`, `importPrivateKey`, en `base64urlEncode` functies uit de callback function.
+
+**Veiligheid:** Admin-only (JWT validatie + `has_role` check). IBAN-validatie voordat betaling wordt uitgevoerd.
+
+### Stappen
+1. Database migratie: `revolut_transaction_id` kolom toevoegen aan `affiliate_payouts`
+2. Edge function `revolut-execute-payout` bouwen met Revolut API integratie
+3. Frontend `AdminAffiliates.tsx` aanpassen: "Processing" knop roept de edge function aan
+4. Deploy en testen
 
