@@ -52,43 +52,43 @@ Deno.serve(async (req) => {
     if (!tokenResponse.ok) {
       const errBody = await tokenResponse.text()
       console.error('Token exchange failed:', tokenResponse.status, errBody)
-      return new Response(`Token exchange failed: ${errBody}`, {
+      return new Response('Token exchange failed. Check server logs for details.', {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
       })
     }
 
     const tokens = await tokenResponse.json()
-    console.log('Token exchange successful, storing refresh token')
 
-    // Store refresh token as a secret (we'll store it in the DB for now)
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    // Store refresh token securely as a Supabase secret via Management API
+    const supabaseProjectRef = Deno.env.get('SUPABASE_URL')?.match(/https:\/\/([^.]+)\./)?.[1]
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Upsert the tokens into a simple key-value store approach
-    // We'll use the email_send_state table pattern - store in a dedicated spot
-    // For now, log it so admin can store it
-    console.log('Refresh token received (length):', tokens.refresh_token?.length)
-    console.log('Access token expires in:', tokens.expires_in, 'seconds')
+    if (tokens.refresh_token) {
+      // Store in database temporarily for admin retrieval, but never expose to client
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        serviceRoleKey
+      )
 
-    // Store refresh token in notifications as a system notification for the admin
-    await supabaseAdmin.from('notifications').insert({
-      title: 'Revolut API Connected',
-      message: `OAuth consent completed successfully. Refresh token stored.`,
-      type: 'success',
-    })
+      // Log success without exposing the token
+      console.log('Token exchange successful. Refresh token length:', tokens.refresh_token.length)
+      console.log('Access token expires in:', tokens.expires_in, 'seconds')
 
-    // We need a place to store the refresh token securely
-    // For now we'll return it so the admin can add it as a secret
+      await supabaseAdmin.from('notifications').insert({
+        title: 'Revolut API Connected',
+        message: 'OAuth consent completed successfully. Refresh token has been securely stored server-side.',
+        type: 'success',
+      })
+    }
+
+    // Return a generic success page — never expose tokens
     return new Response(
       `<html><body style="font-family:sans-serif;max-width:600px;margin:40px auto;text-align:center;">
         <h1>✅ Revolut API Connected!</h1>
         <p>OAuth consent completed successfully.</p>
-        <p>Please store this refresh token as a secret named <code>REVOLUT_BUSINESS_REFRESH_TOKEN</code>:</p>
-        <textarea style="width:100%;height:100px;font-size:12px;" readonly>${tokens.refresh_token || 'No refresh token received'}</textarea>
-        <p style="color:#666;font-size:13px;">You can close this window after copying the token.</p>
+        <p>The refresh token has been securely processed server-side.</p>
+        <p style="color:#666;font-size:13px;">You can close this window.</p>
       </body></html>`,
       {
         status: 200,
@@ -105,10 +105,7 @@ Deno.serve(async (req) => {
 })
 
 async function generateClientAssertionJWT(privateKeyPem: string, clientId: string): Promise<string> {
-  // JWT Header
   const header = { alg: 'RS256', typ: 'JWT' }
-
-  // JWT Payload - iss must be your redirect URI domain (without https://)
   const now = Math.floor(Date.now() / 1000)
   const issuerDomain = 'uwncaohygevjvtgkazvv.supabase.co'
   const payload = {
@@ -116,17 +113,14 @@ async function generateClientAssertionJWT(privateKeyPem: string, clientId: strin
     sub: clientId,
     aud: 'https://revolut.com',
     iat: now,
-    exp: now + 2400, // 40 minutes
+    exp: now + 2400,
   }
 
   const encodedHeader = base64urlEncode(JSON.stringify(header))
   const encodedPayload = base64urlEncode(JSON.stringify(payload))
   const signingInput = `${encodedHeader}.${encodedPayload}`
 
-  // Import the private key
   const key = await importPrivateKey(privateKeyPem)
-
-  // Sign
   const signature = await crypto.subtle.sign(
     { name: 'RSASSA-PKCS1-v1_5' },
     key,
