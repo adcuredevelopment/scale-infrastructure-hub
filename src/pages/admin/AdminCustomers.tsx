@@ -424,7 +424,7 @@ export default function AdminCustomers() {
                 </div>
               )}
             </SlideSection>
-          </>
+          </div>
         )}
       </SlidePanel>
     </div>
