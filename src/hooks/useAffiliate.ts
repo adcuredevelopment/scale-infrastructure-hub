@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 export interface AffiliateData {
   id: string;
@@ -78,6 +79,55 @@ export function useAffiliate() {
     }
     fetchAffiliateData();
   }, [user]);
+
+  // Realtime: listen for new invoices, payouts and referrals scoped to this affiliate
+  useEffect(() => {
+    if (!affiliate?.id) return;
+    const filter = `affiliate_id=eq.${affiliate.id}`;
+    const channel = supabase
+      .channel(`affiliate-rt-${affiliate.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "affiliate_invoices", filter },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            toast.success("New invoice available");
+          }
+          fetchAffiliateData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "affiliate_payouts", filter },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            toast.success("New payout received");
+          } else if (payload.eventType === "UPDATE") {
+            const newRow = payload.new as { status?: string };
+            const oldRow = payload.old as { status?: string };
+            if (newRow.status === "paid" && oldRow.status !== "paid") {
+              toast.success("Payout marked as paid");
+            }
+          }
+          fetchAffiliateData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "affiliate_referrals", filter },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            toast.success("New referral commission earned");
+          }
+          fetchAffiliateData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [affiliate?.id]);
 
   async function fetchAffiliateData() {
     setLoading(true);
