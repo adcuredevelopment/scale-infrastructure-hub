@@ -223,6 +223,66 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_invoices: {
+        Row: {
+          country: string | null
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_name: string | null
+          id: string
+          invoice_number: string
+          issued_at: string
+          payment_id: string | null
+          pdf_path: string | null
+          product_name: string
+          subscription_id: string | null
+          subtotal: number
+          total: number
+          type: string
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_name?: string | null
+          id?: string
+          invoice_number: string
+          issued_at?: string
+          payment_id?: string | null
+          pdf_path?: string | null
+          product_name: string
+          subscription_id?: string | null
+          subtotal?: number
+          total?: number
+          type: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_name?: string | null
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          payment_id?: string | null
+          pdf_path?: string | null
+          product_name?: string
+          subscription_id?: string | null
+          subtotal?: number
+          total?: number
+          type?: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
@@ -602,6 +662,7 @@ export type Database = {
         Returns: number
       }
       nextval_affiliate_invoice: { Args: never; Returns: number }
+      nextval_customer_invoice: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
