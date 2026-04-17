@@ -252,7 +252,7 @@ export default function AdminCustomers() {
       </div>
 
       {/* Customer Detail Panel */}
-      <SlidePanel open={!!selected} onClose={() => setSelected(null)} width={460}>
+      <SlidePanel open={!!selected} onClose={() => setSelected(null)} width={720}>
         {selected && (
           <>
             <div className="px-6 pt-6 pb-5">
