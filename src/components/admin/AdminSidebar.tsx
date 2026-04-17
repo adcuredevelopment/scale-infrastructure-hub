@@ -1,24 +1,31 @@
 import {
-  LayoutDashboard, Users, CreditCard, TrendingUp, Settings, LogOut, ChevronLeft, Share2
+  LayoutDashboard, Users, CreditCard, TrendingUp, Settings, LogOut,
+  ChevronLeft, Share2, BarChart3,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
-const navItems = [
-  { title: "Overview", url: "/admin", icon: LayoutDashboard },
+const mainItems = [
+  { title: "Overview",      url: "/admin",               icon: LayoutDashboard, end: true },
   { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
-  { title: "Payments", url: "/admin/payments", icon: TrendingUp },
-  { title: "Customers", url: "/admin/customers", icon: Users },
-  { title: "Analytics", url: "/admin/analytics", icon: TrendingUp },
-  { title: "Affiliates", url: "/admin/affiliates", icon: Share2 },
+  { title: "Payments",      url: "/admin/payments",      icon: TrendingUp },
+  { title: "Customers",     url: "/admin/customers",     icon: Users },
+  { title: "Analytics",     url: "/admin/analytics",     icon: BarChart3 },
+  { title: "Affiliates",    url: "/admin/affiliates",    icon: Share2 },
+];
+
+const settingsItems = [
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
-export function AdminSidebar() {
+interface Props {
+  onNavigate?: () => void;
+}
+
+export function AdminSidebar({ onNavigate }: Props) {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
@@ -29,56 +36,175 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className={cn(
-      "h-screen sticky top-0 border-r border-border/30 bg-secondary/30 flex flex-col transition-all duration-300",
-      collapsed ? "w-16" : "w-60"
-    )}>
-      <div className="flex items-center justify-between p-4 border-b border-border/20">
-        {!collapsed && (
-          <span className="font-display font-bold text-sm text-foreground">Adcure Admin</span>
+    <aside
+      className={cn(
+        "h-screen sticky top-0 flex flex-col transition-[width] duration-300 relative",
+        collapsed ? "w-[56px]" : "w-[220px]",
+      )}
+      style={{
+        background: "var(--ad-surface-deep)",
+        borderRight: "1px solid var(--ad-border-subtle)",
+      }}
+    >
+      {/* Logo / brand area */}
+      <div className="px-3 pt-5 pb-4">
+        {!collapsed ? (
+          <div className="flex items-center gap-2 px-2">
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center font-syne font-bold text-[13px]"
+              style={{
+                background: "linear-gradient(135deg, var(--ad-accent), #1d4ed8)",
+                color: "#fff",
+              }}
+            >
+              A
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="font-syne font-semibold text-[15px]" style={{ color: "var(--ad-text)" }}>
+                Adcure
+              </span>
+              <span
+                className="text-[10px] uppercase mt-0.5"
+                style={{ color: "var(--ad-text-faint)", letterSpacing: "0.1em" }}
+              >
+                Admin
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center font-syne font-bold text-[13px]"
+              style={{ background: "linear-gradient(135deg, var(--ad-accent), #1d4ed8)", color: "#fff" }}
+            >
+              A
+            </div>
+          </div>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <ChevronLeft className={cn("w-4 h-4 transition-transform", collapsed && "rotate-180")} />
-        </Button>
       </div>
 
-      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.url}
-            to={item.url}
-            end={item.url === "/admin"}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors",
-              collapsed && "justify-center px-2"
-            )}
-            activeClassName="bg-primary/10 text-primary font-medium"
-          >
-            <item.icon className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>{item.title}</span>}
-          </NavLink>
-        ))}
+      {/* Collapse toggle (floating) */}
+      <button
+        type="button"
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute -right-3 top-7 w-6 h-6 rounded-md flex items-center justify-center transition-colors z-10"
+        style={{
+          background: "var(--ad-surface-elevated)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          color: "var(--ad-text-soft)",
+        }}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        <ChevronLeft className={cn("w-3.5 h-3.5 transition-transform", collapsed && "rotate-180")} />
+      </button>
+
+      {/* Nav */}
+      <nav className="flex-1 px-2 pb-2 overflow-y-auto">
+        <NavGroup items={mainItems} collapsed={collapsed} onNavigate={onNavigate} />
+
+        <div
+          className="my-2 mx-2"
+          style={{ borderTop: "1px solid var(--ad-border-subtle)" }}
+        />
+
+        <NavGroup items={settingsItems} collapsed={collapsed} onNavigate={onNavigate} />
       </nav>
 
-      <div className="p-3 border-t border-border/20">
+      {/* Bottom: user + sign out */}
+      <div className="px-3 py-3" style={{ borderTop: "1px solid var(--ad-border-subtle)" }}>
         {!collapsed && user && (
-          <p className="text-[11px] text-muted-foreground truncate mb-2 px-1">{user.email}</p>
+          <p
+            className="text-[11px] truncate mb-2 px-1"
+            style={{ color: "var(--ad-text-muted)" }}
+            title={user.email ?? ""}
+          >
+            {user.email}
+          </p>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn("w-full text-muted-foreground hover:text-destructive", collapsed && "px-2")}
+        <button
+          type="button"
           onClick={handleSignOut}
+          className={cn(
+            "w-full flex items-center gap-2 px-2 h-8 rounded-md text-[12px] transition-colors",
+            collapsed && "justify-center",
+          )}
+          style={{ color: "var(--ad-text-secondary)" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--ad-text-secondary)")}
         >
-          <LogOut className="w-4 h-4" />
-          {!collapsed && <span className="ml-2">Sign Out</span>}
-        </Button>
+          <LogOut className="w-3.5 h-3.5" />
+          {!collapsed && <span>Sign out</span>}
+        </button>
       </div>
     </aside>
+  );
+}
+
+function NavGroup({
+  items, collapsed, onNavigate,
+}: {
+  items: typeof mainItems;
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
+  return (
+    <ul className="space-y-0.5">
+      {items.map((item) => (
+        <li key={item.url} className="relative">
+          <NavLink
+            to={item.url}
+            end={item.end}
+            onClick={onNavigate}
+            className={cn(
+              "group flex items-center gap-2.5 h-9 rounded-[7px] transition-colors text-[13px]",
+              collapsed ? "justify-center px-0" : "px-3",
+            )}
+            activeClassName="admin-nav-active"
+          >
+            {({ isActive }: { isActive: boolean }) => (
+              <NavInner item={item} active={isActive} collapsed={collapsed} />
+            )}
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function NavInner({
+  item, active, collapsed,
+}: {
+  item: { title: string; icon: any };
+  active: boolean;
+  collapsed: boolean;
+}) {
+  const Icon = item.icon;
+  return (
+    <span
+      className="relative flex items-center gap-2.5 w-full h-full rounded-[7px] px-3 transition-colors"
+      style={{
+        background: active ? "rgba(59,130,246,0.10)" : "transparent",
+        color: active ? "var(--ad-text)" : "var(--ad-text-secondary)",
+      }}
+      onMouseEnter={(e) => {
+        if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+      }}
+      onMouseLeave={(e) => {
+        if (!active) e.currentTarget.style.background = "transparent";
+      }}
+    >
+      {active && (
+        <span
+          className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-r"
+          style={{ background: "var(--ad-accent)" }}
+        />
+      )}
+      <Icon
+        className="shrink-0"
+        size={15}
+        style={{ color: active ? "var(--ad-accent)" : "var(--ad-text-faint)" }}
+      />
+      {!collapsed && <span>{item.title}</span>}
+    </span>
   );
 }
