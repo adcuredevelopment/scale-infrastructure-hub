@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { UserX, ChevronDown } from "lucide-react";
 import type { AffiliateReferral } from "@/hooks/useAffiliate";
 
@@ -116,9 +116,8 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                   const cancelled = isCancelledReferral(r);
                   const isOpen = expanded === r.id;
                   return (
-                    <>
+                    <Fragment key={r.id}>
                       <tr
-                        key={r.id}
                         onClick={() => toggle(r.id)}
                         style={{ cursor: "pointer" }}
                       >
@@ -144,14 +143,14 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
                         </td>
                       </tr>
                       {isOpen && (
-                        <tr key={`${r.id}-d`} style={{ background: "#0a0a0d" }}>
+                        <tr style={{ background: "#0a0a0d" }}>
                           <td />
                           <td colSpan={5} style={{ paddingTop: 8, paddingBottom: 16 }}>
                             <ReferralDetail r={r} cancelled={cancelled} />
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
