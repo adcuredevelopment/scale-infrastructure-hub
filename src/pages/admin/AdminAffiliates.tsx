@@ -712,7 +712,7 @@ export default function AdminAffiliates() {
               )}
             </SlideSection>
 
-            <div className="px-6 py-5">
+            <div className="px-6 py-5 mt-auto" style={{ borderTop: "1px solid var(--ad-border-subtle)" }}>
               <button
                 type="button"
                 onClick={() => handleToggleAffiliateStatus(selectedAffiliate.id, selectedAffiliate.status)}
