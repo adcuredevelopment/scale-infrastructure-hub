@@ -52,7 +52,9 @@ export function SlidePanel({ open, onClose, children, width = 420, className }: 
         >
           <X className="w-4 h-4" />
         </button>
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className="flex-1 overflow-y-auto flex flex-col [&>*:first-child]:flex [&>*:first-child]:flex-col [&>*:first-child]:min-h-full">
+          {children}
+        </div>
       </aside>
     </>
   );
