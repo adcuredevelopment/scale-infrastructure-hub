@@ -495,7 +495,7 @@ export default function AdminSubscriptions() {
                 </button>
               </div>
             )}
-          </div>
+          </>
         )}
       </SlidePanel>
 
