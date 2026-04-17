@@ -318,6 +318,16 @@ Deno.serve(async (req) => {
               console.error('Failed to send shop order confirmation email', emailErr)
             }
 
+            // Generate PDF invoice + send invoice email
+            try {
+              await supabase.functions.invoke('generate-customer-invoice', {
+                body: { paymentId: existing.id, type: 'shop_order' },
+              })
+              console.log(`Customer invoice generation triggered for shop order ${order_id}`)
+            } catch (invErr) {
+              console.error('Failed to trigger customer invoice generation', invErr)
+            }
+
             console.log(`Shop order completed for ${email}: ${productName} (€${totalPaid})`)
           }
 
@@ -430,6 +440,16 @@ Deno.serve(async (req) => {
             console.log(`Subscription confirmation email queued for ${email}`)
           } catch (emailErr) {
             console.error('Failed to send subscription confirmation email', emailErr)
+          }
+
+          // Generate PDF invoice for subscription payment (function determines initial vs renewal)
+          try {
+            await supabase.functions.invoke('generate-customer-invoice', {
+              body: { paymentId: existing.id, type: 'subscription_initial' },
+            })
+            console.log(`Customer invoice generation triggered for subscription payment ${order_id}`)
+          } catch (invErr) {
+            console.error('Failed to trigger customer invoice generation', invErr)
           }
 
           // Affiliate commission handling (auto-approved)
