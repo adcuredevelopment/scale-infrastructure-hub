@@ -74,7 +74,7 @@ const CustomerInvoiceEmail = ({
 
         <Text style={footer}>
           Questions about this invoice? Reply to this email or contact{' '}
-          <a href="mailto:support@adcure.agency" style={{ color: '#2563eb' }}>support@adcure.agency</a>.
+          <a href="mailto:service@adcure.agency" style={{ color: '#2563eb' }}>service@adcure.agency</a>.
         </Text>
 
         <Text style={footerSmall}>
