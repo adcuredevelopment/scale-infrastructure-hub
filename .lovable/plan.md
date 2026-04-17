@@ -1,51 +1,67 @@
 
+The user wants automatic Revolut sync instead of manually clicking the "Sync Revolut" button on the Overview page.
 
-User wants invoice PDF redesign:
-1. Fix € symbol spacing (currently `€95.59` looks like `€95.59` glued — likely the bullet/encoding issue with Helvetica + euro char). Need a font that renders € properly with space, or add explicit space.
-2. Remove "Payment status: PAID" green box entirely
-3. Fill company details: KVK 89821211, TAX ID NL003924266B58
-4. Refresh design overall — more premium/minimal
+Looking at the existing setup:
+- `revolut-sync-orders` edge function already exists and is invoked manually via `supabase.functions.invoke("revolut-sync-orders")`
+- There's a `useAutoRefresh` hook that polls every 30s for dashboard data
+- `expire-pending-payments` already exists as a scheduled function pattern
 
-The € rendering issue: pdf-lib's StandardFonts.Helvetica uses WinAnsi encoding which DOES support €, but the symbol can render visually tight. I'll add a thin space `€ 95.59` and also consider a cleaner layout.
+Two approaches: (A) client-side auto-sync while admin tab is open, (B) server-side cron via pg_cron every N minutes. Best practice is server-side cron — it runs even when no admin is logged in, keeps data fresh for webhooks/edge cases, and is the standard Lovable pattern documented in `<schedule-jobs-supabase-edge-functions>`.
 
-Plan:
+I'll combine both: cron for background freshness + a subtle UI toggle so the admin can also enable in-tab auto-sync with status feedback.
 
-# Plan: Redesign Customer Invoice PDF
+# Plan: Revolut Autosync
 
-## Wijzigingen in `generate-customer-invoice/index.ts`
+## Goal
+Replace manual "Sync Revolut" clicks with automatic syncing — both server-side (always on) and optional in-app (when admin tab is open).
 
-### 1. Bedrijfsgegevens invullen
-```ts
-const COMPANY = {
-  name: 'Adcure Agency',
-  addressLines: ['The Netherlands'],
-  email: 'support@adcure.agency',
-  kvk: '89821211',
-  vat: 'NL003924266B58',
-}
+## Approach
+
+**1. Server-side cron (always-on, primary)**
+- Enable `pg_cron` + `pg_net` extensions
+- Schedule `revolut-sync-orders` to run every 5 minutes via `cron.schedule` + `net.http_post`
+- Runs 24/7 regardless of who's logged in — keeps DB fresh for webhooks, late callbacks, and missed events
+
+**2. In-app autosync toggle (Overview header)**
+- Add a small toggle next to the existing Sync button: "Auto-sync: On/Off"
+- When On: invokes `revolut-sync-orders` every 2 minutes while the Overview tab is open, then refreshes dashboard data
+- Persist toggle state in `localStorage` (default: On)
+- Show a subtle "Last synced Xs ago" indicator (reuse `LiveIndicator` styling) so the admin can see freshness
+- Existing manual button stays as a force-sync option
+
+**3. New `useRevolutAutoSync` hook**
+- Encapsulates the interval, error handling, and last-synced timestamp
+- Toast on errors only (silent on success to avoid noise — already 30 syncs/hour)
+
+## Files
+
+**New:**
+- `src/hooks/useRevolutAutoSync.ts` — client interval hook with localStorage toggle persistence
+
+**Edited:**
+- `src/pages/admin/AdminOverview.tsx` — add Auto-sync toggle next to existing Sync button, wire up the hook, show last-sync timestamp
+
+**Database migration (separate, user-data SQL via insert tool — not migration tool, per Lovable rules):**
+- Enable `pg_cron`, `pg_net`
+- `cron.schedule('revolut-autosync-5min', '*/5 * * * *', net.http_post(...))` calling `revolut-sync-orders`
+
+## UX
+
+```text
+Header right side:
+┌──────────────────────────────────────────────────────────┐
+│ [● Updated 12s ago]  [Auto-sync ●On]  [↻ Sync Revolut]  │
+└──────────────────────────────────────────────────────────┘
 ```
 
-### 2. Euro spacing fix
-Aanpassen `fmtMoney`: `€ 95.59` (spatie tussen symbool en bedrag) zodat het niet meer aan elkaar plakt.
+Toggle uses the existing shadcn `Switch` component, scoped to admin theme.
 
-### 3. "Payment status: PAID" box verwijderen
-Hele groene status-box weghalen. Vervangen door subtiele tekstregel "Paid via Revolut" onder de totals, of helemaal weglaten — kies voor minimal: kleine grijze regel rechts onder total: `Paid via Revolut · {date}`.
+## Out of scope
+- No changes to the `revolut-sync-orders` edge function itself (already idempotent: returns `new_synced` / `updated` counts)
+- No retries/backoff on the cron side — if Revolut is down for 5 min, next run picks up
+- No realtime websocket updates — polling is sufficient for this volume
 
-### 4. Design refresh (premium minimal)
-- **Header**: logo links, rechts groot "INVOICE" met onder elkaar invoice nr + datum in kleinere grijze tekst
-- **Accent kleur**: dunne donkere lijn (1px, #111827) onder header ipv niets
-- **From/Bill to**: 2-koloms blok met luchtige typografie, KVK/VAT klein onder bedrijfsnaam
-- **Items tabel**: lichtere header bar, meer padding, bedragen rechts uitgelijnd
-- **Totals**: rechts uitgelijnd blok, TOTAL groter (14pt) met dunne lijn erboven
-- **Footer**: gecentreerd "Thank you for your business" + contact info onderaan in lichte grijs
-
-### 5. Versie suffix
-Bestaande facturen niet hergenereren — alleen nieuwe facturen krijgen het nieuwe design. Admin kan via "Generate Invoice" knop oude opnieuw genereren als nodig.
-
-## Bestanden
-- **Aangepast**: `supabase/functions/generate-customer-invoice/index.ts`
-- **Deploy**: edge function redeploy nodig
-
-## QA
-Na deploy: één testfactuur genereren via admin "Generate Invoice" knop op een bestaande betaling, PDF downloaden en visueel checken (€-spacing, KVK/VAT zichtbaar, geen groene box).
-
+## Notes
+- Existing manual Sync button stays untouched as an "instant force" action
+- Cron runs every 5 min server-side; in-app runs every 2 min when tab is open — both are safe (idempotent upserts)
+- All existing functionality, RLS, edge functions, and styling preserved
