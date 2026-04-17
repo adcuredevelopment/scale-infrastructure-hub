@@ -500,7 +500,7 @@ export default function AdminPayments() {
                     />
                   )}
                 </SlideSection>
-              </div>
+              </>
             );
           })()}
       </SlidePanel>
