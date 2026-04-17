@@ -37,11 +37,22 @@ export interface AffiliatePayout {
   created_at: string;
 }
 
+export interface AffiliateInvoice {
+  id: string;
+  invoice_number: string;
+  amount: number;
+  currency: string;
+  issued_at: string;
+  pdf_path: string | null;
+  payout_id: string;
+}
+
 export function useAffiliate() {
   const [user, setUser] = useState<User | null>(null);
   const [affiliate, setAffiliate] = useState<AffiliateData | null>(null);
   const [referrals, setReferrals] = useState<AffiliateReferral[]>([]);
   const [payouts, setPayouts] = useState<AffiliatePayout[]>([]);
+  const [invoices, setInvoices] = useState<AffiliateInvoice[]>([]);
   const [cancelledEmails, setCancelledEmails] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -60,6 +71,7 @@ export function useAffiliate() {
       setAffiliate(null);
       setReferrals([]);
       setPayouts([]);
+      setInvoices([]);
       setCancelledEmails(new Set());
       setLoading(false);
       return;
@@ -79,7 +91,7 @@ export function useAffiliate() {
       setAffiliate(aff);
 
       if (aff) {
-        const [refsRes, payRes, subsRes] = await Promise.all([
+        const [refsRes, payRes, invRes, subsRes] = await Promise.all([
           supabase
             .from("affiliate_referrals")
             .select("*")
@@ -88,10 +100,15 @@ export function useAffiliate() {
             .from("affiliate_payouts")
             .select("*")
             .order("created_at", { ascending: false }),
+          supabase
+            .from("affiliate_invoices")
+            .select("id, invoice_number, amount, currency, issued_at, pdf_path, payout_id")
+            .order("issued_at", { ascending: false }),
           supabase.rpc("get_affiliate_cancelled_emails"),
         ]);
         setReferrals((refsRes.data as AffiliateReferral[]) || []);
         setPayouts((payRes.data as AffiliatePayout[]) || []);
+        setInvoices((invRes.data as AffiliateInvoice[]) || []);
         const cancelled = new Set<string>(
           (subsRes.data || []).map((s) => s.customer_email.toLowerCase())
         );
@@ -114,7 +131,7 @@ export function useAffiliate() {
     (email) => !cancelledEmails.has(email)
   ).length;
 
-  // Signup bonuses that haven't been paid out yet
+  // Signup bonuses that haven't been paid out yet (kept for backward compat)
   const unpaidSignupBonuses = referrals
     .filter((r) => r.referral_type === "signup_bonus" && r.status !== "paid")
     .reduce((sum, r) => sum + Number(r.commission_amount), 0);
@@ -130,6 +147,15 @@ export function useAffiliate() {
     .filter((r) => r.referral_type === "recurring" && (r.status === "approved" || r.status === "paid") && new Date(r.created_at) >= monthStart)
     .reduce((sum, r) => sum + Number(r.commission_amount), 0);
 
+  // Total earned: sum of all paid payouts
+  const totalEarnedPaid = payouts
+    .filter((p) => p.status === "paid")
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+
+  // Map invoices by payout_id for quick lookup in PayoutsTable
+  const invoicesByPayout = new Map<string, AffiliateInvoice>();
+  for (const inv of invoices) invoicesByPayout.set(inv.payout_id, inv);
+
   async function updateAffiliate(fields: Partial<AffiliateData>) {
     if (!affiliate) throw new Error("No affiliate");
     const { error } = await supabase
@@ -140,18 +166,34 @@ export function useAffiliate() {
     setAffiliate({ ...affiliate, ...fields } as AffiliateData);
   }
 
+  /** Open an invoice PDF (private bucket -> signed URL). */
+  async function openInvoicePdf(pdfPath: string) {
+    const { data, error } = await supabase
+      .storage
+      .from("affiliate-invoices")
+      .createSignedUrl(pdfPath, 60);
+    if (error || !data?.signedUrl) {
+      throw error || new Error("Could not generate invoice link");
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
   return {
     user,
     affiliate,
     referrals,
     payouts,
+    invoices,
+    invoicesByPayout,
     cancelledEmails,
     loading,
     activeReferrals,
     unpaidSignupBonuses,
     pendingAmount,
     monthlyRecurring,
+    totalEarnedPaid,
     refetch: fetchAffiliateData,
     updateAffiliate,
+    openInvoicePdf,
   };
 }

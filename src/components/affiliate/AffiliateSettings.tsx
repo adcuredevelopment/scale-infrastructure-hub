@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Pencil, Lock, Copy, Check, Info, Landmark } from "lucide-react";
 import type { AffiliateData } from "@/hooks/useAffiliate";
@@ -6,10 +6,40 @@ import type { AffiliateData } from "@/hooks/useAffiliate";
 interface AffiliateSettingsProps {
   affiliate: AffiliateData;
   onUpdate: (fields: Partial<AffiliateData>) => Promise<void>;
+  startInEdit?: boolean;
 }
 
-export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProps) {
-  const [editing, setEditing] = useState(false);
+type FormErrors = Partial<Record<"iban" | "vat_number" | "kvk_number", string>>;
+
+const IBAN_REGEX = /^[A-Z]{2}[0-9A-Z]{13,32}$/;
+const VAT_NL_REGEX = /^NL\d{9}B\d{2}$/;
+// Generic EU VAT (country code + 8-12 alphanumeric)
+const VAT_EU_REGEX = /^[A-Z]{2}[0-9A-Z]{8,12}$/;
+const KVK_REGEX = /^\d{8}$/;
+
+function validateField(name: keyof FormErrors, raw: string): string | undefined {
+  const value = raw.trim().toUpperCase().replace(/\s+/g, "");
+  if (name === "iban") {
+    if (!value) return "Please enter a valid IBAN number";
+    if (!IBAN_REGEX.test(value)) return "Please enter a valid IBAN number";
+    return;
+  }
+  if (name === "vat_number") {
+    if (!value) return; // optional
+    if (!VAT_NL_REGEX.test(value) && !VAT_EU_REGEX.test(value)) {
+      return "Please enter a valid VAT number (e.g., NL123456789B01)";
+    }
+    return;
+  }
+  if (name === "kvk_number") {
+    if (!value) return; // optional
+    if (!KVK_REGEX.test(value)) return "KVK number must be 8 digits";
+    return;
+  }
+}
+
+export function AffiliateSettings({ affiliate, onUpdate, startInEdit = false }: AffiliateSettingsProps) {
+  const [editing, setEditing] = useState(startInEdit);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({
@@ -19,6 +49,11 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
     vat_number: affiliate.vat_number || "",
     billing_address: affiliate.billing_address || "",
   });
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  useEffect(() => {
+    if (startInEdit) setEditing(true);
+  }, [startInEdit]);
 
   const handleCopyCode = async () => {
     await navigator.clipboard.writeText(affiliate.affiliate_code);
@@ -27,9 +62,32 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const validateAll = (): boolean => {
+    const next: FormErrors = {
+      iban: validateField("iban", form.iban),
+      vat_number: validateField("vat_number", form.vat_number),
+      kvk_number: validateField("kvk_number", form.kvk_number),
+    };
+    Object.keys(next).forEach((k) => {
+      if (!next[k as keyof FormErrors]) delete next[k as keyof FormErrors];
+    });
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleBlur = (name: keyof FormErrors) => () => {
+    const msg = validateField(name, form[name]);
+    setErrors((e) => {
+      const next = { ...e };
+      if (msg) next[name] = msg;
+      else delete next[name];
+      return next;
+    });
+  };
+
   const handleSave = async () => {
-    if (!form.iban.trim()) {
-      toast.error("IBAN is required");
+    if (!validateAll()) {
+      toast.error("Please fix the errors below");
       return;
     }
     setSaving(true);
@@ -52,6 +110,7 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
 
   const handleCancel = () => {
     setEditing(false);
+    setErrors({});
     setForm({
       iban: affiliate.iban || "",
       company_name: affiliate.company_name || "",
@@ -60,6 +119,8 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
       billing_address: affiliate.billing_address || "",
     });
   };
+
+  const errClass = (k: keyof FormErrors) => (errors[k] ? "aff-input-error" : "");
 
   return (
     <div className="aff-card p-6 md:p-7" style={{ maxWidth: 600 }}>
@@ -95,15 +156,16 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
         </Field>
 
         {/* IBAN */}
-        <Field label="IBAN *">
+        <Field label="IBAN *" error={errors.iban}>
           <div className="relative">
             <Landmark className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748b]" />
             <input
               value={form.iban}
               onChange={(e) => setForm((f) => ({ ...f, iban: e.target.value }))}
+              onBlur={handleBlur("iban")}
               disabled={!editing}
               placeholder="NL00ABCD0123456789"
-              className="aff-input aff-mono pl-10"
+              className={`aff-input aff-mono pl-10 ${errClass("iban")}`}
             />
           </div>
         </Field>
@@ -120,20 +182,22 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
 
         {/* KVK + VAT */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="KVK Number">
+          <Field label="KVK Number" error={errors.kvk_number}>
             <input
               value={form.kvk_number}
               onChange={(e) => setForm((f) => ({ ...f, kvk_number: e.target.value }))}
+              onBlur={handleBlur("kvk_number")}
               disabled={!editing}
-              className="aff-input aff-mono"
+              className={`aff-input aff-mono ${errClass("kvk_number")}`}
             />
           </Field>
-          <Field label="VAT Number">
+          <Field label="VAT Number" error={errors.vat_number}>
             <input
               value={form.vat_number}
               onChange={(e) => setForm((f) => ({ ...f, vat_number: e.target.value }))}
+              onBlur={handleBlur("vat_number")}
               disabled={!editing}
-              className="aff-input aff-mono"
+              className={`aff-input aff-mono ${errClass("vat_number")}`}
             />
           </Field>
         </div>
@@ -171,11 +235,14 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label, children, error,
+}: { label: string; children: React.ReactNode; error?: string }) {
   return (
     <div>
       <div className="aff-input-label mb-1.5">{label}</div>
       {children}
+      {error && <div className="aff-input-error-msg">{error}</div>}
     </div>
   );
 }
