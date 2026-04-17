@@ -491,7 +491,7 @@ export default function AdminAffiliates() {
       {/* Detail Slide Panel */}
       <SlidePanel open={!!selectedAffiliate} onClose={() => setSelectedAffiliate(null)} width={460}>
         {selectedAffiliate && (
-          <div>
+          <>
             {/* Header */}
             <div className="px-6 pt-6 pb-5">
               <div className="flex items-start gap-3">
