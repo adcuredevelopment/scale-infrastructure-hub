@@ -255,7 +255,9 @@ Deno.serve(async (req) => {
         if (prevPayload?.type === 'shop_order') {
           const email = prevPayload?.email
           const productName = prevPayload?.product
-          const totalPaid = Number(prevPayload?.total || prevPayload?.amount || 0)
+          const subtotal = Number(prevPayload?.amount || 0)
+          const vatAmount = Number(prevPayload?.vat || 0)
+          const totalPaid = Number(prevPayload?.total || subtotal + vatAmount || 0)
 
           if (email && productName) {
             const customerName = prevPayload?.firstName && prevPayload?.lastName
@@ -293,6 +295,28 @@ Deno.serve(async (req) => {
               message: `${email} ordered ${productName} (€${totalPaid})`,
               related_entity_id: order_id,
             })
+
+            try {
+              await supabase.functions.invoke('send-transactional-email', {
+                body: {
+                  templateName: 'shop-order-confirmed',
+                  recipientEmail: email,
+                  idempotencyKey: `shop-confirmed-${existing.id}`,
+                  templateData: {
+                    customerName,
+                    productName,
+                    amount: subtotal,
+                    vat: vatAmount,
+                    total: totalPaid,
+                    currency: 'EUR',
+                    deliveryTime: 'within 1 hour',
+                  },
+                },
+              })
+              console.log(`Shop order confirmation email queued for ${email}`)
+            } catch (emailErr) {
+              console.error('Failed to send shop order confirmation email', emailErr)
+            }
 
             console.log(`Shop order completed for ${email}: ${productName} (€${totalPaid})`)
           }
