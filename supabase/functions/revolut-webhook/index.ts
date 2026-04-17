@@ -250,6 +250,60 @@ Deno.serve(async (req) => {
 
       if (event === 'ORDER_COMPLETED') {
         const prevPayload = existing.payload as any
+
+        // ----- Shop one-time order branch -----
+        if (prevPayload?.type === 'shop_order') {
+          const email = prevPayload?.email
+          const productName = prevPayload?.product
+          const totalPaid = Number(prevPayload?.total || prevPayload?.amount || 0)
+
+          if (email && productName) {
+            const customerName = prevPayload?.firstName && prevPayload?.lastName
+              ? `${prevPayload.firstName} ${prevPayload.lastName}`
+              : null
+
+            const { data: existingCustomer } = await supabase
+              .from('customers')
+              .select('id, total_spent, first_payment_at')
+              .eq('email', email)
+              .maybeSingle()
+
+            if (existingCustomer) {
+              await supabase.from('customers').update({
+                total_spent: Number(existingCustomer.total_spent) + totalPaid,
+                last_payment_at: new Date().toISOString(),
+                ...(customerName ? { name: customerName } : {}),
+              }).eq('id', existingCustomer.id)
+            } else {
+              await supabase.from('customers').insert({
+                email,
+                name: customerName,
+                plan: null,
+                total_spent: totalPaid,
+                subscription_count: 0,
+                first_payment_at: new Date().toISOString(),
+                last_payment_at: new Date().toISOString(),
+                status: 'active',
+              })
+            }
+
+            await supabase.from('notifications').insert({
+              type: 'payment',
+              title: `New shop order: ${productName}`,
+              message: `${email} ordered ${productName} (€${totalPaid})`,
+              related_entity_id: order_id,
+            })
+
+            console.log(`Shop order completed for ${email}: ${productName} (€${totalPaid})`)
+          }
+
+          return new Response(
+            JSON.stringify({ received: true }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // ----- Subscription branch (existing) -----
         const email = prevPayload?.email
         const planName = prevPayload?.plan
         const amount = Number(prevPayload?.amount || 0)

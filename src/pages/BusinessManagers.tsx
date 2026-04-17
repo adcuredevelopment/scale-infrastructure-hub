@@ -12,16 +12,19 @@ const products = [
     name: "Verified Old Business Manager BM350 Limit $25",
     description: "Aged verified BM with $25 daily spend limit, ready for scaling.",
     price: "€95",
+    amount: 95,
   },
   {
     name: "Verified Old Business Manager BM350 Limit $50",
     description: "Aged verified BM with $50 daily spend limit for higher volume campaigns.",
     price: "€115",
+    amount: 115,
   },
   {
     name: "Reinstated Business Manager BM350 Limit $250",
     description: "Reinstated BM with $250 limit, battle-tested for maximum ad durability.",
     price: "€250",
+    amount: 250,
     popular: true,
   },
 ];
