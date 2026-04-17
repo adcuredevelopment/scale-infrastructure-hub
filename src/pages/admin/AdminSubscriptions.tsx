@@ -483,7 +483,7 @@ export default function AdminSubscriptions() {
 
             {selected.status === "active" && (
               <div
-                className="px-6 py-5 mt-auto"
+                className="px-6 py-5"
                 style={{ borderTop: "1px solid var(--ad-border-subtle)" }}
               >
                 <button
