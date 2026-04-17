@@ -158,14 +158,14 @@ export function AffiliateSettings({ affiliate, onUpdate, startInEdit = false }: 
         {/* IBAN */}
         <Field label="IBAN *" error={errors.iban}>
           <div className="relative">
-            <Landmark className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748b]" />
+            <Landmark className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748b] pointer-events-none" />
             <input
               value={form.iban}
               onChange={(e) => setForm((f) => ({ ...f, iban: e.target.value }))}
               onBlur={handleBlur("iban")}
               disabled={!editing}
               placeholder="NL00ABCD0123456789"
-              className={`aff-input aff-mono pl-10 ${errClass("iban")}`}
+              className={`aff-input aff-mono pl-11 ${errClass("iban")}`}
             />
           </div>
         </Field>
