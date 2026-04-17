@@ -489,7 +489,7 @@ export default function AdminAffiliates() {
       </div>
 
       {/* Detail Slide Panel */}
-      <SlidePanel open={!!selectedAffiliate} onClose={() => setSelectedAffiliate(null)} width={720}>
+      <SlidePanel open={!!selectedAffiliate} onClose={() => setSelectedAffiliate(null)} width={460}>
         {selectedAffiliate && (
           <>
             {/* Header */}

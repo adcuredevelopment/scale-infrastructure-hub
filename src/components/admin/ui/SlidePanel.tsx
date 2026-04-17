@@ -10,7 +10,7 @@ interface Props {
   className?: string;
 }
 
-export function SlidePanel({ open, onClose, children, width = 720, className }: Props) {
+export function SlidePanel({ open, onClose, children, width = 420, className }: Props) {
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -37,8 +37,8 @@ export function SlidePanel({ open, onClose, children, width = 720, className }: 
           className,
         )}
         style={{
-          width: "100%",
-          maxWidth: width,
+          width,
+          maxWidth: "100vw",
           background: "var(--ad-surface)",
           borderLeft: "1px solid var(--ad-border)",
         }}

@@ -385,7 +385,7 @@ export default function AdminPayments() {
       </div>
 
       {/* Detail Slide Panel */}
-      <SlidePanel open={!!selected} onClose={() => setSelected(null)} width={720}>
+      <SlidePanel open={!!selected} onClose={() => setSelected(null)} width={460}>
         {selected &&
           (() => {
             const payload = (selected.payload || {}) as any;
