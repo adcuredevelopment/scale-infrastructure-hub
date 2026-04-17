@@ -345,7 +345,9 @@ export default function AdminAffiliates() {
 
       {/* KPIs */}
       {loading ? (
-        <KPISkeleton count={4} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <KPISkeleton key={i} />)}
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <AdminKPICard label="Total Affiliates" value={affiliates.length} numericValue={affiliates.length} icon={Users} />
@@ -410,7 +412,7 @@ export default function AdminAffiliates() {
             {loading ? (
               <TableRow><TableCell colSpan={7} className="p-0"><TableSkeleton rows={6} cols={7} /></TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={7}><EmptyState title="No affiliates found" description={search ? "Try adjusting your search." : "No affiliates registered yet."} icon={Users} /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={7}><EmptyState title="No affiliates found" subtitle={search ? "Try adjusting your search." : "No affiliates registered yet."} icon={Users} /></TableCell></TableRow>
             ) : (
               filtered.map((a) => (
                 <TableRow
