@@ -11,7 +11,7 @@ const LOGO_URL = 'https://uwncaohygevjvtgkazvv.supabase.co/storage/v1/object/pub
 const COMPANY = {
   name: 'Adcure Agency',
   addressLines: ['The Netherlands'],
-  email: 'support@adcure.agency',
+  email: 'service@adcure.agency',
   kvk: '89821211',
   vat: 'NL003924266B58',
 }
