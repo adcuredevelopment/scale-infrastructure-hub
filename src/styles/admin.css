@@ -1,0 +1,197 @@
+/* =========================================================
+   Adcure Admin — "Obsidian Precision" design system
+   Scoped to .admin-scope so the public site is unaffected.
+   ========================================================= */
+
+.admin-scope {
+  /* Surfaces */
+  --ad-bg: #09090c;
+  --ad-surface: #111116;
+  --ad-surface-elevated: #18181f;
+  --ad-surface-deep: #0d0d11;
+
+  /* Borders */
+  --ad-border: rgba(255, 255, 255, 0.07);
+  --ad-border-subtle: rgba(255, 255, 255, 0.04);
+  --ad-border-strong: rgba(255, 255, 255, 0.11);
+
+  /* Text */
+  --ad-text: #f1f5f9;
+  --ad-text-secondary: #64748b;
+  --ad-text-muted: #334155;
+  --ad-text-faint: #475569;
+  --ad-text-soft: #94a3b8;
+
+  /* Accents */
+  --ad-accent: #3b82f6;
+  --ad-accent-soft: #60a5fa;
+  --ad-cyan: #22d3ee;
+  --ad-violet: #a78bfa;
+
+  /* Status */
+  --ad-green: #10b981;
+  --ad-green-soft: rgba(16, 185, 129, 0.12);
+  --ad-green-border: rgba(16, 185, 129, 0.25);
+
+  --ad-red: #ef4444;
+  --ad-red-soft: rgba(239, 68, 68, 0.10);
+  --ad-red-text: #f87171;
+  --ad-red-border: rgba(239, 68, 68, 0.20);
+
+  --ad-amber: #f59e0b;
+  --ad-amber-soft: rgba(245, 158, 11, 0.10);
+  --ad-amber-text: #fbbf24;
+  --ad-amber-border: rgba(245, 158, 11, 0.20);
+
+  --ad-blue-soft: rgba(59, 130, 246, 0.10);
+  --ad-blue-soft-2: rgba(59, 130, 246, 0.12);
+  --ad-blue-border: rgba(59, 130, 246, 0.25);
+
+  --ad-violet-soft: rgba(139, 92, 246, 0.12);
+  --ad-violet-border: rgba(139, 92, 246, 0.20);
+
+  --ad-slate-soft: rgba(100, 116, 139, 0.12);
+  --ad-slate-border: rgba(100, 116, 139, 0.20);
+
+  background: var(--ad-bg);
+  color: var(--ad-text);
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Font utilities */
+.admin-scope .font-syne {
+  font-family: "Syne", "Plus Jakarta Sans", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+.admin-scope .font-mono-jb {
+  font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-feature-settings: "tnum", "zero";
+  letter-spacing: -0.01em;
+}
+
+/* Page entrance */
+@keyframes admin-page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.admin-scope .admin-page {
+  animation: admin-page-in 0.2s ease-out both;
+}
+
+/* Slide panel */
+@keyframes admin-panel-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.admin-scope .admin-panel-in {
+  animation: admin-panel-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Live dot pulse */
+@keyframes admin-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(1.45); }
+}
+.admin-scope .admin-dot-pulse {
+  animation: admin-dot-pulse 1.8s ease-in-out infinite;
+}
+
+/* Subtle row hover transition */
+.admin-scope .admin-row {
+  transition: background-color 120ms ease, opacity 120ms ease;
+}
+.admin-scope .admin-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Reusable surfaces */
+.admin-scope .admin-card {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: 10px;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.admin-scope .admin-card-hover:hover {
+  background: var(--ad-surface-elevated);
+  border-color: var(--ad-border-strong);
+}
+
+/* Table primitives */
+.admin-scope .admin-table-head {
+  background: var(--ad-surface-deep);
+  color: var(--ad-text-faint);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+.admin-scope .admin-table-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Inputs */
+.admin-scope .admin-input {
+  background: var(--ad-surface-deep);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--ad-text);
+  border-radius: 8px;
+  transition: border-color 140ms ease;
+}
+.admin-scope .admin-input::placeholder { color: var(--ad-text-muted); }
+.admin-scope .admin-input:focus,
+.admin-scope .admin-input:focus-visible {
+  outline: none;
+  border-color: var(--ad-accent);
+  box-shadow: none;
+}
+
+/* Buttons */
+.admin-scope .admin-btn-primary {
+  background: var(--ad-accent);
+  color: #fff;
+  border-radius: 7px;
+  font-weight: 500;
+  transition: background-color 140ms ease;
+}
+.admin-scope .admin-btn-primary:hover { background: #2f74ea; }
+
+.admin-scope .admin-btn-ghost {
+  background: transparent;
+  color: var(--ad-text-soft);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 7px;
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+}
+.admin-scope .admin-btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--ad-text);
+}
+
+.admin-scope .admin-btn-destructive {
+  background: var(--ad-red-soft);
+  color: var(--ad-red-text);
+  border: 1px solid var(--ad-red-border);
+  border-radius: 7px;
+  transition: background-color 140ms ease;
+}
+.admin-scope .admin-btn-destructive:hover { background: rgba(239, 68, 68, 0.18); }
+
+/* Mono chip */
+.admin-scope .admin-mono-chip {
+  background: var(--ad-surface-deep);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ad-text-soft);
+}
+
+/* Scrollbar (subtle) */
+.admin-scope ::-webkit-scrollbar { width: 10px; height: 10px; }
+.admin-scope ::-webkit-scrollbar-track { background: transparent; }
+.admin-scope ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+.admin-scope ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.12); }
