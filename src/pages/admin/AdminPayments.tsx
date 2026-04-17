@@ -46,6 +46,8 @@ const getAmount = (payload: any): string => {
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<any[]>([]);
+  const [invoiceMap, setInvoiceMap] = useState<Record<string, { invoice_number: string; pdf_path: string | null }>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
@@ -53,16 +55,48 @@ export default function AdminPayments() {
   const [loading, setLoading] = useState(true);
 
   const fetchPayments = useCallback(async () => {
-    const { data } = await supabase
-      .from("payments")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setPayments(data || []);
+    const [{ data: pays }, { data: invs }] = await Promise.all([
+      supabase.from("payments").select("*").order("created_at", { ascending: false }),
+      supabase.from("customer_invoices").select("payment_id, invoice_number, pdf_path"),
+    ]);
+    setPayments(pays || []);
+    const map: Record<string, { invoice_number: string; pdf_path: string | null }> = {};
+    (invs || []).forEach((i: any) => { if (i.payment_id) map[i.payment_id] = { invoice_number: i.invoice_number, pdf_path: i.pdf_path }; });
+    setInvoiceMap(map);
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
   const { lastRefreshed } = useAutoRefresh(fetchPayments);
+
+  const handleDownload = async (paymentId: string) => {
+    const inv = invoiceMap[paymentId];
+    if (!inv?.pdf_path) return;
+    setBusyId(paymentId);
+    const { data, error } = await supabase.storage
+      .from("customer-invoices")
+      .createSignedUrl(inv.pdf_path, 60 * 5);
+    setBusyId(null);
+    if (error || !data?.signedUrl) {
+      toast.error("Could not generate download link");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const handleGenerate = async (paymentId: string, type: "shop_order" | "subscription_initial") => {
+    setBusyId(paymentId);
+    const { error } = await supabase.functions.invoke("generate-customer-invoice", {
+      body: { paymentId, type },
+    });
+    setBusyId(null);
+    if (error) {
+      toast.error("Failed to generate invoice");
+      return;
+    }
+    toast.success("Invoice generated");
+    fetchPayments();
+  };
 
   const plans = useMemo(() => {
     const set = new Set(
