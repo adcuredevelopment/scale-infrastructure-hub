@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, FileDown, FilePlus2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { LastRefreshed } from "@/components/admin/LastRefreshed";
+import { toast } from "sonner";
 
 const STATUS_OPTIONS = ["completed", "pending", "authorised", "failed", "expired"] as const;
 const TYPE_OPTIONS = [
@@ -45,6 +46,8 @@ const getAmount = (payload: any): string => {
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<any[]>([]);
+  const [invoiceMap, setInvoiceMap] = useState<Record<string, { invoice_number: string; pdf_path: string | null }>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
@@ -52,16 +55,48 @@ export default function AdminPayments() {
   const [loading, setLoading] = useState(true);
 
   const fetchPayments = useCallback(async () => {
-    const { data } = await supabase
-      .from("payments")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setPayments(data || []);
+    const [{ data: pays }, { data: invs }] = await Promise.all([
+      supabase.from("payments").select("*").order("created_at", { ascending: false }),
+      supabase.from("customer_invoices").select("payment_id, invoice_number, pdf_path"),
+    ]);
+    setPayments(pays || []);
+    const map: Record<string, { invoice_number: string; pdf_path: string | null }> = {};
+    (invs || []).forEach((i: any) => { if (i.payment_id) map[i.payment_id] = { invoice_number: i.invoice_number, pdf_path: i.pdf_path }; });
+    setInvoiceMap(map);
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
   const { lastRefreshed } = useAutoRefresh(fetchPayments);
+
+  const handleDownload = async (paymentId: string) => {
+    const inv = invoiceMap[paymentId];
+    if (!inv?.pdf_path) return;
+    setBusyId(paymentId);
+    const { data, error } = await supabase.storage
+      .from("customer-invoices")
+      .createSignedUrl(inv.pdf_path, 60 * 5);
+    setBusyId(null);
+    if (error || !data?.signedUrl) {
+      toast.error("Could not generate download link");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const handleGenerate = async (paymentId: string, type: "shop_order" | "subscription_initial") => {
+    setBusyId(paymentId);
+    const { error } = await supabase.functions.invoke("generate-customer-invoice", {
+      body: { paymentId, type },
+    });
+    setBusyId(null);
+    if (error) {
+      toast.error("Failed to generate invoice");
+      return;
+    }
+    toast.success("Invoice generated");
+    fetchPayments();
+  };
 
   const plans = useMemo(() => {
     const set = new Set(
@@ -213,17 +248,20 @@ export default function AdminPayments() {
               <TableHead className="text-xs">Status</TableHead>
               <TableHead className="text-xs">Date</TableHead>
               <TableHead className="text-xs">Order ID</TableHead>
+              <TableHead className="text-xs">Invoice</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No payments found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No payments found</TableCell></TableRow>
             ) : (
               filtered.map((p) => {
                 const payload = p.payload as any;
                 const type = getPaymentType(payload);
+                const inv = invoiceMap[p.id];
+                const canGenerate = p.status === "completed";
                 return (
                   <TableRow key={p.id} className="border-border/10">
                     <TableCell>
@@ -242,6 +280,26 @@ export default function AdminPayments() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{format(new Date(p.created_at), "MMM dd, yyyy HH:mm")}</TableCell>
                     <TableCell className="text-xs text-muted-foreground font-mono">{p.revolut_order_id?.slice(0, 12) || "—"}</TableCell>
+                    <TableCell>
+                      {inv ? (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5"
+                          onClick={() => handleDownload(p.id)}
+                          disabled={busyId === p.id || !inv.pdf_path}
+                          title={inv.invoice_number}>
+                          {busyId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
+                          PDF
+                        </Button>
+                      ) : canGenerate ? (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5 text-muted-foreground"
+                          onClick={() => handleGenerate(p.id, type === "shop_order" ? "shop_order" : "subscription_initial")}
+                          disabled={busyId === p.id}>
+                          {busyId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FilePlus2 className="w-3 h-3" />}
+                          Generate
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })
