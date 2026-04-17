@@ -12,6 +12,8 @@ import {
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
+import { Copy as CopyIcon, Check as CheckIcon } from "lucide-react";
+import { toast } from "sonner";
 
 type TabKey = "dashboard" | "settings";
 
@@ -285,12 +287,8 @@ function OnboardingBanner({
 }
 
 /* ---- Affiliate code chip under referral link ---- */
-import { useState as useStateInner } from "react";
-import { Copy as CopyIcon, Check as CheckIcon } from "lucide-react";
-import { toast } from "sonner";
-
 function AffiliateCodeChip({ code }: { code: string }) {
-  const [copied, setCopied] = useStateInner(false);
+  const [copied, setCopied] = useState(false);
   const onCopy = async () => {
     await navigator.clipboard.writeText(code);
     setCopied(true);
