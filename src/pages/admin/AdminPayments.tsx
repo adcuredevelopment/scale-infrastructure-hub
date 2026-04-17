@@ -248,17 +248,20 @@ export default function AdminPayments() {
               <TableHead className="text-xs">Status</TableHead>
               <TableHead className="text-xs">Date</TableHead>
               <TableHead className="text-xs">Order ID</TableHead>
+              <TableHead className="text-xs">Invoice</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No payments found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No payments found</TableCell></TableRow>
             ) : (
               filtered.map((p) => {
                 const payload = p.payload as any;
                 const type = getPaymentType(payload);
+                const inv = invoiceMap[p.id];
+                const canGenerate = p.status === "completed";
                 return (
                   <TableRow key={p.id} className="border-border/10">
                     <TableCell>
@@ -277,6 +280,26 @@ export default function AdminPayments() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{format(new Date(p.created_at), "MMM dd, yyyy HH:mm")}</TableCell>
                     <TableCell className="text-xs text-muted-foreground font-mono">{p.revolut_order_id?.slice(0, 12) || "—"}</TableCell>
+                    <TableCell>
+                      {inv ? (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5"
+                          onClick={() => handleDownload(p.id)}
+                          disabled={busyId === p.id || !inv.pdf_path}
+                          title={inv.invoice_number}>
+                          {busyId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
+                          PDF
+                        </Button>
+                      ) : canGenerate ? (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5 text-muted-foreground"
+                          onClick={() => handleGenerate(p.id, type === "shop_order" ? "shop_order" : "subscription_initial")}
+                          disabled={busyId === p.id}>
+                          {busyId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FilePlus2 className="w-3 h-3" />}
+                          Generate
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })
