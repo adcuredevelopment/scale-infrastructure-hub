@@ -9,3 +9,4 @@ export { KPISkeleton, TableSkeleton } from "./Skeletons";
 export { MonoChip } from "./MonoChip";
 export { SlidePanel, SlideSection, SlideRow } from "./SlidePanel";
 export { StatChip } from "./StatChip";
+export { Avatar } from "./Avatar";
