@@ -393,7 +393,7 @@ export default function AdminPayments() {
             const amount = getAmountNum(payload);
             const inv = invoiceMap[selected.id];
             return (
-              <>
+              <div>
                 <div className="px-6 pt-6 pb-5">
                   <p
                     className="text-[10px] uppercase mb-2"
