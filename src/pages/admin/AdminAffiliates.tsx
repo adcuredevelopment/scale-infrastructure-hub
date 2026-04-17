@@ -521,7 +521,7 @@ export default function AdminAffiliates() {
               {affReferrals.length === 0 ? (
                 <p className="text-[12px]" style={{ color: "var(--ad-text-faint)" }}>No active referrals</p>
               ) : (
-                <div className="space-y-1.5 max-h-[260px] overflow-y-auto">
+                <div className="space-y-1.5">
                   {affReferrals.map((r) => (
                     <div
                       key={r.id}
@@ -571,7 +571,7 @@ export default function AdminAffiliates() {
               {affPayouts.length === 0 ? (
                 <p className="text-[12px]" style={{ color: "var(--ad-text-faint)" }}>No payouts yet</p>
               ) : (
-                <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
+                <div className="space-y-1.5">
                   {affPayouts.map((p) => {
                     const invoice = getInvoiceForPayout(p.id);
                     return (
@@ -678,7 +678,7 @@ export default function AdminAffiliates() {
               {affInvoices.length === 0 ? (
                 <p className="text-[12px]" style={{ color: "var(--ad-text-faint)" }}>No invoices yet</p>
               ) : (
-                <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
+                <div className="space-y-1.5">
                   {affInvoices.map((inv) => (
                     <div
                       key={inv.id}

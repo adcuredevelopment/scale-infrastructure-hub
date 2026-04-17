@@ -385,7 +385,7 @@ export default function AdminSubscriptions() {
       </div>
 
       {/* Detail Slide Panel */}
-      <SlidePanel open={!!selected} onClose={() => setSelected(null)} width={440}>
+      <SlidePanel open={!!selected} onClose={() => setSelected(null)} width={460}>
         {selected && (
           <>
             <div className="px-6 pt-6 pb-5">
