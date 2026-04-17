@@ -1,14 +1,20 @@
 import {
   LayoutDashboard, Users, CreditCard, TrendingUp, Settings, LogOut,
-  ChevronLeft, Share2, BarChart3,
+  ChevronLeft, Share2, BarChart3, type LucideIcon,
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { NavLink as RouterNavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
-const mainItems = [
+interface NavItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  end?: boolean;
+}
+
+const mainItems: NavItem[] = [
   { title: "Overview",      url: "/admin",               icon: LayoutDashboard, end: true },
   { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
   { title: "Payments",      url: "/admin/payments",      icon: TrendingUp },
@@ -17,7 +23,7 @@ const mainItems = [
   { title: "Affiliates",    url: "/admin/affiliates",    icon: Share2 },
 ];
 
-const settingsItems = [
+const settingsItems: NavItem[] = [
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
@@ -46,19 +52,11 @@ export function AdminSidebar({ onNavigate }: Props) {
         borderRight: "1px solid var(--ad-border-subtle)",
       }}
     >
-      {/* Logo / brand area */}
+      {/* Brand */}
       <div className="px-3 pt-5 pb-4">
         {!collapsed ? (
           <div className="flex items-center gap-2 px-2">
-            <div
-              className="w-7 h-7 rounded-md flex items-center justify-center font-syne font-bold text-[13px]"
-              style={{
-                background: "linear-gradient(135deg, var(--ad-accent), #1d4ed8)",
-                color: "#fff",
-              }}
-            >
-              A
-            </div>
+            <BrandMark />
             <div className="flex flex-col leading-none">
               <span className="font-syne font-semibold text-[15px]" style={{ color: "var(--ad-text)" }}>
                 Adcure
@@ -72,22 +70,15 @@ export function AdminSidebar({ onNavigate }: Props) {
             </div>
           </div>
         ) : (
-          <div className="flex justify-center">
-            <div
-              className="w-7 h-7 rounded-md flex items-center justify-center font-syne font-bold text-[13px]"
-              style={{ background: "linear-gradient(135deg, var(--ad-accent), #1d4ed8)", color: "#fff" }}
-            >
-              A
-            </div>
-          </div>
+          <div className="flex justify-center"><BrandMark /></div>
         )}
       </div>
 
-      {/* Collapse toggle (floating) */}
+      {/* Collapse toggle */}
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-7 w-6 h-6 rounded-md flex items-center justify-center transition-colors z-10"
+        className="hidden md:flex absolute -right-3 top-7 w-6 h-6 rounded-md items-center justify-center transition-colors z-10"
         style={{
           background: "var(--ad-surface-elevated)",
           border: "1px solid rgba(255,255,255,0.08)",
@@ -101,16 +92,11 @@ export function AdminSidebar({ onNavigate }: Props) {
       {/* Nav */}
       <nav className="flex-1 px-2 pb-2 overflow-y-auto">
         <NavGroup items={mainItems} collapsed={collapsed} onNavigate={onNavigate} />
-
-        <div
-          className="my-2 mx-2"
-          style={{ borderTop: "1px solid var(--ad-border-subtle)" }}
-        />
-
+        <div className="my-2 mx-2" style={{ borderTop: "1px solid var(--ad-border-subtle)" }} />
         <NavGroup items={settingsItems} collapsed={collapsed} onNavigate={onNavigate} />
       </nav>
 
-      {/* Bottom: user + sign out */}
+      {/* Footer */}
       <div className="px-3 py-3" style={{ borderTop: "1px solid var(--ad-border-subtle)" }}>
         {!collapsed && user && (
           <p
@@ -125,86 +111,87 @@ export function AdminSidebar({ onNavigate }: Props) {
           type="button"
           onClick={handleSignOut}
           className={cn(
-            "w-full flex items-center gap-2 px-2 h-8 rounded-md text-[12px] transition-colors",
+            "w-full flex items-center gap-2 px-2 h-8 rounded-md text-[12px] transition-colors group",
             collapsed && "justify-center",
           )}
           style={{ color: "var(--ad-text-secondary)" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--ad-text-secondary)")}
         >
-          <LogOut className="w-3.5 h-3.5" />
-          {!collapsed && <span>Sign out</span>}
+          <LogOut className="w-3.5 h-3.5 group-hover:text-[#f87171] transition-colors" />
+          {!collapsed && <span className="group-hover:text-[#f87171] transition-colors">Sign out</span>}
         </button>
       </div>
     </aside>
   );
 }
 
+function BrandMark() {
+  return (
+    <div
+      className="w-7 h-7 rounded-md flex items-center justify-center font-syne font-bold text-[13px]"
+      style={{
+        background: "linear-gradient(135deg, var(--ad-accent), #1d4ed8)",
+        color: "#fff",
+      }}
+    >
+      A
+    </div>
+  );
+}
+
 function NavGroup({
   items, collapsed, onNavigate,
 }: {
-  items: typeof mainItems;
+  items: NavItem[];
   collapsed: boolean;
   onNavigate?: () => void;
 }) {
   return (
     <ul className="space-y-0.5">
-      {items.map((item) => (
-        <li key={item.url} className="relative">
-          <NavLink
-            to={item.url}
-            end={item.end}
-            onClick={onNavigate}
-            className={cn(
-              "group flex items-center gap-2.5 h-9 rounded-[7px] transition-colors text-[13px]",
-              collapsed ? "justify-center px-0" : "px-3",
-            )}
-            activeClassName="admin-nav-active"
-          >
-            {({ isActive }: { isActive: boolean }) => (
-              <NavInner item={item} active={isActive} collapsed={collapsed} />
-            )}
-          </NavLink>
-        </li>
-      ))}
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <li key={item.url}>
+            <RouterNavLink
+              to={item.url}
+              end={item.end}
+              onClick={onNavigate}
+              className="block"
+            >
+              {({ isActive }) => (
+                <span
+                  className={cn(
+                    "relative flex items-center gap-2.5 h-9 rounded-[7px] transition-colors text-[13px]",
+                    collapsed ? "justify-center px-0" : "px-3",
+                  )}
+                  style={{
+                    background: isActive ? "rgba(59,130,246,0.10)" : "transparent",
+                    color: isActive ? "var(--ad-text)" : "var(--ad-text-secondary)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {isActive && (
+                    <span
+                      className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-r"
+                      style={{ background: "var(--ad-accent)" }}
+                    />
+                  )}
+                  <Icon
+                    className="shrink-0"
+                    size={15}
+                    style={{ color: isActive ? "var(--ad-accent)" : "var(--ad-text-faint)" }}
+                  />
+                  {!collapsed && <span>{item.title}</span>}
+                </span>
+              )}
+            </RouterNavLink>
+          </li>
+        );
+      })}
     </ul>
-  );
-}
-
-function NavInner({
-  item, active, collapsed,
-}: {
-  item: { title: string; icon: any };
-  active: boolean;
-  collapsed: boolean;
-}) {
-  const Icon = item.icon;
-  return (
-    <span
-      className="relative flex items-center gap-2.5 w-full h-full rounded-[7px] px-3 transition-colors"
-      style={{
-        background: active ? "rgba(59,130,246,0.10)" : "transparent",
-        color: active ? "var(--ad-text)" : "var(--ad-text-secondary)",
-      }}
-      onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-      }}
-      onMouseLeave={(e) => {
-        if (!active) e.currentTarget.style.background = "transparent";
-      }}
-    >
-      {active && (
-        <span
-          className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-r"
-          style={{ background: "var(--ad-accent)" }}
-        />
-      )}
-      <Icon
-        className="shrink-0"
-        size={15}
-        style={{ color: active ? "var(--ad-accent)" : "var(--ad-text-faint)" }}
-      />
-      {!collapsed && <span>{item.title}</span>}
-    </span>
   );
 }

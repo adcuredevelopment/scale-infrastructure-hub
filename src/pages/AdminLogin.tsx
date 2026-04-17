@@ -1,14 +1,12 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { AdminFontLoader } from "@/components/admin/AdminFontLoader";
+import "@/styles/admin.css";
 
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 60_000; // 1 minute
+const LOCKOUT_MS = 60_000;
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -24,7 +22,6 @@ export default function AdminLogin() {
     e.preventDefault();
     setError("");
 
-    // Rate limiting
     const now = Date.now();
     if (now < lockoutUntilRef.current) {
       const remaining = Math.ceil((lockoutUntilRef.current - now) / 1000);
@@ -52,50 +49,128 @@ export default function AdminLogin() {
     navigate("/admin");
   };
 
+  const hasError = !!error;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border/40">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
-            <Shield className="w-6 h-6 text-primary" />
+    <div className="admin-scope min-h-screen flex items-center justify-center px-4">
+      <AdminFontLoader />
+
+      <div
+        className="w-full max-w-[400px] p-10 admin-page"
+        style={{
+          background: "var(--ad-surface)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 14,
+        }}
+      >
+        {/* Brand */}
+        <div className="flex items-center gap-2.5 mb-8">
+          <div
+            className="w-8 h-8 rounded-md flex items-center justify-center font-syne font-bold text-[14px]"
+            style={{
+              background: "linear-gradient(135deg, var(--ad-accent), #1d4ed8)",
+              color: "#fff",
+            }}
+          >
+            A
           </div>
-          <CardTitle className="font-display text-2xl">Admin Dashboard</CardTitle>
-          <CardDescription>Sign in to access the admin panel</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@adcure.agency"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            {error && (
-              <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">{error}</p>
-            )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Sign In
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col leading-none">
+            <span className="font-syne font-bold text-[20px]" style={{ color: "var(--ad-text)" }}>
+              Adcure
+            </span>
+            <span
+              className="text-[10px] uppercase mt-1"
+              style={{ color: "var(--ad-text-faint)", letterSpacing: "0.1em" }}
+            >
+              Admin
+            </span>
+          </div>
+        </div>
+
+        {/* Title */}
+        <h1
+          className="font-syne font-semibold text-[18px] mb-1"
+          style={{ color: "var(--ad-text)" }}
+        >
+          Sign in to your account
+        </h1>
+        <p className="text-[13px] mb-7" style={{ color: "var(--ad-text-secondary)" }}>
+          Enter your credentials to access the admin panel.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="email"
+              className="text-[11px] uppercase font-medium"
+              style={{ color: "var(--ad-text-faint)", letterSpacing: "0.08em" }}
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@adcure.agency"
+              required
+              autoComplete="email"
+              className="admin-input w-full h-10 px-3 text-[13px]"
+              style={hasError ? { borderColor: "var(--ad-red-border)" } : undefined}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor="password"
+              className="text-[11px] uppercase font-medium"
+              style={{ color: "var(--ad-text-faint)", letterSpacing: "0.08em" }}
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+              className="admin-input w-full h-10 px-3 text-[13px]"
+              style={hasError ? { borderColor: "var(--ad-red-border)" } : undefined}
+            />
+          </div>
+
+          {error && (
+            <p
+              className="text-[12px] rounded-md px-3 py-2"
+              style={{
+                background: "var(--ad-red-soft)",
+                color: "var(--ad-red-text)",
+                border: "1px solid var(--ad-red-border)",
+              }}
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="admin-btn-primary w-full h-10 text-[13px] inline-flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            Sign in
+          </button>
+        </form>
+
+        <p
+          className="text-[11px] text-center mt-8"
+          style={{ color: "var(--ad-text-muted)" }}
+        >
+          service@adcure.agency
+        </p>
+      </div>
     </div>
   );
 }
