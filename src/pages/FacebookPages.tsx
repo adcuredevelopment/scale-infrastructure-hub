@@ -12,21 +12,25 @@ const products = [
     name: "Facebook Page — No Followers",
     description: "Clean page ready for your brand, perfect for fresh campaign setups.",
     price: "€7.50",
+    amount: 7.5,
   },
   {
     name: "Facebook Page — 800–1,500 Followers",
     description: "Established page with organic follower base for instant credibility.",
     price: "€20",
+    amount: 20,
   },
   {
     name: "Facebook Page — 2,000–4,000 Followers",
     description: "High-engagement page with strong follower count for better ad delivery.",
     price: "€30",
+    amount: 30,
   },
   {
     name: "Facebook Page — 10K+ Followers",
     description: "Premium page with 10K+ followers for maximum trust and reach.",
     price: "€80",
+    amount: 80,
     popular: true,
   },
 ];

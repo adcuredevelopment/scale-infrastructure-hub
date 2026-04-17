@@ -12,21 +12,25 @@ const products = [
     name: "Facebook Vietnamese 3Line Account",
     description: "Vietnamese profile with 3-line verification, high trust score and stable ad performance.",
     price: "€30",
+    amount: 30,
   },
   {
     name: "Facebook Vietnamese Super Aged (2007–2015) 3Line Account",
     description: "Ultra-aged Vietnamese profile from 2007–2015 with 3-line verification, exceptional trust score and proven long-term ad stability.",
     price: "€35",
+    amount: 35,
   },
   {
     name: "Facebook US 3Line Reinstated Account",
     description: "US-based reinstated profile with 3-line verification, restored ad privileges and clean standing.",
     price: "€40",
+    amount: 40,
   },
   {
     name: "Facebook US 3Line 2x Reinstated Account",
     description: "Double-reinstated US profile with 3-line verification and maximum ad durability.",
     price: "€60",
+    amount: 60,
     popular: true,
   },
 ];
