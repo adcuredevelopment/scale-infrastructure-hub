@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,8 +23,8 @@ export function SlidePanel({ open, onClose, children, width = 420, className }: 
 
   if (!open) return null;
 
-  return (
-    <>
+  return createPortal(
+    <div className="admin-scope">
       {/* Overlay */}
       <div
         onClick={onClose}
@@ -56,7 +57,8 @@ export function SlidePanel({ open, onClose, children, width = 420, className }: 
           <div className="min-h-full flex flex-col">{children}</div>
         </div>
       </aside>
-    </>
+    </div>,
+    document.body,
   );
 }
 
