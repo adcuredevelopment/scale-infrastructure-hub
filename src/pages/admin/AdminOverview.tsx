@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { useRevolutAutoSync } from "@/hooks/useRevolutAutoSync";
+import { Switch } from "@/components/ui/switch";
 import {
   AdminKPICard,
   StatusBadge,
@@ -113,6 +115,7 @@ export default function AdminOverview() {
   }, [fetchDashboardData]);
 
   const { lastRefreshed } = useAutoRefresh(fetchDashboardData);
+  const autoSync = useRevolutAutoSync(fetchDashboardData);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -165,15 +168,35 @@ export default function AdminOverview() {
             Revenue & subscription metrics
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <LiveIndicator timestamp={lastRefreshed} />
+        <div className="flex items-center gap-3 flex-wrap">
+          <LiveIndicator
+            timestamp={autoSync.lastSyncedAt ?? lastRefreshed}
+            label={autoSync.running ? "Syncing Revolut…" : undefined}
+          />
+          <div
+            className="inline-flex items-center gap-2 h-9 px-3 rounded-md"
+            style={{
+              border: "1px solid var(--ad-border-subtle)",
+              background: "var(--ad-surface-2, rgba(255,255,255,0.02))",
+            }}
+            title="Automatically sync Revolut every 2 minutes while this tab is open. Server-side cron also runs every 5 minutes."
+          >
+            <span className="text-[11px]" style={{ color: "var(--ad-text-secondary)" }}>
+              Auto-sync
+            </span>
+            <Switch
+              checked={autoSync.enabled}
+              onCheckedChange={autoSync.setEnabled}
+              className="scale-75 -mx-1"
+            />
+          </div>
           <button
             onClick={handleSync}
             disabled={syncing}
             className="admin-btn-ghost inline-flex items-center gap-2 px-3 h-9 text-[12px] disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "Syncing..." : "Sync Revolut"}
+            {syncing ? "Syncing..." : "Sync now"}
           </button>
         </div>
       </div>
