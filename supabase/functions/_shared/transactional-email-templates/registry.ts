@@ -13,10 +13,12 @@ import { template as subscriptionCancelled } from './subscription-cancelled.tsx'
 import { template as subscriptionConfirmed } from './subscription-confirmed.tsx'
 import { template as payoutInvoice } from './payout-invoice.tsx'
 import { template as shopOrderConfirmed } from './shop-order-confirmed.tsx'
+import { template as customerInvoice } from './customer-invoice.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'subscription-cancelled': subscriptionCancelled,
   'subscription-confirmed': subscriptionConfirmed,
   'payout-invoice': payoutInvoice,
   'shop-order-confirmed': shopOrderConfirmed,
+  'customer-invoice': customerInvoice,
 }
