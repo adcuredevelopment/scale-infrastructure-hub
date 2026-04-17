@@ -12,8 +12,8 @@ const COMPANY = {
   name: 'Adcure Agency',
   addressLines: ['The Netherlands'],
   email: 'support@adcure.agency',
-  kvk: '',
-  vat: '',
+  kvk: '89821211',
+  vat: 'NL003924266B58',
 }
 
 interface Body {
@@ -29,9 +29,11 @@ function formatInvoiceNumber(seq: number): string {
   return `INV-${new Date().getFullYear()}-${pad(seq, 6)}`
 }
 
+// Note: explicit space between currency symbol and amount so the € glyph
+// doesn't visually collide with the digits in pdf-lib's Helvetica.
 function fmtMoney(n: number, currency = 'EUR') {
-  const sym = currency === 'EUR' ? '€' : currency + ' '
-  return `${sym}${Number(n).toFixed(2)}`
+  const sym = currency === 'EUR' ? '€' : currency
+  return `${sym} ${Number(n).toFixed(2)}`
 }
 
 function fmtDate(d: Date) {
@@ -59,112 +61,211 @@ async function buildPdf(opts: {
   const font = await pdf.embedFont(StandardFonts.Helvetica)
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold)
 
-  const text = (s: string, x: number, y: number, size = 10, bold = false, color = rgb(0.1, 0.12, 0.15)) => {
+  // Color palette — premium minimal
+  const ink = rgb(0.07, 0.09, 0.12)        // near-black
+  const muted = rgb(0.45, 0.47, 0.52)       // grey label
+  const subtle = rgb(0.62, 0.64, 0.68)      // very light grey
+  const hairline = rgb(0.88, 0.89, 0.91)    // divider
+  const surface = rgb(0.975, 0.978, 0.982)  // table header bg
+
+  const text = (
+    s: string,
+    x: number,
+    y: number,
+    size = 10,
+    bold = false,
+    color = ink,
+  ) => {
     page.drawText(s, { x, y, size, font: bold ? fontBold : font, color })
   }
 
-  const margin = 50
-  let y = height - margin
+  const textRight = (
+    s: string,
+    rightX: number,
+    y: number,
+    size = 10,
+    bold = false,
+    color = ink,
+  ) => {
+    const f = bold ? fontBold : font
+    const w = f.widthOfTextAtSize(s, size)
+    page.drawText(s, { x: rightX - w, y, size, font: f, color })
+  }
 
-  // Logo
+  const margin = 50
+  const contentW = width - margin * 2
+
+  // ───────── Header ─────────
+  let headerTop = height - margin
+  let logoBottom = headerTop
+
+  // Logo (left)
   try {
     const logoRes = await fetch(LOGO_URL)
     if (logoRes.ok) {
       const logoBytes = new Uint8Array(await logoRes.arrayBuffer())
       const logo = await pdf.embedPng(logoBytes).catch(() => null)
       if (logo) {
-        const scale = 110 / logo.width
-        page.drawImage(logo, { x: margin, y: y - logo.height * scale, width: logo.width * scale, height: logo.height * scale })
+        const targetW = 120
+        const scale = targetW / logo.width
+        const h = logo.height * scale
+        page.drawImage(logo, {
+          x: margin,
+          y: headerTop - h,
+          width: targetW,
+          height: h,
+        })
+        logoBottom = headerTop - h
       }
     }
   } catch (e) {
     console.warn('Logo embed failed', e)
   }
 
-  // Right top: Invoice block
-  text('INVOICE', width - margin - 100, y, 22, true)
-  y -= 30
-  text(`Invoice No: ${opts.invoiceNumber}`, width - margin - 160, y, 9)
-  y -= 14
-  text(`Date: ${fmtDate(opts.issuedAt)}`, width - margin - 160, y, 9)
+  // Right header — INVOICE + meta
+  textRight('INVOICE', width - margin, headerTop - 4, 26, true, ink)
+  textRight(`No. ${opts.invoiceNumber}`, width - margin, headerTop - 26, 10, false, muted)
+  textRight(fmtDate(opts.issuedAt), width - margin, headerTop - 40, 10, false, muted)
 
-  // Reset y to below logo
-  y = height - margin - 90
+  // Hairline under header
+  const dividerY = Math.min(logoBottom, headerTop - 60) - 18
+  page.drawLine({
+    start: { x: margin, y: dividerY },
+    end: { x: width - margin, y: dividerY },
+    thickness: 0.6,
+    color: hairline,
+  })
 
-  // From / To
-  text('FROM', margin, y, 9, true, rgb(0.45, 0.45, 0.5))
-  text('BILL TO', width / 2, y, 9, true, rgb(0.45, 0.45, 0.5))
+  // ───────── From / Bill to ─────────
+  let y = dividerY - 28
+  const colLeftX = margin
+  const colRightX = margin + contentW / 2
+
+  text('FROM', colLeftX, y, 8, true, subtle)
+  text('BILL TO', colRightX, y, 8, true, subtle)
   y -= 16
-  text(COMPANY.name, margin, y, 11, true)
-  text(opts.customerName || opts.customerEmail, width / 2, y, 11, true)
+
+  text(COMPANY.name, colLeftX, y, 11, true, ink)
+  text(opts.customerName || opts.customerEmail, colRightX, y, 11, true, ink)
   y -= 14
+
+  let leftY = y
+  let rightY = y
   for (const line of COMPANY.addressLines) {
-    text(line, margin, y, 10)
-    y -= 12
+    text(line, colLeftX, leftY, 9.5, false, muted)
+    leftY -= 13
   }
-  if (COMPANY.kvk) { text(`KVK: ${COMPANY.kvk}`, margin, y, 10); y -= 12 }
-  if (COMPANY.vat) { text(`VAT: ${COMPANY.vat}`, margin, y, 10); y -= 12 }
+  if (COMPANY.kvk) {
+    text(`KVK ${COMPANY.kvk}`, colLeftX, leftY, 9.5, false, muted)
+    leftY -= 13
+  }
+  if (COMPANY.vat) {
+    text(`VAT ${COMPANY.vat}`, colLeftX, leftY, 9.5, false, muted)
+    leftY -= 13
+  }
+  text(COMPANY.email, colLeftX, leftY, 9.5, false, muted)
+  leftY -= 13
 
-  // Customer side
-  let cy = height - margin - 120
-  text(opts.customerEmail, width / 2, cy, 10)
-  cy -= 12
-  if (opts.country) { text(opts.country, width / 2, cy, 10) }
+  text(opts.customerEmail, colRightX, rightY, 9.5, false, muted)
+  rightY -= 13
+  if (opts.country) {
+    text(opts.country, colRightX, rightY, 9.5, false, muted)
+    rightY -= 13
+  }
 
-  // Items table
-  y = Math.min(y, cy) - 30
-  const tableTop = y
+  // ───────── Items table ─────────
+  y = Math.min(leftY, rightY) - 28
   const tableX = margin
-  const tableW = width - margin * 2
+  const tableW = contentW
+  const headerH = 26
 
-  // Header bar
-  page.drawRectangle({ x: tableX, y: y - 22, width: tableW, height: 24, color: rgb(0.95, 0.96, 0.97) })
-  text('Description', tableX + 12, y - 16, 10, true, rgb(0.3, 0.32, 0.36))
-  text('Amount', tableX + tableW - 70, y - 16, 10, true, rgb(0.3, 0.32, 0.36))
-  y -= 38
+  // Header row
+  page.drawRectangle({
+    x: tableX,
+    y: y - headerH,
+    width: tableW,
+    height: headerH,
+    color: surface,
+  })
+  text('DESCRIPTION', tableX + 14, y - 17, 9, true, muted)
+  textRight('AMOUNT', tableX + tableW - 14, y - 17, 9, true, muted)
+  y -= headerH + 18
 
-  // Row
-  text(opts.productName, tableX + 12, y, 11)
-  text(fmtMoney(opts.subtotal, opts.currency), tableX + tableW - 70, y, 11)
-  y -= 26
+  // Single item row
+  text(opts.productName, tableX + 14, y, 11, false, ink)
+  textRight(fmtMoney(opts.subtotal, opts.currency), tableX + tableW - 14, y, 11, false, ink)
+  y -= 22
 
   // Divider
-  page.drawLine({ start: { x: tableX + 12, y }, end: { x: tableX + tableW - 12, y }, thickness: 0.5, color: rgb(0.85, 0.86, 0.88) })
-  y -= 18
+  page.drawLine({
+    start: { x: tableX, y },
+    end: { x: tableX + tableW, y },
+    thickness: 0.5,
+    color: hairline,
+  })
+  y -= 22
 
-  // Totals
-  const labelX = tableX + tableW - 200
-  const valueX = tableX + tableW - 70
-  text('Subtotal', labelX, y, 10, false, rgb(0.4, 0.42, 0.46))
-  text(fmtMoney(opts.subtotal, opts.currency), valueX, y, 10)
+  // ───────── Totals ─────────
+  const totalsRight = tableX + tableW - 14
+  const labelRight = totalsRight - 110
+
+  textRight('Subtotal', labelRight, y, 10, false, muted)
+  textRight(fmtMoney(opts.subtotal, opts.currency), totalsRight, y, 10, false, ink)
   y -= 16
 
-  if (opts.vatRate > 0) {
-    text(`VAT (${(opts.vatRate * 100).toFixed(0)}%)`, labelX, y, 10, false, rgb(0.4, 0.42, 0.46))
-    text(fmtMoney(opts.vatAmount, opts.currency), valueX, y, 10)
-    y -= 16
-  } else {
-    text('VAT', labelX, y, 10, false, rgb(0.4, 0.42, 0.46))
-    text(fmtMoney(0, opts.currency), valueX, y, 10)
-    y -= 16
+  const vatLabel =
+    opts.vatRate > 0 ? `VAT (${(opts.vatRate * 100).toFixed(0)}%)` : 'VAT (0%)'
+  textRight(vatLabel, labelRight, y, 10, false, muted)
+  textRight(fmtMoney(opts.vatAmount, opts.currency), totalsRight, y, 10, false, ink)
+  y -= 14
+
+  // Hairline above TOTAL
+  page.drawLine({
+    start: { x: labelRight - 30, y: y - 4 },
+    end: { x: totalsRight, y: y - 4 },
+    thickness: 0.6,
+    color: hairline,
+  })
+  y -= 22
+
+  textRight('TOTAL', labelRight, y, 13, true, ink)
+  textRight(fmtMoney(opts.total, opts.currency), totalsRight, y, 14, true, ink)
+  y -= 18
+
+  // Subtle paid line (replaces green box)
+  textRight(
+    `Paid via ${opts.paymentMethod} · ${fmtDate(opts.issuedAt)}`,
+    totalsRight,
+    y,
+    8.5,
+    false,
+    subtle,
+  )
+
+  // ───────── Footer ─────────
+  // Thin line
+  page.drawLine({
+    start: { x: margin, y: 110 },
+    end: { x: width - margin, y: 110 },
+    thickness: 0.5,
+    color: hairline,
+  })
+
+  const centerText = (s: string, yy: number, size: number, bold = false, color = ink) => {
+    const f = bold ? fontBold : font
+    const w = f.widthOfTextAtSize(s, size)
+    page.drawText(s, { x: (width - w) / 2, y: yy, size, font: f, color })
   }
 
-  page.drawLine({ start: { x: labelX, y: y + 4 }, end: { x: valueX + 60, y: y + 4 }, thickness: 0.5, color: rgb(0.85, 0.86, 0.88) })
-  y -= 8
-  text('TOTAL', labelX, y, 12, true)
-  text(fmtMoney(opts.total, opts.currency), valueX, y, 12, true)
-  y -= 36
-
-  // Payment status box
-  page.drawRectangle({ x: margin, y: y - 32, width: tableW, height: 36, color: rgb(0.94, 0.98, 0.95), borderColor: rgb(0.6, 0.85, 0.65), borderWidth: 0.5 })
-  text('Payment status: PAID', margin + 14, y - 20, 11, true, rgb(0.1, 0.55, 0.25))
-  text(`Payment method: ${opts.paymentMethod}`, margin + 220, y - 20, 10, false, rgb(0.25, 0.45, 0.3))
-  y -= 60
-
-  // Footer
-  text('Thank you for your business.', margin, 80, 11, true)
-  text(`Questions? Contact ${COMPANY.email}`, margin, 64, 9, false, rgb(0.45, 0.45, 0.5))
-  text(`This invoice was generated automatically by ${COMPANY.name}.`, margin, 50, 8, false, rgb(0.6, 0.6, 0.65))
+  centerText('Thank you for your business.', 88, 11, true, ink)
+  centerText(`Questions? Contact ${COMPANY.email}`, 70, 9, false, muted)
+  centerText(
+    `${COMPANY.name} · KVK ${COMPANY.kvk} · VAT ${COMPANY.vat}`,
+    54,
+    8,
+    false,
+    subtle,
+  )
 
   return await pdf.save()
 }
