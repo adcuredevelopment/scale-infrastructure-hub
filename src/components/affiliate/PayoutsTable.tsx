@@ -1,67 +1,83 @@
-import { Badge } from "@/components/ui/badge";
+import { Wallet } from "lucide-react";
 import type { AffiliatePayout } from "@/hooks/useAffiliate";
 
 interface Props {
   payouts: AffiliatePayout[];
 }
 
-const statusColors: Record<string, string> = {
-  pending: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  processing: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  paid: "bg-green-500/10 text-green-400 border-green-500/20",
-  failed: "bg-destructive/10 text-destructive border-destructive/20",
-};
+function badgeClass(status: string) {
+  switch (status) {
+    case "paid": return "aff-badge-paid";
+    case "failed": return "aff-badge-failed";
+    case "pending":
+    case "processing": return "aff-badge-pending";
+    default: return "aff-badge-pending";
+  }
+}
 
 export function PayoutsTable({ payouts }: Props) {
   return (
-    <div className="glass rounded-xl p-4 sm:p-5 md:p-6">
-      <h3 className="font-display font-semibold text-sm mb-4">Payout History</h3>
+    <div className="aff-card overflow-hidden">
+      <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        <h3 className="aff-syne font-semibold text-[14px] text-[#f1f5f9]">Payout History</h3>
+      </div>
+
       {payouts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No payouts yet.</p>
+        <div className="px-5 py-12 flex flex-col items-center text-center">
+          <Wallet className="w-8 h-8 text-[#334155] mb-3" />
+          <p className="text-[14px] text-[#64748b]">No payouts yet</p>
+        </div>
       ) : (
         <>
-          {/* Mobile card layout */}
-          <div className="space-y-3 md:hidden">
+          {/* Mobile cards */}
+          <div className="md:hidden p-4 space-y-3">
             {payouts.map((p) => (
-              <div key={p.id} className="rounded-lg border border-border/50 p-3 space-y-2">
+              <div key={p.id} className="rounded-lg p-3 space-y-2"
+                   style={{ background: "#0d0d11", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold">€{Number(p.amount).toFixed(2)}</span>
-                  <Badge variant="outline" className={statusColors[p.status] || ""}>
+                  <span className="aff-mono text-[14px] font-semibold text-[#f1f5f9]">€{Number(p.amount).toFixed(2)}</span>
+                  <span className={`aff-badge ${badgeClass(p.status)}`}>
+                    {p.status === "paid" && <span className="dot" />}
                     {p.status}
-                  </Badge>
+                  </span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{p.payout_date ? new Date(p.payout_date).toLocaleDateString() : "—"}</span>
-                  <span className="truncate max-w-[60%] text-right">{p.notes || "—"}</span>
+                <div className="flex items-center justify-between text-[12px]">
+                  <span className="aff-mono text-[#64748b]">
+                    {p.payout_date ? new Date(p.payout_date).toLocaleDateString() : "—"}
+                  </span>
+                  <span className="text-[#94a3b8] italic truncate max-w-[60%] text-right">{p.notes || "—"}</span>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Desktop table layout */}
+          {/* Desktop table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="aff-table">
               <thead>
-                <tr className="text-muted-foreground text-xs border-b border-border">
-                  <th className="text-left py-2 font-medium">Amount</th>
-                  <th className="text-center py-2 font-medium">Status</th>
-                  <th className="text-right py-2 font-medium">Date</th>
-                  <th className="text-right py-2 font-medium">Notes</th>
+                <tr>
+                  <th>Amount</th>
+                  <th style={{ textAlign: "center" }}>Status</th>
+                  <th style={{ textAlign: "right" }}>Date</th>
+                  <th style={{ textAlign: "right" }}>Notes</th>
                 </tr>
               </thead>
               <tbody>
                 {payouts.map((p) => (
-                  <tr key={p.id} className="border-b border-border/50">
-                    <td className="py-2.5">€{Number(p.amount).toFixed(2)}</td>
-                    <td className="py-2.5 text-center">
-                      <Badge variant="outline" className={statusColors[p.status] || ""}>
-                        {p.status}
-                      </Badge>
+                  <tr key={p.id}>
+                    <td className="aff-mono" style={{ fontWeight: 600, fontSize: 14 }}>
+                      €{Number(p.amount).toFixed(2)}
                     </td>
-                    <td className="py-2.5 text-right text-muted-foreground">
+                    <td style={{ textAlign: "center" }}>
+                      <span className={`aff-badge ${badgeClass(p.status)}`}>
+                        {p.status === "paid" && <span className="dot" />}
+                        {p.status}
+                      </span>
+                    </td>
+                    <td className="aff-mono dim" style={{ textAlign: "right", fontSize: 12 }}>
                       {p.payout_date ? new Date(p.payout_date).toLocaleDateString() : "—"}
                     </td>
-                    <td className="py-2.5 text-right text-muted-foreground truncate max-w-[150px]">
+                    <td className="dim" style={{ textAlign: "right", fontStyle: "italic", maxWidth: 200 }}>
                       {p.notes || "—"}
                     </td>
                   </tr>

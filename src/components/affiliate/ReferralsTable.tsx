@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { UserX } from "lucide-react";
 import type { AffiliateReferral } from "@/hooks/useAffiliate";
 
 interface Props {
@@ -12,11 +12,6 @@ function maskEmail(email: string | null) {
   const [local, domain] = email.split("@");
   return `${local.slice(0, 2)}***@${domain}`;
 }
-
-const statusColors: Record<string, string> = {
-  active: "bg-green-500/10 text-green-400 border-green-500/20",
-  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
-};
 
 type FilterType = "all" | "active" | "cancelled";
 
@@ -40,46 +35,48 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
   ];
 
   return (
-    <div className="glass rounded-xl p-4 sm:p-5 md:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display font-semibold text-sm">Referrals</h3>
-        <div className="flex gap-1.5">
+    <div className="aff-card overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        <h3 className="aff-syne font-semibold text-[14px] text-[#f1f5f9]">Referrals</h3>
+        <div className="aff-tabs">
           {filters.map((f) => (
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                filter === f.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
+              data-active={filter === f.value}
+              className="aff-tab aff-tab-sm"
             >
               {f.label}
             </button>
           ))}
         </div>
       </div>
+
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {filter === "all" ? "No referrals yet. Share your link to start earning!" : `No ${filter} referrals.`}
-        </p>
+        <div className="px-5 py-12 flex flex-col items-center text-center">
+          <UserX className="w-8 h-8 text-[#334155] mb-3" />
+          <p className="text-[14px] text-[#64748b]">No referrals yet</p>
+          <p className="text-[12px] text-[#475569] mt-1">Share your referral link to get started</p>
+        </div>
       ) : (
         <>
-          {/* Mobile card layout */}
-          <div className="space-y-3 md:hidden">
+          {/* Mobile cards */}
+          <div className="md:hidden p-4 space-y-3">
             {filtered.map((r) => {
               const cancelled = isCancelledReferral(r);
               return (
-                <div key={r.id} className="rounded-lg border border-border/50 p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium truncate max-w-[60%]">{maskEmail(r.customer_email)}</span>
-                    <Badge variant="outline" className={statusColors[cancelled ? "cancelled" : "active"] || ""}>
+                <div key={r.id} className="rounded-lg p-3 space-y-2"
+                     style={{ background: "#0d0d11", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[13px] text-[#94a3b8] truncate">{maskEmail(r.customer_email)}</span>
+                    <span className={`aff-badge ${cancelled ? "aff-badge-cancelled" : "aff-badge-active"}`}>
+                      {!cancelled && <span className="dot" />}
                       {cancelled ? "Cancelled" : "Active"}
-                    </Badge>
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">€{Number(r.commission_amount).toFixed(2)}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="aff-mono text-[13px] font-medium text-[#f1f5f9]">€{Number(r.commission_amount).toFixed(2)}</span>
+                    <span className="aff-mono text-[12px] text-[#64748b]">
                       {new Date(r.created_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -88,32 +85,35 @@ export function ReferralsTable({ referrals, cancelledEmails }: Props) {
             })}
           </div>
 
-          {/* Desktop table layout */}
+          {/* Desktop table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="aff-table">
               <thead>
-                <tr className="text-muted-foreground text-xs border-b border-border">
-                  <th className="text-left py-2 font-medium">Customer</th>
-                  <th className="text-left py-2 font-medium">Plan</th>
-                  <th className="text-right py-2 font-medium">Commission</th>
-                  <th className="text-center py-2 font-medium">Status</th>
-                  <th className="text-right py-2 font-medium">Date</th>
+                <tr>
+                  <th>Customer</th>
+                  <th>Plan</th>
+                  <th style={{ textAlign: "right" }}>Commission</th>
+                  <th style={{ textAlign: "center" }}>Status</th>
+                  <th style={{ textAlign: "right" }}>Date</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => {
                   const cancelled = isCancelledReferral(r);
                   return (
-                    <tr key={r.id} className="border-b border-border/50">
-                      <td className="py-2.5">{maskEmail(r.customer_email)}</td>
-                      <td className="py-2.5">{r.plan_name || "—"}</td>
-                      <td className="py-2.5 text-right">€{Number(r.commission_amount).toFixed(2)}</td>
-                      <td className="py-2.5 text-center">
-                        <Badge variant="outline" className={statusColors[cancelled ? "cancelled" : "active"] || ""}>
-                          {cancelled ? "Cancelled" : "Active"}
-                        </Badge>
+                    <tr key={r.id}>
+                      <td className="dim">{maskEmail(r.customer_email)}</td>
+                      <td>{r.plan_name || "—"}</td>
+                      <td className="aff-mono" style={{ textAlign: "right", fontWeight: 500 }}>
+                        €{Number(r.commission_amount).toFixed(2)}
                       </td>
-                      <td className="py-2.5 text-right text-muted-foreground">
+                      <td style={{ textAlign: "center" }}>
+                        <span className={`aff-badge ${cancelled ? "aff-badge-cancelled" : "aff-badge-active"}`}>
+                          {!cancelled && <span className="dot" />}
+                          {cancelled ? "Cancelled" : "Active"}
+                        </span>
+                      </td>
+                      <td className="aff-mono dim" style={{ textAlign: "right", fontSize: 12 }}>
                         {new Date(r.created_at).toLocaleDateString()}
                       </td>
                     </tr>

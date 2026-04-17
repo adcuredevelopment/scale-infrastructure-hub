@@ -1,10 +1,6 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Save, Pencil } from "lucide-react";
+import { Loader2, Pencil, Lock, Copy, Check, Info, Landmark } from "lucide-react";
 import type { AffiliateData } from "@/hooks/useAffiliate";
 
 interface AffiliateSettingsProps {
@@ -15,6 +11,7 @@ interface AffiliateSettingsProps {
 export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({
     iban: affiliate.iban || "",
     company_name: affiliate.company_name || "",
@@ -23,9 +20,16 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
     billing_address: affiliate.billing_address || "",
   });
 
+  const handleCopyCode = async () => {
+    await navigator.clipboard.writeText(affiliate.affiliate_code);
+    setCopied(true);
+    toast.success("Code copied!");
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   const handleSave = async () => {
     if (!form.iban.trim()) {
-      toast.error("IBAN is verplicht");
+      toast.error("IBAN is required");
       return;
     }
     setSaving(true);
@@ -37,97 +41,141 @@ export function AffiliateSettings({ affiliate, onUpdate }: AffiliateSettingsProp
         vat_number: form.vat_number.trim() || null,
         billing_address: form.billing_address.trim() || null,
       });
-      toast.success("Gegevens opgeslagen");
+      toast.success("Settings saved successfully");
       setEditing(false);
     } catch {
-      toast.error("Opslaan mislukt, probeer opnieuw");
+      toast.error("Failed to save, please try again");
     } finally {
       setSaving(false);
     }
   };
 
+  const handleCancel = () => {
+    setEditing(false);
+    setForm({
+      iban: affiliate.iban || "",
+      company_name: affiliate.company_name || "",
+      kvk_number: affiliate.kvk_number || "",
+      vat_number: affiliate.vat_number || "",
+      billing_address: affiliate.billing_address || "",
+    });
+  };
+
   return (
-    <div className="glass rounded-xl p-6 max-w-2xl">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-display font-bold">Account Settings</h2>
+    <div className="aff-card p-6 md:p-7" style={{ maxWidth: 600 }}>
+      <div className="flex items-center justify-between">
+        <h2 className="aff-syne font-semibold text-[16px] text-[#f1f5f9]">Account Settings</h2>
         {!editing && (
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-            <Pencil className="w-4 h-4 mr-2" /> Edit
-          </Button>
+          <button onClick={() => setEditing(true)} className="aff-btn-ghost">
+            <Pencil className="w-3.5 h-3.5" /> Edit
+          </button>
         )}
       </div>
+      <p className="text-[12px] text-[#64748b] mt-1">Manage your billing and payout information</p>
 
-      <div className="space-y-4">
-        <div>
-          <Label>Email</Label>
-          <Input value={affiliate.email} disabled className="mt-1" />
-        </div>
-        <div>
-          <Label>Affiliate Code</Label>
-          <Input value={affiliate.affiliate_code} disabled className="mt-1" />
-        </div>
-        <div>
-          <Label>IBAN *</Label>
-          <Input
-            value={form.iban}
-            onChange={(e) => setForm((f) => ({ ...f, iban: e.target.value }))}
-            disabled={!editing}
-            placeholder="NL00ABCD0123456789"
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label>Company Name</Label>
-          <Input
+      <div className="my-5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+
+      <div className="space-y-5">
+        {/* Email */}
+        <Field label="Email">
+          <div className="relative">
+            <input value={affiliate.email} readOnly className="aff-input pr-10" />
+            <Lock className="w-3.5 h-3.5 absolute right-3.5 top-1/2 -translate-y-1/2 text-[#475569]" />
+          </div>
+        </Field>
+
+        {/* Affiliate code */}
+        <Field label="Affiliate Code">
+          <div className="relative">
+            <input value={affiliate.affiliate_code} readOnly className="aff-input aff-mono pr-10" />
+            <button onClick={handleCopyCode} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-[#f1f5f9] transition-colors">
+              {copied ? <Check className="w-3.5 h-3.5 text-[#10b981]" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </Field>
+
+        {/* IBAN */}
+        <Field label="IBAN *">
+          <div className="relative">
+            <Landmark className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748b]" />
+            <input
+              value={form.iban}
+              onChange={(e) => setForm((f) => ({ ...f, iban: e.target.value }))}
+              disabled={!editing}
+              placeholder="NL00ABCD0123456789"
+              className="aff-input aff-mono pl-10"
+            />
+          </div>
+        </Field>
+
+        {/* Company */}
+        <Field label="Company Name">
+          <input
             value={form.company_name}
             onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))}
             disabled={!editing}
-            className="mt-1"
+            className="aff-input"
           />
-        </div>
+        </Field>
+
+        {/* KVK + VAT */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Label>KVK Number</Label>
-            <Input
+          <Field label="KVK Number">
+            <input
               value={form.kvk_number}
               onChange={(e) => setForm((f) => ({ ...f, kvk_number: e.target.value }))}
               disabled={!editing}
-              className="mt-1"
+              className="aff-input aff-mono"
             />
-          </div>
-          <div>
-            <Label>VAT Number</Label>
-            <Input
+          </Field>
+          <Field label="VAT Number">
+            <input
               value={form.vat_number}
               onChange={(e) => setForm((f) => ({ ...f, vat_number: e.target.value }))}
               disabled={!editing}
-              className="mt-1"
+              className="aff-input aff-mono"
             />
-          </div>
+          </Field>
         </div>
-        <div>
-          <Label>Billing Address</Label>
-          <Textarea
+
+        {/* Billing address */}
+        <Field label="Billing Address">
+          <textarea
             value={form.billing_address}
             onChange={(e) => setForm((f) => ({ ...f, billing_address: e.target.value }))}
             disabled={!editing}
-            rows={3}
-            className="mt-1"
+            rows={4}
+            className="aff-input"
           />
-        </div>
+        </Field>
 
         {editing && (
-          <div className="flex gap-3 pt-2">
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Save
-            </Button>
-            <Button variant="outline" onClick={() => { setEditing(false); setForm({ iban: affiliate.iban || "", company_name: affiliate.company_name || "", kvk_number: affiliate.kvk_number || "", vat_number: affiliate.vat_number || "", billing_address: affiliate.billing_address || "" }); }}>
-              Cancel
-            </Button>
+          <div className="flex gap-2 pt-2">
+            <button onClick={handleSave} disabled={saving} className="aff-btn-primary">
+              {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Save Changes
+            </button>
+            <button onClick={handleCancel} className="aff-btn-ghost">Cancel</button>
           </div>
         )}
+
+        <div className="aff-info">
+          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "#3b82f6" }} />
+          <span>
+            Your IBAN and company details are used for generating self-billing invoices.
+            Make sure they are accurate for correct payouts.
+          </span>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="aff-input-label mb-1.5">{label}</div>
+      {children}
     </div>
   );
 }
