@@ -387,7 +387,7 @@ export default function AdminSubscriptions() {
       {/* Detail Slide Panel */}
       <SlidePanel open={!!selected} onClose={() => setSelected(null)} width={460}>
         {selected && (
-          <>
+          <div>
             <div className="px-6 pt-6 pb-5">
               <p
                 className="text-[10px] uppercase mb-2"
@@ -483,7 +483,7 @@ export default function AdminSubscriptions() {
 
             {selected.status === "active" && (
               <div
-                className="px-6 py-5"
+                className="px-6 py-5 mt-auto"
                 style={{ borderTop: "1px solid var(--ad-border-subtle)" }}
               >
                 <button
@@ -495,7 +495,7 @@ export default function AdminSubscriptions() {
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
       </SlidePanel>
 
