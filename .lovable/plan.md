@@ -1,70 +1,108 @@
 
 
-# Plan: One-time checkout voor shop pagina's via Revolut
+# Plan: Automatische Customer Invoices (PDF met logo, per email)
 
 ## Doel
-Alle 4 shop pagina's (Facebook Accounts, Pages, Structures, Business Managers) krijgen een werkende checkout die:
-- Klantgegevens verzamelt (naam, email, land) — zelfde flow als subscriptions
-- 21% BTW toevoegt voor NL-klanten (prijzen zijn nu excl. BTW)
-- Een **eenmalige betaling** afrekent via Revolut Merchant API (ipv recurring subscription)
-- Affiliate code meestuurt voor referral attribution
-- Doorstuurt naar `/payment-success` na betaling
+Bij elke succesvolle betaling stuur je de klant automatisch een professionele PDF-factuur met Adcure-logo:
+- **Shop orders** (eenmalige aankoop)
+- **Eerste subscription signup**
+- **Elke maandelijkse recharge** (subscription renewal)
 
-## Architectuur
+## Wat wordt opgebouwd
+
+### 1. Nieuwe storage bucket `customer-invoices` (private)
+PDF's worden hier opgeslagen onder pad `<email>/<invoice_number>.pdf`. Admin-only RLS, signed URLs voor download in admin panel.
+
+### 2. Nieuwe tabel `customer_invoices`
+Houdt elke uitgegeven factuur bij voor admin-overzicht & boekhouding:
+- `invoice_number` (formaat `INV-2026-000123`, sequentieel via Postgres sequence)
+- `customer_email`, `customer_name`
+- `type` (`shop_order` | `subscription_initial` | `subscription_renewal`)
+- `product_name`, `subtotal`, `vat_amount`, `vat_rate`, `total`, `currency`
+- `payment_id`, `subscription_id` (refs)
+- `pdf_path`, `issued_at`, `country`
+- RLS: admins read/write, service role full access
+
+### 3. Nieuwe edge function `generate-customer-invoice`
+Wordt server-side aangeroepen vanuit `revolut-webhook`. Doet:
+1. Haalt betaling/klantgegevens op
+2. Genereert sequentieel factuurnummer (`nextval_customer_invoice` RPC)
+3. Bouwt **echte PDF** met `pdf-lib` (npm) — Adcure logo bovenaan, factuurdetails, BTW-breakdown, juridische voettekst
+4. Upload naar `customer-invoices` bucket
+5. Insert record in `customer_invoices`
+6. Triggert email via `send-transactional-email` met nieuwe template `customer-invoice` en signed URL als download-link
+
+### 4. Nieuwe email template `customer-invoice.tsx`
+Korte branded mail met:
+- Adcure logo
+- "Your invoice is ready"
+- Bedrag + factuurnummer
+- Grote download-knop → signed URL (7 dagen geldig) naar PDF in storage
+- Reply-to support@adcure.agency
+
+### 5. Webhook integratie (`revolut-webhook`)
+Op `ORDER_COMPLETED` voegt webhook toe:
+- **Shop order branch**: na bestaande shop-order-confirmed email → ook `generate-customer-invoice` aanroepen met type `shop_order`
+- **Subscription branch**: bij elke completed payment → `generate-customer-invoice` aanroepen
+  - Eerste payment voor subscription → type `subscription_initial`
+  - Volgende payments (recharge) → type `subscription_renewal`
+  - Detectie via check op bestaande subscription + count van eerdere completed payments voor die customer/subscription
+
+### 6. Admin UI: nieuwe tab in `AdminPayments`
+Knop "Download Invoice" per row die al een invoice heeft. Als invoice ontbreekt: "Generate Invoice" knop (admin failsafe).
+
+## PDF design (één pagina, A4)
 
 ```text
-ShopProductGrid "Order Now" 
-   → CheckoutDialog (naam/email/land, BTW preview)
-       → revolut-create-shop-order (NEW edge function)
-           → Revolut Merchant API /orders
-               → checkout_url → klant betaalt
-                   → revolut-webhook (bestaand) → ORDER_COMPLETED
-                       → payments + customers + notifications
+┌─────────────────────────────────────────┐
+│  [ADCURE LOGO]                          │
+│                                         │
+│  INVOICE                                │
+│  Invoice No: INV-2026-000123            │
+│  Date: 17 April 2026                    │
+│                                         │
+│  From:                  To:             │
+│  Adcure Agency          John Doe        │
+│  The Netherlands        john@email.com  │
+│  KVK: xxxxxxxx          NL              │
+│  VAT: NLxxxxxxxxxB01                    │
+│                                         │
+│  ┌───────────────────────────────────┐  │
+│  │ Description           Amount      │  │
+│  │ FB Vietnamese Account €30.00      │  │
+│  │ Subtotal              €30.00      │  │
+│  │ VAT (21%)             €6.30       │  │
+│  │ TOTAL                 €36.30      │  │
+│  └───────────────────────────────────┘  │
+│                                         │
+│  Payment status: PAID                   │
+│  Payment method: Revolut                │
+│                                         │
+│  Thank you for your business.           │
+│  support@adcure.agency                  │
+└─────────────────────────────────────────┘
 ```
-
-## Wijzigingen
-
-### 1. Nieuwe edge function `revolut-create-shop-order`
-- Input: `productName`, `amount` (excl BTW), `email`, `firstName`, `lastName`, `country`, `affiliateCode`
-- **Server-side allowlist**: alle 13 shop producten met hun prijzen worden hardcoded in de function (zelfde patroon als `revolut-create-order` voor plans). Dit voorkomt dat klanten zelf bedragen kunnen kiezen.
-- Berekent BTW (21%) als `country === "NL"`, totaal = bedrag + BTW
-- Maakt Revolut order aan met `capture_mode: 'automatic'` (eenmalig, geen subscription)
-- Slaat op in `payments` tabel met `payload.type = 'shop_order'`, product, amount, email, country, vat, affiliateCode
-- Redirect URL: `/payment-success?product=<name>&email=<email>`
-- CORS headers + email validatie
-
-### 2. Nieuwe component `src/components/shop/ShopCheckoutDialog.tsx`
-Hergebruikt het patroon uit `PricingSection`:
-- Velden: First Name, Last Name, Email, Country (zelfde EU lijst)
-- Live BTW breakdown: subtotaal, BTW (21% indien NL), totaal
-- "Continue to Payment" knop → roept `revolut-create-shop-order` aan → redirect naar `checkout_url`
-- Loading state, error toasts
-
-### 3. Update `ShopProductGrid.tsx`
-- Vervang `<Link to="/contact">` door `onClick` die de dialog opent met geselecteerd product
-- Voeg `amount: number` toe aan Product interface (excl BTW, in EUR)
-- State management voor selected product binnen de grid
-
-### 4. Update alle 4 shop pagina's
-Voeg `amount` numeriek toe aan elk product object (parsed uit huidige `price` strings):
-- **FacebookAccounts**: 30, 35, 40, 60
-- **FacebookPages**: 7.50, 20, 30, 80
-- **FacebookStructures**: 175, 225
-- **BusinessManagers**: 95, 115, 250
-
-### 5. Update `revolut-webhook/index.ts`
-Bij `ORDER_COMPLETED` moet de webhook onderscheid maken tussen:
-- `payload.type === 'shop_order'` → update `customers` (total_spent, last_payment_at), maak notification, **GEEN** subscription record. Affiliate commissie geldt niet voor shop orders (alleen voor recurring subscriptions blijft bestaan).
-- Anders (bestaande logic) → subscription flow
-
-### 6. Update `PaymentSuccess.tsx`
-Detect `?product=` query param. Indien aanwezig, toon shop-variant van bedankpagina (zonder portal signup steps; gewoon "We sturen je de details binnen 1 uur per email").
 
 ## Technische details
 
-**BTW**: Frontend toont breakdown, backend herberekent (never trust client). Revolut ontvangt het totaalbedrag inclusief BTW.
+- **PDF library**: `pdf-lib` via `npm:pdf-lib@1.17.1` (werkt in Deno edge functions, geen native deps)
+- **Logo**: ophalen vanuit bestaande `email-assets/adcure-logo.png` bucket en embedden in PDF
+- **Subscription renewal detectie**: tellen van `payments` rows met `payload.email = X AND payload.plan = Y AND status = 'completed'` — als > 1 dan `subscription_renewal`
+- **Idempotency**: `customer_invoices` heeft unique constraint op `payment_id` zodat dubbele webhooks geen dubbele facturen maken
+- **VAT logic**: hergebruikt bestaande logica (21% voor NL, 0% voor andere EU landen — voor consistency met huidige checkout)
+- **Email subject**: `"Invoice INV-2026-000123 from Adcure"`
+- **Rust van bestaande code**: `affiliate-invoices` bucket en `affiliate_invoices` tabel blijven ongemoeid (zijn voor self-billing payouts, totaal andere flow)
 
-**Geen affiliate commissie op shop**: Shop orders zijn one-off. We slaan `affiliateCode` wel op in de payment payload voor tracking, maar de webhook maakt geen `affiliate_referrals` record voor `type === 'shop_order'`.
+## Bestanden die aangemaakt/aangepast worden
 
-**Email/notificatie**: Webhook stuurt geen "subscription confirmed" email voor shop orders. Optioneel kan later een aparte `shop-order-confirmed` template komen — voor nu volstaat de admin notification.
+**Nieuw:**
+- migration: bucket `customer-invoices` + tabel `customer_invoices` + sequence + RPC + RLS
+- `supabase/functions/generate-customer-invoice/index.ts`
+- `supabase/functions/generate-customer-invoice/deno.json`
+- `supabase/functions/_shared/transactional-email-templates/customer-invoice.tsx`
+
+**Aangepast:**
+- `supabase/functions/_shared/transactional-email-templates/registry.ts` (registreer nieuwe template)
+- `supabase/functions/revolut-webhook/index.ts` (invoke generate-customer-invoice in beide branches)
+- `src/pages/admin/AdminPayments.tsx` (Download Invoice knop per row)
 
