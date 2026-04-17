@@ -376,15 +376,19 @@ export default function AdminAffiliates() {
         <FilterTabs
           value={statusFilter}
           onChange={(v) => setStatusFilter(v as StatusFilter)}
-          tabs={[
-            { value: "all", label: "All", count: counts.all },
-            { value: "active", label: "Active", count: counts.active },
-            { value: "suspended", label: "Suspended", count: counts.suspended },
+          items={[
+            { id: "all", label: "All", count: counts.all },
+            { id: "active", label: "Active", count: counts.active },
+            { id: "suspended", label: "Suspended", count: counts.suspended },
           ]}
         />
-        <div className="flex items-center gap-2">
-          <StatChip label="Affiliates" value={filtered.length} />
-          <SearchInput value={search} onChange={setSearch} placeholder="Search affiliates..." />
+        <div className="flex items-center gap-2 flex-1 sm:flex-none sm:w-72">
+          <StatChip label="shown" value={String(filtered.length)} />
+          <SearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search affiliates..."
+          />
         </div>
       </div>
 
