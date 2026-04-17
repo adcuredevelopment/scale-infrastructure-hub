@@ -287,3 +287,115 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* Notice banners (amber/blue variants) */
+.aff-scope .aff-notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--aff-text-secondary);
+}
+.aff-scope .aff-notice-amber {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.20);
+}
+
+/* Onboarding card */
+.aff-scope .aff-onboarding {
+  position: relative;
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 10px;
+  padding: 20px 24px;
+}
+.aff-scope .aff-onboarding-x {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--aff-text-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+.aff-scope .aff-onboarding-x:hover {
+  color: var(--aff-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Inline code chip */
+.aff-scope .aff-code-chip {
+  background: #0a0a0d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 3px 8px;
+  color: var(--aff-text);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+/* Field error */
+.aff-scope .aff-input.aff-input-error,
+.aff-scope .aff-input.aff-input-error:focus {
+  border-color: var(--aff-red);
+}
+.aff-scope .aff-input-error-msg {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--aff-red-light);
+}
+
+/* Tooltip (info icon + table th) */
+.aff-scope .aff-tooltip {
+  position: relative;
+  display: inline-flex;
+  color: var(--aff-text-faint);
+  cursor: help;
+}
+.aff-scope .aff-tooltip:hover { color: var(--aff-text-secondary); }
+.aff-scope .aff-tooltip::after,
+.aff-scope .aff-th-tooltip:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #18181f;
+  border: 1px solid var(--aff-border);
+  color: var(--aff-text);
+  font-size: 11px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: normal;
+  width: max-content;
+  max-width: 240px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 50;
+  text-align: left;
+  line-height: 1.4;
+}
+.aff-scope .aff-tooltip:hover::after {
+  opacity: 1;
+}
+.aff-scope .aff-th-tooltip {
+  cursor: help;
+  position: relative;
+}
+.aff-scope .aff-th-tooltip:hover::after { opacity: 1; }
+
