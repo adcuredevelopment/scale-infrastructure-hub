@@ -1,17 +1,26 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { KPICard } from "@/components/admin/KPICard";
-import { Users, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
-import { motion } from "framer-motion";
+import { Users, CreditCard, TrendingUp, Wallet, RefreshCw, Inbox, ArrowRight } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-
-import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
-import { LastRefreshed } from "@/components/admin/LastRefreshed";
+import {
+  AdminKPICard,
+  StatusBadge,
+  LiveIndicator,
+  FilterTabs,
+  EmptyState,
+  KPISkeleton,
+} from "@/components/admin/ui";
+import { RevenueMilestones } from "@/components/admin/RevenueMilestones";
+
+type Range = "7D" | "30D" | "90D";
+const RANGE_DAYS: Record<Range, number> = { "7D": 7, "30D": 30, "90D": 90 };
 
 export default function AdminOverview() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalRevenue: 0,
     activeSubscriptions: 0,
@@ -23,27 +32,10 @@ export default function AdminOverview() {
     custChange: 0,
   });
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
-  
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [allPayments, setAllPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('revolut-sync-orders');
-      if (error) throw error;
-      toast.success(`Synced! ${data.new_synced} new, ${data.updated} updated from ${data.total_orders} orders`);
-      await fetchDashboardData();
-    } catch (err: any) {
-      toast.error('Sync failed: ' + (err.message || 'Unknown error'));
-    } finally {
-      setSyncing(false);
-    }
-  };
+  const [range, setRange] = useState<Range>("7D");
 
   const fetchDashboardData = useCallback(async () => {
     const [subsRes, custRes, paymentsRes, allPaymentsRes] = await Promise.all([
@@ -56,22 +48,18 @@ export default function AdminOverview() {
     const subs = subsRes.data || [];
     const custs = custRes.data || [];
     const payments = paymentsRes.data || [];
-    const allPayments = allPaymentsRes.data || [];
+    const allP = allPaymentsRes.data || [];
 
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     const activeSubs = subs.filter((s) => s.status === "active");
-    // Total Revenue = sum of all completed payments (historical)
-    const totalRevenue = allPayments
+    const totalRevenue = allP
       .filter((p) => p.status === "completed")
       .reduce((acc, p) => acc + Number((p.payload as any)?.amount || 0), 0);
-    // MRR = sum of currently active subscription amounts
     const mrr = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
 
-    // Last month's MRR: subs that were active at end of last month
-    // (started before this month AND not cancelled before this month)
     const lastMonthActiveSubs = subs.filter((s) => {
       const started = new Date(s.started_at);
       if (started >= thisMonthStart) return false;
@@ -83,15 +71,25 @@ export default function AdminOverview() {
     const lastMonthMrr = lastMonthActiveSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
     const mrrChange = lastMonthMrr > 0 ? ((mrr - lastMonthMrr) / lastMonthMrr) * 100 : (mrr > 0 ? 100 : 0);
 
-    // Revenue this month vs last month
-    const revenueThisMonth = subs.filter((s) => new Date(s.started_at) >= thisMonthStart).reduce((acc, s) => acc + Number(s.amount || 0), 0);
-    const revenueLastMonth = subs.filter((s) => { const d = new Date(s.started_at); return d >= lastMonthStart && d < thisMonthStart; }).reduce((acc, s) => acc + Number(s.amount || 0), 0);
-    const revenueChange = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : (revenueThisMonth > 0 ? 100 : 0);
+    const revenueThisMonth = subs
+      .filter((s) => new Date(s.started_at) >= thisMonthStart)
+      .reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const revenueLastMonth = subs
+      .filter((s) => {
+        const d = new Date(s.started_at);
+        return d >= lastMonthStart && d < thisMonthStart;
+      })
+      .reduce((acc, s) => acc + Number(s.amount || 0), 0);
+    const revenueChange =
+      revenueLastMonth > 0
+        ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100
+        : revenueThisMonth > 0
+        ? 100
+        : 0;
 
-    // New subs this month
-    const subsThisMonth = subs.filter((s) => new Date(s.started_at) >= thisMonthStart && s.status === "active").length;
-
-    // New customers this month
+    const subsThisMonth = subs.filter(
+      (s) => new Date(s.started_at) >= thisMonthStart && s.status === "active",
+    ).length;
     const custsThisMonth = custs.filter((c) => new Date(c.created_at) >= thisMonthStart).length;
 
     setStats({
@@ -106,10 +104,36 @@ export default function AdminOverview() {
     });
 
     setRecentPayments(payments);
+    setAllPayments(allP);
+    setLoading(false);
+  }, []);
 
-    // Build chart data from ALL payments (last 7 days)
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const { lastRefreshed } = useAutoRefresh(fetchDashboardData);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("revolut-sync-orders");
+      if (error) throw error;
+      toast.success(
+        `Synced! ${data.new_synced} new, ${data.updated} updated from ${data.total_orders} orders`,
+      );
+      await fetchDashboardData();
+    } catch (err: any) {
+      toast.error("Sync failed: " + (err.message || "Unknown error"));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const chartData = useMemo(() => {
     const days: Record<string, number> = {};
-    for (let i = 6; i >= 0; i--) {
+    const total = RANGE_DAYS[range];
+    for (let i = total - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       days[format(d, "MMM dd")] = 0;
@@ -123,105 +147,227 @@ export default function AdminOverview() {
           days[key] += Number(payload?.amount || 0);
         }
       });
-    setChartData(Object.entries(days).map(([date, amount]) => ({ date, amount })));
-  }, []);
+    return Object.entries(days).map(([date, amount]) => ({ date, amount }));
+  }, [allPayments, range]);
 
-  const { lastRefreshed } = useAutoRefresh(fetchDashboardData);
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-emerald-500/15 text-emerald-500";
-      case "pending": return "bg-amber-500/15 text-amber-500";
-      case "failed": return "bg-destructive/15 text-destructive";
-      default: return "bg-muted text-muted-foreground";
-    }
-  };
+  const formatCurrency = (n: number) =>
+    n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl">
-      <div className="flex items-center justify-between">
+    <div className="p-6 md:p-8 space-y-6 max-w-7xl admin-page">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Dashboard Overview</h1>
-          <p className="text-sm text-muted-foreground mt-1">Real-time view of your business metrics</p>
-          <LastRefreshed timestamp={lastRefreshed} />
+          <h1 className="font-syne font-bold" style={{ fontSize: 22, color: "var(--ad-text)" }}>
+            Overview
+          </h1>
+          <p className="text-[13px] mt-0.5" style={{ color: "var(--ad-text-secondary)" }}>
+            Revenue & subscription metrics
+          </p>
         </div>
-        <Button onClick={handleSync} disabled={syncing} variant="outline" size="sm" className="gap-2">
-          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Syncing...' : 'Sync Revolut'}
-        </Button>
+        <div className="flex items-center gap-3">
+          <LiveIndicator timestamp={lastRefreshed} />
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="admin-btn-ghost inline-flex items-center gap-2 px-3 h-9 text-[12px] disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Sync Revolut"}
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Revenue" value={`€${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={Wallet} change={`${stats.revenueChange >= 0 ? '+' : ''}${stats.revenueChange}% this month`} changeType={stats.revenueChange >= 0 ? "positive" : "negative"} delay={0} />
-        <KPICard title="MRR" value={`€${stats.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={TrendingUp} change={`${stats.mrrChange >= 0 ? '+' : ''}${stats.mrrChange}% vs last month`} changeType={stats.mrrChange >= 0 ? "positive" : "negative"} delay={0.05} />
-        <KPICard title="Active Subscriptions" value={stats.activeSubscriptions.toString()} icon={CreditCard} change={`+${stats.subsChange} this month`} changeType="positive" delay={0.1} />
-        <KPICard title="Total Customers" value={stats.totalCustomers.toString()} icon={Users} change={`+${stats.custChange} new`} changeType="positive" delay={0.15} />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {loading ? (
+          <>
+            <KPISkeleton /><KPISkeleton /><KPISkeleton /><KPISkeleton />
+          </>
+        ) : (
+          <>
+            <AdminKPICard
+              label="Total Revenue"
+              value={`€${formatCurrency(stats.totalRevenue)}`}
+              numericValue={stats.totalRevenue}
+              prefix="€"
+              format={formatCurrency}
+              icon={Wallet}
+              change={`${stats.revenueChange >= 0 ? "+" : ""}${stats.revenueChange}% this month`}
+              changeType={stats.revenueChange >= 0 ? "positive" : "negative"}
+              delay={0}
+            />
+            <AdminKPICard
+              label="MRR"
+              value={`€${formatCurrency(stats.mrr)}`}
+              numericValue={stats.mrr}
+              prefix="€"
+              format={formatCurrency}
+              icon={TrendingUp}
+              change={`${stats.mrrChange >= 0 ? "+" : ""}${stats.mrrChange}% vs last month`}
+              changeType={stats.mrrChange >= 0 ? "positive" : "negative"}
+              delay={0.06}
+            />
+            <AdminKPICard
+              label="Active Subscriptions"
+              value={stats.activeSubscriptions}
+              numericValue={stats.activeSubscriptions}
+              icon={CreditCard}
+              change={`+${stats.subsChange} this month`}
+              changeType="positive"
+              delay={0.12}
+            />
+            <AdminKPICard
+              label="Total Customers"
+              value={stats.totalCustomers}
+              numericValue={stats.totalCustomers}
+              icon={Users}
+              change={`+${stats.custChange} new`}
+              changeType="positive"
+              delay={0.18}
+            />
+          </>
+        )}
       </div>
+
+      {/* Revenue Milestones */}
+      <RevenueMilestones currentValue={stats.totalRevenue} />
 
       {/* Revenue Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="rounded-xl border border-border/30 bg-card/60 p-5"
+      <div
+        className="admin-card p-5 admin-page"
+        style={{ animationDelay: "180ms" }}
       >
-        <h2 className="text-sm font-semibold text-foreground mb-4">Revenue (Last 7 Days)</h2>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h2 className="font-syne text-[13px] font-semibold" style={{ color: "var(--ad-text)" }}>
+            Revenue — Last {range === "7D" ? "7 days" : range === "30D" ? "30 days" : "90 days"}
+          </h2>
+          <FilterTabs
+            items={[
+              { id: "7D", label: "7D" },
+              { id: "30D", label: "30D" },
+              { id: "90D", label: "90D" },
+            ]}
+            value={range}
+            onChange={(v) => setRange(v as Range)}
+          />
+        </div>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(213, 94%, 52%)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(213, 94%, 52%)" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 16%, 16%)" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(215, 15%, 55%)" }} />
-              <YAxis tick={{ fontSize: 11, fill: "hsl(215, 15%, 55%)" }} />
-              <Tooltip
-                contentStyle={{ background: "hsl(220, 18%, 8%)", border: "1px solid hsl(220, 16%, 16%)", borderRadius: 8 }}
-                labelStyle={{ color: "hsl(210, 20%, 92%)" }}
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: "#475569" }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                tickLine={false}
+                interval="preserveStartEnd"
               />
-              <Area type="monotone" dataKey="amount" stroke="hsl(213, 94%, 52%)" fill="url(#revGrad)" strokeWidth={2} />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#475569" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "#0d0d11",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                labelStyle={{ color: "#f1f5f9" }}
+                itemStyle={{ color: "#3b82f6" }}
+                formatter={(value: any) => [`€${Number(value).toFixed(2)}`, "Revenue"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="amount"
+                stroke="#3b82f6"
+                fill="url(#revGrad)"
+                strokeWidth={2}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      </motion.div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-        {/* Recent Payments */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="rounded-xl border border-border/30 bg-card/60 overflow-hidden"
+      {/* Recent Payments */}
+      <div
+        className="admin-card overflow-hidden admin-page"
+        style={{ animationDelay: "240ms" }}
+      >
+        <div
+          className="px-5 py-4 flex items-center justify-between"
+          style={{ borderBottom: "1px solid var(--ad-border-subtle)" }}
         >
-          <div className="px-5 py-4 border-b border-border/20 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Recent Payments</h2>
-            <a href="/admin/payments" className="text-xs text-primary font-medium">View all →</a>
-          </div>
-          <div className="divide-y divide-border/10">
-            {recentPayments.length === 0 ? (
-              <p className="p-5 text-sm text-muted-foreground">No payments yet</p>
-            ) : (
-              recentPayments.slice(0, 5).map((p) => (
-                <div key={p.id} className="flex items-center justify-between px-5 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{(p.payload as any)?.email || p.merchant_ref || "—"}</p>
-                    <p className="text-xs text-muted-foreground">{format(new Date(p.created_at), "MMM dd, HH:mm")}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">€{(p.payload as any)?.amount || "—"}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusColor(p.status)}`}>
-                      {p.status}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </motion.div>
+          <h2 className="font-syne text-[13px] font-semibold" style={{ color: "var(--ad-text)" }}>
+            Recent Payments
+          </h2>
+          <button
+            onClick={() => navigate("/admin/payments")}
+            className="text-[12px] inline-flex items-center gap-1 transition-colors"
+            style={{ color: "var(--ad-accent)" }}
+          >
+            View all
+            <ArrowRight className="w-3 h-3" />
+          </button>
+        </div>
 
+        {recentPayments.length === 0 ? (
+          <EmptyState icon={Inbox} title="No payments yet" subtitle="Payments will appear here once received" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="admin-table-head">
+                  <th className="text-left px-5 py-2.5 font-medium">Email</th>
+                  <th className="text-left px-5 py-2.5 font-medium">Plan</th>
+                  <th className="text-right px-5 py-2.5 font-medium">Amount</th>
+                  <th className="text-left px-5 py-2.5 font-medium">Status</th>
+                  <th className="text-right px-5 py-2.5 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentPayments.slice(0, 5).map((p) => {
+                  const payload = (p.payload || {}) as any;
+                  return (
+                    <tr
+                      key={p.id}
+                      onClick={() => navigate("/admin/payments")}
+                      className="admin-row cursor-pointer"
+                      style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                    >
+                      <td className="px-5 py-3" style={{ color: "var(--ad-text)" }}>
+                        {payload.email || p.merchant_ref || "—"}
+                      </td>
+                      <td className="px-5 py-3" style={{ color: "var(--ad-text-soft)" }}>
+                        {payload.plan_name || payload.product_name || "—"}
+                      </td>
+                      <td className="px-5 py-3 text-right font-mono-jb" style={{ color: "var(--ad-text)" }}>
+                        €{Number(payload.amount || 0).toFixed(2)}
+                      </td>
+                      <td className="px-5 py-3">
+                        <StatusBadge status={p.status} withDot={p.status === "completed"} />
+                      </td>
+                      <td
+                        className="px-5 py-3 text-right font-mono-jb text-[11px]"
+                        style={{ color: "var(--ad-text-secondary)" }}
+                      >
+                        {format(new Date(p.created_at), "MMM dd, HH:mm")}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
