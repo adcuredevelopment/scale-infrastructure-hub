@@ -11,12 +11,44 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { LastRefreshed } from "@/components/admin/LastRefreshed";
 
 const STATUS_OPTIONS = ["completed", "pending", "authorised", "failed", "expired"] as const;
+const TYPE_OPTIONS = [
+  { value: "all", label: "All Types" },
+  { value: "subscription", label: "Subscriptions" },
+  { value: "shop_order", label: "Shop Orders" },
+] as const;
+
+const getPaymentType = (payload: any): "subscription" | "shop_order" => {
+  return payload?.type === "shop_order" ? "shop_order" : "subscription";
+};
+
+const getProductOrPlan = (payload: any): string => {
+  return payload?.type === "shop_order" ? (payload?.product || "—") : (payload?.plan || "—");
+};
+
+const getCategory = (payload: any): string => {
+  if (payload?.type !== "shop_order") return "Subscription";
+  return payload?.category
+    ? String(payload.category)
+        .split("-")
+        .map((s: string) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(" ")
+    : "Shop";
+};
+
+const getAmount = (payload: any): string => {
+  if (payload?.type === "shop_order") {
+    const total = payload?.total ?? payload?.amount;
+    return total !== undefined ? `€${Number(total).toFixed(2)}` : "—";
+  }
+  return payload?.amount !== undefined ? `€${payload.amount}` : "—";
+};
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "subscription" | "shop_order">("all");
   const [loading, setLoading] = useState(true);
 
   const fetchPayments = useCallback(async () => {
@@ -31,10 +63,9 @@ export default function AdminPayments() {
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
   const { lastRefreshed } = useAutoRefresh(fetchPayments);
 
-  // Derive unique plans and status counts
   const plans = useMemo(() => {
     const set = new Set(
-      payments.map((p) => (p.payload as any)?.plan).filter(Boolean)
+      payments.map((p) => getProductOrPlan(p.payload as any)).filter((v) => v && v !== "—")
     );
     return Array.from(set).sort();
   }, [payments]);
@@ -47,15 +78,26 @@ export default function AdminPayments() {
     return counts;
   }, [payments]);
 
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: payments.length, subscription: 0, shop_order: 0 };
+    for (const p of payments) {
+      const t = getPaymentType(p.payload as any);
+      counts[t] = (counts[t] || 0) + 1;
+    }
+    return counts;
+  }, [payments]);
+
   const filtered = payments.filter((p) => {
     const payload = p.payload as any;
+    const productOrPlan = getProductOrPlan(payload);
     const matchesSearch =
       p.merchant_ref?.toLowerCase().includes(search.toLowerCase()) ||
       payload?.email?.toLowerCase().includes(search.toLowerCase()) ||
-      payload?.plan?.toLowerCase().includes(search.toLowerCase());
+      productOrPlan.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-    const matchesPlan = planFilter === "all" || (payload?.plan === planFilter);
-    return matchesSearch && matchesStatus && matchesPlan;
+    const matchesPlan = planFilter === "all" || productOrPlan === planFilter;
+    const matchesType = typeFilter === "all" || getPaymentType(payload) === typeFilter;
+    return matchesSearch && matchesStatus && matchesPlan && matchesType;
   });
 
   const statusColor = (status: string) => {
@@ -69,11 +111,18 @@ export default function AdminPayments() {
     }
   };
 
-  const hasActiveFilters = statusFilter !== "all" || planFilter !== "all" || search.length > 0;
+  const typeBadge = (type: "subscription" | "shop_order") =>
+    type === "shop_order"
+      ? "bg-purple-500/15 text-purple-500"
+      : "bg-blue-500/15 text-blue-500";
+
+  const hasActiveFilters =
+    statusFilter !== "all" || planFilter !== "all" || typeFilter !== "all" || search.length > 0;
 
   const clearFilters = () => {
     setStatusFilter("all");
     setPlanFilter("all");
+    setTypeFilter("all");
     setSearch("");
   };
 
@@ -82,9 +131,27 @@ export default function AdminPayments() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Payments</h1>
-          <p className="text-sm text-muted-foreground mt-1">Track all payment transactions</p>
+          <p className="text-sm text-muted-foreground mt-1">Track all subscriptions and shop orders</p>
         </div>
         <LastRefreshed timestamp={lastRefreshed} />
+      </div>
+
+      {/* Type chips */}
+      <div className="flex flex-wrap gap-2">
+        {TYPE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setTypeFilter(opt.value as any)}
+            className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all border ${
+              typeFilter === opt.value
+                ? "bg-primary/15 text-primary border-primary/30"
+                : "bg-card/60 text-muted-foreground border-border/30 hover:border-border/60"
+            }`}
+          >
+            {opt.label}
+            <span className="ml-1.5 opacity-70">{typeCounts[opt.value] || 0}</span>
+          </button>
+        ))}
       </div>
 
       {/* Quick status chips */}
@@ -99,7 +166,7 @@ export default function AdminPayments() {
                 : "bg-card/60 text-muted-foreground border-border/30 hover:border-border/60"
             }`}
           >
-            {status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1)}
+            {status === "all" ? "All Statuses" : status.charAt(0).toUpperCase() + status.slice(1)}
             <span className="ml-1.5 opacity-70">{statusCounts[status] || 0}</span>
           </button>
         ))}
@@ -109,15 +176,15 @@ export default function AdminPayments() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search by email, plan or ref..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Search by email, product, plan or ref..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={planFilter} onValueChange={setPlanFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-56">
             <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="All Plans" />
+            <SelectValue placeholder="All Products / Plans" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Plans</SelectItem>
+            <SelectItem value="all">All Products / Plans</SelectItem>
             {plans.map((p) => (
               <SelectItem key={p} value={p}>{p}</SelectItem>
             ))}
@@ -130,7 +197,6 @@ export default function AdminPayments() {
         )}
       </div>
 
-      {/* Results count */}
       <p className="text-xs text-muted-foreground">
         Showing {filtered.length} of {payments.length} payments
       </p>
@@ -139,8 +205,10 @@ export default function AdminPayments() {
         <Table>
           <TableHeader>
             <TableRow className="border-border/20">
+              <TableHead className="text-xs">Type</TableHead>
               <TableHead className="text-xs">Email</TableHead>
-              <TableHead className="text-xs">Plan</TableHead>
+              <TableHead className="text-xs">Product / Plan</TableHead>
+              <TableHead className="text-xs">Category</TableHead>
               <TableHead className="text-xs">Amount</TableHead>
               <TableHead className="text-xs">Status</TableHead>
               <TableHead className="text-xs">Date</TableHead>
@@ -149,17 +217,26 @@ export default function AdminPayments() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No payments found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No payments found</TableCell></TableRow>
             ) : (
               filtered.map((p) => {
                 const payload = p.payload as any;
+                const type = getPaymentType(payload);
                 return (
                   <TableRow key={p.id} className="border-border/10">
+                    <TableCell>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${typeBadge(type)}`}>
+                        {type === "shop_order" ? "Shop" : "Subscription"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-sm">{payload?.email || "—"}</TableCell>
-                    <TableCell className="text-sm font-medium">{payload?.plan || "—"}</TableCell>
-                    <TableCell className="text-sm">€{payload?.amount || "—"}</TableCell>
+                    <TableCell className="text-sm font-medium max-w-[240px] truncate" title={getProductOrPlan(payload)}>
+                      {getProductOrPlan(payload)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{getCategory(payload)}</TableCell>
+                    <TableCell className="text-sm">{getAmount(payload)}</TableCell>
                     <TableCell>
                       <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${statusColor(p.status)}`}>{p.status}</span>
                     </TableCell>
